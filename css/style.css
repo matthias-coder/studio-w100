@@ -1,7 +1,7 @@
 /* ===================== Studio W100 — Responsive Tablet & Desktop Command Center UI ===================== */
 :root{
   --paper:#eceee6; --sheet:#f8f8f3; --sheet-alt:#f1f3eb; --ink:#1d2747; --ink-soft:#56607d; --grid:rgba(40,70,140,.08);
-  --line:#c9cdbf; --accent:#d4471d; --accent-ink:#fff; --good:#2f7a4a; --bad:#b3261e; --warn:#b87d14; --chip:#e3e6dc;
+  --line:#c9cdbf; --accent:#d4471d; --accent-ink:#fff; --good:#266a3e; --bad:#b3261e; --warn:#b87d14; --chip:#e3e6dc;
   --c1:#2b4c9b; --c2:#7d879e; --c3:#d4471d; --c4:#2f7a4a; --c5:#c4931a; --c6:#8a3f8f; --c7:#1f8a8a; --c8:#5b6b2f;
   --f-display:"Bungee",Impact,"Arial Black",sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -70,7 +70,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   box-shadow:0 6px 16px rgba(0,0,0,.10);
 }
 .hud div{min-width:0}
-.hud .label{font-size:10px;display:block}
+.hud .label{font-size:11px;display:block}
 .hud b{display:block;font:500 18px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hud small{display:block;font:500 11px var(--f-mono);color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hud .warn b,.hud .warn small{color:var(--bad)}
@@ -510,3 +510,87 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
 /* Interview-Verlauf */
 .iv-past{display:grid;gap:3px;border-left:3px solid var(--line);padding:6px 10px;background:var(--sheet-alt);border-radius:0 4px 4px 0}
 .iv-past.ok{border-left-color:var(--good)} .iv-past.bad{border-left-color:var(--bad)}
+
+/* ===================== Responsive-Überarbeitung (Laptop & Smartphone) ===================== */
+/* hidden muss gegen display:grid/flex gewinnen (sonst bleibt z. B. der HUD im Setup sichtbar) */
+[hidden]{display:none!important}
+.track:empty{display:none}
+
+/* Reiterleiste: über die volle Breite, immer einzeilig */
+.ws-nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+.ws-tab{flex:0 0 auto}
+
+/* Monatskarte: Studio-Aktionen als dezente Leiste, Entscheidung bleibt das Wichtigste */
+.studio-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 8px;border:1.5px dashed var(--line);border-radius:6px}
+.studio-actions .label{margin-right:4px}
+.event-banner{max-height:140px}
+.event-banner.mag-banner{max-height:170px}
+
+/* Handy-Sprungleiste: nur auf schmalen Bildschirmen und während eines Projekts */
+.mobile-bar{display:none}
+.menu-btn{display:none}
+#main,#dock,#sheet{scroll-margin-top:96px}
+
+@media (max-width:860px){
+  body.in-project{padding-bottom:64px}
+  body.in-project .mobile-bar{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:6px;position:fixed;left:0;right:0;bottom:0;z-index:30;
+    padding:8px max(10px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
+    background:var(--sheet);border-top:1.5px solid var(--ink);box-shadow:0 -4px 14px rgba(0,0,0,.12);
+  }
+  .mobile-bar button{min-height:44px;font:500 13px var(--f-mono);border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
+}
+
+@media (max-width:640px){
+  /* Kopfzeile: eine Zeile, Werkzeuge hinter dem Menü-Button */
+  header{padding:8px 12px;gap:8px;flex-wrap:nowrap}
+  header.open{flex-wrap:wrap}
+  header>div:first-child{flex:1 1 0;min-width:0}
+  header h1{font-size:18px}
+  .menu-btn{flex:0 0 auto}
+
+  /* Studio-Aktionen: kompakte Zeile */
+  .studio-actions{gap:5px;padding:6px}
+  .studio-actions .label{flex-basis:100%}
+  .studio-actions .btn{flex:1 1 auto;padding:6px 8px;font-size:12px;box-shadow:none}
+  .hide-sm{display:none}
+  header h1 small,.sub{display:none}
+  .menu-btn{display:inline-flex}
+  .toggles{display:none;width:100%}
+  header.open .toggles{display:flex}
+
+  /* Kompakter HUD: Budget, Moral, Hype, Zeit; Antippen zeigt alle Werte */
+  .hud{grid-template-columns:repeat(4,minmax(0,1fr));padding:8px 10px;gap:6px 10px;cursor:pointer;position:relative}
+  .hud .money{grid-column:auto;display:block}
+  .hud b{font-size:16px}
+  .hud small{display:none}
+  .hud .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+  .hud>div:nth-child(4),.hud>div:nth-child(5),.hud>div:nth-child(6){display:none}
+  .hud.expanded>div:nth-child(4),.hud.expanded>div:nth-child(5),.hud.expanded>div:nth-child(6){display:block}
+  .hud.expanded small{display:block}
+  .hud::after{content:"▾";position:absolute;right:8px;bottom:2px;font-size:11px;color:var(--ink-soft)}
+  .hud.expanded::after{content:"▴"}
+
+  /* Phasenleiste: nur die aktuelle Phase ausgeschrieben */
+  .track{padding:4px 8px}
+  .track div{font-size:0;padding-top:2px}
+  .track div.now{font-size:12px;overflow:visible}
+
+  .event-banner{max-height:110px}
+
+  /* Mindestens 12 px Schrift */
+  .label,.hud .label,.chip,.check,.track div.now,.ws-tab .dot,.tog .badge,.stat span,.staff-lvl,.ledger tr.head td{font-size:12px}
+}
+
+/* Optionskarten: Badge unter den Titel, damit der Titel nicht zerquetscht wird */
+@media (max-width:600px){
+  .opt{grid-template-columns:minmax(0,1fr)}
+  .opt .check{justify-self:start;white-space:normal}
+}
+
+/* Touch-Geräte: Ziele mindestens 44 px */
+@media (pointer:coarse){
+  .seg button,.tog,.btn.small,.btn.tiny,.ws-tab,.sub-tab,.dock-tab,.cat-pill,.wiz-step,details>summary{min-height:44px}
+  input[type=checkbox],input[type=radio]:not(.choice input){width:22px;height:22px}
+  label:has(>input[type=checkbox]){min-height:44px;display:flex;align-items:center;gap:10px}
+}

@@ -15,7 +15,8 @@
         <h1>Studio <span>W100</span> · Goldstatus <small style="font-size:.55em;color:var(--muted);font-weight:400">Das Gamedev-RPG</small></h1>
         <div class="sub">Pen-&-Paper trifft Spielestudio-Tycoon: Level deinen Game Director, deine Leads und deine Engine vom ersten Pitch bis zu den Game of the Year Awards.</div>
       </div>
-      <div class="toggles">
+      <button class="tog menu-btn" id="tgMenu" aria-expanded="false" aria-controls="toggles" title="Menü">☰ Menü</button>
+      <div class="toggles" id="toggles">
         <button class="tog" id="tgProfile" title="Spieler-Profile wechseln, Spielstand teilen & Chronik exportieren">👤 Spieler 1</button>
         <button class="tog" id="tgExport" title="Fortschritt & Studio-Chronik exportieren">📜 Export</button>
         <button class="tog" id="tgTheme" title="Zwischen Papier-Bogen (Hell) und Studio-Nachtschicht (Dunkel) wechseln">🌓 Design</button>
@@ -29,15 +30,23 @@
       <div class="track" id="track"></div>
     </div>
 
+    <nav class="ws-nav" id="wsNav" aria-label="Arbeitsbereich wechseln" hidden></nav>
+
     <div class="table">
       <aside class="sheet" id="sheet" aria-label="Studio- und Projekt-Bogen"></aside>
       <div class="center-col">
-        <nav class="ws-nav" id="wsNav" aria-label="Arbeitsbereich wechseln" hidden></nav>
         <main class="card" id="main"></main>
       </div>
       <aside class="dock" id="dock" aria-label="Budget, Personal & Würfelprotokoll"></aside>
     </div>
   </div>
+
+  <!-- Handy: Sprungleiste zu Karte, Budget & Studio-Bogen -->
+  <nav class="mobile-bar" aria-label="Schnellzugriff">
+    <button type="button" data-jump="main">🃏 Karte</button>
+    <button type="button" data-jump="dock">💰 Budget</button>
+    <button type="button" data-jump="sheet">📋 Studio</button>
+  </nav>
 
   <!-- Loginless Multi-User Profile & Progress Export Modal -->
   <div class="modal-backdrop" id="profileModal" hidden>
@@ -78,6 +87,8 @@
       };
     })();
 
+    $('tgMenu').onclick=()=>{const hd=$('tgMenu').closest('header');const open=hd.classList.toggle('open');$('tgMenu').setAttribute('aria-expanded',open)};
+    document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>$(b.dataset.jump).scrollIntoView({block:'start'}));
     $('tgProfile').onclick=()=>openProfileModal('profiles');
     $('tgExport').onclick=()=>openProfileModal('chronicle');
     $('closeModalBtn').onclick=closeProfileModal;

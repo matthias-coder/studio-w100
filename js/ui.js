@@ -111,8 +111,10 @@ function openCardZoom(src,title){
 function renderHud(){
   const h=$('hud');
   if(!h)return;
+  document.body.classList.toggle('in-project',!!S);
   if(!S||!ACTIVE.concat(['launch']).includes(S.screen)){h.hidden=true;return}
   h.hidden=false;
+  h.onclick=()=>h.classList.toggle('expanded');
   recalcQual();
   const r=S.res,rw=runway(),left=12-S.round;
   const crit=rw<1,low=rw<=3&&rw<left;
@@ -903,10 +905,11 @@ function renderMain(){
   if(sc==='event'){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
-    m.innerHTML=monthNote()+budgetAlert()+`<div class="row">
-      <button class="btn small" id="shopBtn" data-opensub="invest">🛒 Investieren & Equipment</button>
-      <button class="btn small" data-opensub="hire">👥 Personal einstellen (${C.studio.staff.length}/6)</button>
-      <button class="btn small" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
+    m.innerHTML=monthNote()+budgetAlert()+`<div class="studio-actions">
+      <span class="label">Diesen Monat außerdem</span>
+      <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
+      <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/6)</button>
+      <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
     </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
