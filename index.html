@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio W100: Vom Pitch zum Goldstatus — Das Spielestudio-Aufbauspiel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Studio <span>W100</span> · Goldstatus</h1>
+        <div class="sub">Vom ersten Pitch bis zu den Game of the Year Awards: Führe dein eigenes Spielestudio — jede Entscheidung wird mit dem W100 ausgewürfelt.</div>
+      </div>
+      <div class="toggles">
+        <button class="tog" id="tgProfile" title="Spieler-Profile wechseln, Spielstand teilen & Chronik exportieren">👤 Spieler 1</button>
+        <button class="tog" id="tgExport" title="Fortschritt & Studio-Chronik exportieren">📜 Export</button>
+        <button class="tog" id="tgTheme" title="Zwischen Papier-Bogen (Hell) und Studio-Nachtschicht (Dunkel) wechseln">🌓 Design</button>
+        <button class="tog" id="tgManual" aria-pressed="false" title="Mit echtem W100 spielen und Ergebnis eintragen">🎲 Echter W100</button>
+        <button class="tog" id="tgNew">Karriere neu starten</button>
+      </div>
+    </header>
+
+    <div class="hud-wrap">
+      <div class="hud" id="hud" hidden></div>
+      <div class="track" id="track"></div>
+    </div>
+
+    <div class="table">
+      <aside class="sheet" id="sheet" aria-label="Studio- und Projekt-Bogen"></aside>
+      <div class="center-col">
+        <nav class="ws-nav" id="wsNav" aria-label="Arbeitsbereich wechseln" hidden></nav>
+        <main class="card" id="main"></main>
+      </div>
+      <aside class="dock" id="dock" aria-label="Budget, Personal & Würfelprotokoll"></aside>
+    </div>
+  </div>
+
+  <!-- Loginless Multi-User Profile & Progress Export Modal -->
+  <div class="modal-backdrop" id="profileModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">Spieler-Profile & Fortschritts-Export</h3>
+        <button type="button" class="btn tiny ghost" id="closeModalBtn">Schließen</button>
+      </div>
+      <div id="profileModalBody"></div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // Theme initialization (Hell / Dunkel)
+    (function initTheme(){
+      const savedTheme=localStorage.getItem('w100_theme');
+      if(savedTheme==='dark'||savedTheme==='light'){
+        document.documentElement.setAttribute('data-theme',savedTheme);
+      }
+      const btn=$('tgTheme');
+      const syncBtn=()=>{
+        const cur=document.documentElement.getAttribute('data-theme');
+        btn.textContent=cur==='dark'?'☀️ Hell':'🌙 Nachtschicht';
+      };
+      syncBtn();
+      btn.onclick=()=>{
+        const isDark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const next=isDark?'light':'dark';
+        document.documentElement.setAttribute('data-theme',next);
+        localStorage.setItem('w100_theme',next);
+        syncBtn();
+      };
+    })();
+
+    $('tgProfile').onclick=()=>openProfileModal('profiles');
+    $('tgExport').onclick=()=>openProfileModal('chronicle');
+    $('closeModalBtn').onclick=closeProfileModal;
+    $('profileModal').onclick=e=>{if(e.target===$('profileModal'))closeProfileModal()};
+    $('tgManual').onclick=()=>{manual=!manual;render();save()};
+    $('tgNew').onclick=()=>{
+      const b=$('tgNew');
+      if(b.dataset.c){
+        delete b.dataset.c;
+        b.textContent='Karriere neu starten';
+        C=null;S=null;wsTab='board';render();save();
+      }else{
+        b.dataset.c='1';
+        b.textContent='Wirklich alles löschen?';
+        setTimeout(()=>{delete b.dataset.c;b.textContent='Karriere neu starten'},3000);
+      }
+    };
+
+    load();
+    if(S&&(S.screen==='roll'||(S.screen==='manual'&&!manual))){
+      const p=S.pending;S.pending=null;
+      if(p&&p.kind==='rand'){S.rnd=p.ev;S.screen='random'}
+      else if(p&&p.kind==='rescue'){S.rescued=S.rescued.filter(x=>x!==p.ev);S.screen='crisis'}
+      else if(p&&['shop','hire','contract'].includes(p.kind))S.screen='shop';
+      else if(p&&p.kind==='dlc')S.screen='end';
+      else if(p&&p.kind==='mand')S.screen='mand';
+      else S.screen='event';
+    }
+    render();
+  </script>
+</body>
+</html>
