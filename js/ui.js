@@ -1283,7 +1283,7 @@ function launchSetupProject(){
     title:(setupDraft.title||'').trim()||randTitle(),
     genre:setupDraft.genre,
     subGenre:setupDraft.subGenre!=='none'?setupDraft.subGenre:null,
-    tier:setupDraft.tier,
+    tier:(first&&setupDraft.tier!=='indie')||(!first&&C.studio.kasse<TIERS[setupDraft.tier].min)?'indie':setupDraft.tier,
     model:setupDraft.model,
     ip:setupDraft.ip,
     extras:[...setupDraft.extras],
@@ -1475,8 +1475,9 @@ function renderSetup(m){
       <div class="field">
         <span class="label">Produktionsklasse</span>
         <div class="choices compact">${Object.entries(TIERS).map(([k,t])=>{
-          const ok=first||kasse>=t.min;
-          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${t.n}</b><code>${first?'Start '+money(220*t.scale)+' · ':'mind. '+money(t.min)+' · '}${t.team} Leute · ~${money(13*t.scale)}/M</code><span class="more">${t.d} · Preise: ${t.prices.map(p=>nf(p,2)).join(' / ')} € · ${t.note}</span></label>`;
+          // Neue Studios starten immer als Indie; größere Klassen erst mit genug Studiokapital
+          const ok=first?k==='indie':kasse>=t.min;
+          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${ok?'':'🔒 '}${t.n}</b><code>${first?(ok?'Start '+money(220*t.scale)+' · ':'erst mit '+money(t.min)+' Studiokapital · '):'mind. '+money(t.min)+' · '}${t.team} Leute · ~${money(13*t.scale)}/M</code><span class="more">${t.d} · Preise: ${t.prices.map(p=>nf(p,2)).join(' / ')} € · ${t.note}</span></label>`;
         }).join('')}</div>
       </div>
       <div class="field">
