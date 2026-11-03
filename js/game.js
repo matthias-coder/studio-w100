@@ -1574,9 +1574,47 @@ function resolveDlc(id,ok,crit){
   return {ch,txt};
 }
 
-function refound(){
+/* ===================== Handtuch werfen: Studio verkaufen & neu gründen ===================== */
+// Erlös für den Director: halbe Studiokasse plus Verkaufswert der eigenen Engine
+function towelPayout(){
+  const sc=C.studio.tier?TIERS[C.studio.tier].scale:1;
+  const eng=C.studio.engine?15*C.studio.engine.version*sc:0;
+  return Math.round((Math.max(0,C.studio.kasse)*0.5+eng)*10)/10;
+}
+// Ein sehr loyaler Lead (Loyalität ≥ 8) folgt dem Director ins neue Studio
+function towelFollower(){
+  return [...C.studio.staff].filter(st=>(st.loyalty||0)>=8).sort((a,b)=>b.loyalty-a.loyalty||(b.level||1)-(a.level||1))[0]||null;
+}
+function throwTowel(name){
+  if(S||!C)return;
+  const old=C.studio,pay=towelPayout(),fol=towelFollower();
+  C.formerStudios=[...(C.formerStudios||[]),{name:old.name,games:C.dir.games-(C.studioGamesStart||0),fame:old.fame}];
+  C.dir.wealth=Math.round((C.dir.wealth+pay)*10)/10;
+  C.dir.fame=Math.max(0,Math.round(C.dir.fame*0.85));
+  C.studio={name:(name||'').trim()||'Neustart Studios',fame:0,kasse:Math.round((C.dir.wealth+80)*10)/10,
+    staff:fol?[{...fol,loyalty:clamp(fol.loyalty-1,1,10)}]:[],exStaff:old.exStaff||[],engine:null,salaryDrift:0,overheadDrift:0};
+  C.dir.wealth=0;
+  C.studioGamesStart=C.dir.games;
+  C.engProj=null;
+  C.towel={old:old.name,pay,follower:fol?`${fol.personName} (${STAFF[fol.id].n})`:null};
+  rollMarketTrend();render();save();
+}
+
+function refound(name){
   const inv=Math.round(C.dir.wealth);
   const oldEng=C.studio.engine?{...C.studio.engine,techDebt:0,licenseMode:'none'}:null;
-  C.studio={name:C.studio.name,fame:0,kasse:inv+80,staff:[],exStaff:C.studio.exStaff||[],engine:oldEng,salaryDrift:0,overheadDrift:0};
-  C.dir.wealth=0;S=null;rollMarketTrend();render();save();
+  C.formerStudios=[...(C.formerStudios||[]),{name:C.studio.name,games:C.dir.games-(C.studioGamesStart||0),fame:C.studio.fame,broke:true}];
+  C.studio={name:(name||'').trim()||C.studio.name,fame:0,kasse:inv+80,staff:[],exStaff:C.studio.exStaff||[],engine:oldEng,salaryDrift:0,overheadDrift:0};
+  C.studioGamesStart=C.dir.games;
+  C.dir.wealth=0;S=null;setupDraft=null;rollMarketTrend();render();save();
+}
+
+// Ruhestand: Karriere endet mit einer Bilanz, danach beginnt eine neue Karriere
+function retire(){
+  if(!C)return;
+  const metas=C.hall.map(h=>h.meta).filter(x=>x!=null);
+  C.retired={games:C.dir.games,best:metas.length?Math.max(...metas):null,
+    awards:C.hall.reduce((a,h)=>a+(h.awards?.length||0),0),wealth:Math.round(C.dir.wealth),
+    studios:(C.formerStudios||[]).length+1};
+  S=null;render();save();
 }

@@ -897,6 +897,7 @@ function renderMain(){
   if(C&&wsTab==='engine'){renderEngineLab(m);return}
   if(C&&wsTab==='league'){renderLeagueView(m);return}
 
+  if(!S&&C?.retired){renderRetirement(m);return}
   if(!S){renderSetup(m);return}
   const sc=S.screen;
   if(sc==='event'){
@@ -1126,12 +1127,52 @@ function renderCrisis(m){
   const q=$('quit');if(q)q.onclick=()=>gameOver('budget');
 }
 
+/* Pleite: neues Studio mit Privatkapital gründen oder in den Ruhestand gehen */
+function brokeChoiceHTML(){
+  return `<div class="alert mid">
+    <b>Wie geht es für ${esc(C.dir.n)} weiter?</b>
+    <span>Privatkapital ${money(C.dir.wealth)} + Gründerzuschuss ${money(80)} = Startkapital ${money(Math.round(C.dir.wealth)+80)} für ein neues Studio. Oder ${esc(C.dir.n)} setzt sich zur Ruhe und die Karriere endet mit einer Bilanz.</span>
+    <div class="field" style="margin:0">
+      <label class="label" for="reName">Name des neuen Studios</label>
+      <input id="reName" type="text" maxlength="40" placeholder="z. B. Phönix Games">
+    </div>
+    <div class="row">
+      <button class="btn" id="re">🏢 Neues Studio gründen</button>
+      <button class="btn ghost" id="retire">🌅 Zur Ruhe setzen</button>
+    </div>
+  </div>`;
+}
+function bindBrokeChoice(){
+  $('re').onclick=()=>refound($('reName').value);
+  $('retire').onclick=retire;
+  const q=$('quit');if(q)q.remove();
+}
+function renderRetirement(m){
+  const r=C.retired;
+  m.innerHTML=`<span class="stamp">🌅 Ruhestand</span>
+    <h3>${esc(C.dir.n)} setzt sich zur Ruhe</h3>
+    <p>Nach ${r.games} veröffentlichten Spiel${r.games===1?'':'en'} in ${r.studios} Studio${r.studios===1?'':'s'} ist Schluss. Die Branche erinnert sich${r.best!=null&&r.best>=80?' an echte Meisterwerke':r.best!=null&&r.best>=60?' an solide Arbeit':' vor allem an den Mut, es versucht zu haben'}.</p>
+    <div class="score">
+      <div><span class="label">Spiele</span><b>${r.games}</b></div>
+      <div><span class="label">Beste Wertung</span><b>${r.best??'–'}</b></div>
+      <div><span class="label">Awards</span><b>${r.awards}</b></div>
+      <div><span class="label">Privatvermögen</span><b>${money(r.wealth)}</b></div>
+    </div>
+    ${C.hall.length?`<details class="fold"><summary>📜 Ruhmeshalle</summary><div class="fold-body">${hallHTML()}</div></details>`:''}
+    <p class="note">Freigeschaltete Legenden bleiben für die nächste Karriere erhalten.</p>
+    <div class="row">
+      <button class="btn small ghost" id="expChron">Chronik exportieren</button>
+      <button class="btn" id="newCareer">Neue Karriere beginnen</button>
+    </div>`;
+  $('expChron').onclick=()=>openProfileModal('chronicle');
+  $('newCareer').onclick=()=>{C=null;S=null;setupDraft=null;setupStep=1;wsTab='board';render();save()};
+}
+
 function renderOver(m){
   const t={budget:['Insolvenz','Das Konto ist leer. Der Insolvenzverwalter verkauft die Rechte, das Spiel erscheint nie.'],haus:['Alles verloren','Die Bank hat abgelehnt. Studio und Haus sind weg.'],moral:['Das Team ist weg','Die Moral ist auf null. Am Montag liegen die Kündigungen auf dem Tisch.']}[S.over]||['Ende',''];
-  m.innerHTML=`<span class="label">Ende Monat ${S.round}</span><h3>${t[0]}</h3><p>${t[1]}</p><p>${esc(C.dir.n)} kann mit ${money(C.dir.wealth)} Privatgeld und einem Gründerzuschuss von ${money(80)} ein neues Indie-Studio gründen. Studio-Fame startet bei null, das Personal ist weg (eure eigene Engine und alle freigeschalteten Branchen-Legenden bleiben euch erhalten).</p>
-   <div class="ledger">${ledger(null)}</div><div class="row"><button class="btn" id="re">Neues Studio gründen</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
-  $('re').onclick=refound;
-  $('quit').onclick=()=>{C=null;S=null;render();save()};
+  m.innerHTML=`<span class="label">Ende Monat ${S.round}</span><h3>${t[0]}</h3><p>${t[1]}</p><p class="note">Bei einer Neugründung startet der Studio-Fame bei null und das Personal ist weg. Die eigene Engine und alle freigeschalteten Legenden bleiben erhalten.</p>
+   <div class="ledger">${ledger(null)}</div>${brokeChoiceHTML()}`;
+  bindBrokeChoice();
 }
 
 function ledger(e){
@@ -1216,9 +1257,13 @@ function renderEnd(m){
        <div class="ledger">${ledger(e)}</div>
      </div>
    </details>
-   <div class="row">${broke?'<button class="btn" id="re">Neues Studio gründen</button>':'<button class="btn" id="nextP">Nächstes Projekt planen</button>'}<button class="btn small ghost" id="expChron">Chronik exportieren</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
+   ${broke?brokeChoiceHTML():''}
+   <div class="row">${broke?'':'<button class="btn" id="nextP">Nächstes Projekt planen</button><button class="btn ghost" id="towelP">🏳️ Handtuch werfen</button>'}<button class="btn small ghost" id="expChron">Chronik exportieren</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
   m.querySelectorAll('[data-dlc]').forEach(b=>b.onclick=()=>startDlc(b.dataset.dlc));
-  if(broke)$('re').onclick=refound;else $('nextP').onclick=()=>{S=null;setupDraft=null;setupStep=2;wsTab='board';render();save()};
+  if(broke)bindBrokeChoice();else{
+    $('nextP').onclick=()=>{S=null;setupDraft=null;setupStep=2;wsTab='board';render();save()};
+    $('towelP').onclick=()=>{S=null;setupDraft=null;ensureSetupDraft();setupDraft.mode='towel';wsTab='board';render();save()};
+  }
   $('expChron').onclick=()=>openProfileModal('chronicle');
   $('quit').onclick=()=>{C=null;S=null;setupDraft=null;setupStep=1;wsTab='board';render();save()};
 }
@@ -1292,18 +1337,60 @@ function launchSetupProject(){
   };
   setupDraft=null;
   wsTab='board';
-  if(C)C.engProj=null;
+  if(C){C.engProj=null;C.towel=null}
   startGame(cfg);
 }
 
 /* ===================== Engine-Projekt zwischen zwei Spielen ===================== */
 function setupModeBar(){
-  if(!C||!C.studio.engine)return '';
+  if(!C)return '';
   const mode=setupDraft.mode;
   return `<div class="sub-tabs" role="tablist" aria-label="Nächstes Projekt">
     <button type="button" class="sub-tab ${mode==='game'?'active':''}" data-setmode="game">🎮 Neues Spiel entwickeln</button>
-    <button type="button" class="sub-tab ${mode==='engine'?'active':''}" data-setmode="engine">⚙️ Engine-Projekt (6–12 Monate)</button>
+    ${C.studio.engine?`<button type="button" class="sub-tab ${mode==='engine'?'active':''}" data-setmode="engine">⚙️ Engine-Projekt (6–12 Monate)</button>`:''}
+    <button type="button" class="sub-tab ${mode==='towel'?'active':''}" data-setmode="towel">🏳️ Handtuch werfen</button>
   </div>`;
+}
+function towelResultHTML(){
+  const t=C?.towel;
+  if(!t)return '';
+  return `<div class="alert good"><b>🏢 ${esc(C.studio.name)} ist gegründet</b><span>„${esc(t.old)}“ wurde verkauft (Erlös ${money(t.pay)}). Startkapital: ${money(C.studio.kasse)}.${t.follower?` ${esc(t.follower)} kommt mit ins neue Studio.`:''}</span></div>`;
+}
+function renderTowel(m){
+  const pay=towelPayout(),fol=towelFollower(),start=Math.round((C.dir.wealth+pay+80)*10)/10;
+  const tiers=Object.entries(TIERS).map(([k,t])=>`<div><span>${t.n}</span><span class="${start>=t.min?'pos':'neg'}">${start>=t.min?'✓ möglich':'ab '+money(t.min)}</span></div>`).join('');
+  m.innerHTML=setupModeBar()+`
+    <span class="stamp">🏳️ Handtuch werfen</span>
+    <h3>${esc(C.studio.name)} verkaufen und ein neues Studio gründen</h3>
+    <p class="note" style="margin:0">${esc(C.dir.n)} verkauft das Studio samt Engine und Team und fängt woanders neu an. Erfahrung, Werte, Vorteile und freigeschaltete Legenden bleiben, der Ruf leidet etwas.</p>
+    <div class="mini">
+      <div><span>Erlös aus dem Verkauf (½ Kasse${C.studio.engine?' + Engine':''})</span><span class="pos">${money(pay,true)}</span></div>
+      <div><span>Privatvermögen des Directors</span><span>${money(C.dir.wealth)}</span></div>
+      <div><span>Gründerzuschuss</span><span>${money(80)}</span></div>
+      <div><span><b>Startkapital des neuen Studios</b></span><span><b>${money(start)}</b></span></div>
+      <div><span>Director-Fame</span><span class="neg">${C.dir.fame} → ${Math.max(0,Math.round(C.dir.fame*0.85))}</span></div>
+      <div><span>Mitkommender Lead</span><span>${fol?esc(fol.personName)+' ('+STAFF[fol.id].n+')':'niemand (Loyalität 8+ nötig)'}</span></div>
+    </div>
+    <div class="mini"><span class="label">Mögliche Produktionsklasse</span>${tiers}</div>
+    <div class="field">
+      <label class="label" for="towelName">Name des neuen Studios</label>
+      <input id="towelName" type="text" maxlength="40" value="${esc(setupDraft.towelName||'')}" placeholder="z. B. Zweite Chance Games">
+    </div>
+    <p class="err" id="towelErr" hidden></p>
+    <div class="wiz-nav">
+      <span class="note">Studio, Engine, übriges Personal und Studio-Fame bleiben beim alten Studio.</span>
+      <button type="button" class="btn" id="towelGo">🏳️ Verkaufen & neu gründen</button>
+    </div>`;
+  bindSetupMode(m);
+  const nm=$('towelName');nm.oninput=e=>{setupDraft.towelName=e.target.value};
+  $('towelGo').onclick=()=>{
+    const name=(setupDraft.towelName||'').trim();
+    if(!name||name===C.studio.name){const e=$('towelErr');e.hidden=false;e.textContent='Gebt dem neuen Studio einen eigenen Namen.';return}
+    const b=$('towelGo');
+    if(!b.dataset.c){b.dataset.c='1';b.textContent='Wirklich verkaufen?';setTimeout(()=>{if(b.isConnected){delete b.dataset.c;b.textContent='🏳️ Verkaufen & neu gründen'}},3000);return}
+    throwTowel(name);setupDraft=null;
+    render();
+  };
 }
 function bindSetupMode(m){
   m.querySelectorAll('[data-setmode]').forEach(b=>b.onclick=()=>{setupDraft.mode=b.dataset.setmode;renderMain()});
@@ -1369,6 +1456,7 @@ function renderSetup(m){
   ensureSetupDraft();
   const first=!C;
   if(!first&&C.studio.engine&&setupDraft.mode==='engine'){renderEngineProject(m);return}
+  if(!first&&setupDraft.mode==='towel'){renderTowel(m);return}
   const kasse=first?null:C.studio.kasse;
   const seqs=first?[]:C.hall.map((h,i)=>[h,i]).filter(([h])=>h.meta!=null&&h.meta>=70&&!h.ipLost);
   const tr=C?.trend;
@@ -1605,7 +1693,7 @@ function renderSetup(m){
       </div>`;
   }
 
-  m.innerHTML=engProjResultHTML()+setupModeBar()+stepsBar+bodyHTML;
+  m.innerHTML=towelResultHTML()+engProjResultHTML()+setupModeBar()+stepsBar+bodyHTML;
   bindZoomTriggers(m);
   bindSetupMode(m);
 
