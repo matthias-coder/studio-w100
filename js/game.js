@@ -642,7 +642,7 @@ function getOpt(p){
     const role=leg?.leadRole||'senior';
     const st=STAFF[role]?.stat||'design';
     return {
-      l:`Gast-Session mit ${leg?.n||'Legende'}`,
+      l:leg?.encCollabLabel||`Gast-Session mit ${leg?.n||'Legende'}`,
       st,
       dc:55,
       s:leg?.encEff||{gp:5},
@@ -934,15 +934,15 @@ function chooseLegendAction(mode){
   }
 
   // mode === 'pass'
-  const ch=apply({moral:1});
+  const ch=apply(leg.encPassEff||{moral:1});
   S.last={
     kind:'legend',
     ev:legKey,
     safe:true,
     ch,
     pre:[],
-    l:'Autogramm & Kaffeepause',
-    txt:`Ihr plaudert bei einer Tasse Kaffee mit ${leg.n}. Das Team ist motiviert (+1 Moral), und vielleicht kreuzen sich eure Wege bald wieder.`
+    l:leg.encPassLabel||'Autogramm & Kaffeepause',
+    txt:`Ihr entscheidet euch für euren eigenen Weg im Gespräch mit ${leg.n}. Das Team zieht motiviert mit, und vielleicht kreuzen sich eure Wege bald wieder.`
   };
   addLog(`<span>M${S.round}</span> Kaffeepause mit ${leg.n} (+1 Moral)`);
   S.screen='result';

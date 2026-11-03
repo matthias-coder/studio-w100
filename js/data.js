@@ -558,6 +558,9 @@ const DIRS={
     leadRole:'bizdev',
     d:'Der bebrillte 90er-Software-Monopolist im Strickpullunder. Wedelt mit 3,5-Zoll-Disketten und Exklusiv-Verträgen, während im Hintergrund die Monitore blau aufleuchten.',
     encStory:'Ein verschmitzt grinsender Tech-Mogul im Musterpullunder legt einen dicken Stapel Lizenzverträge und eine blaue Diskette auf den Tisch, während hinter ihm drei Monitore einen Blue Screen zeigen: „Unterschreibt für mein Betriebssystem, und ich mache euch reich!“',
+    encCollabLabel:'💾 Exklusiv-Vertrag für sein Betriebssystem verhandeln',
+    encPassLabel:'🐧 Ablehnen & unabhängig bleiben (+1 Moral, +1 Hype)',
+    encPassEff:{moral:1,hype:1},
     encEff:{budget:40,wl:3,bugs:2},
     s:{vision:2,technik:3,fuehrung:1,business:4,hype:2,polish:0},
     aff:{aufbau:2,sport:1,mmorpg:1},perks:['netz','spar'],flaws:['buggy'],ab:'monopol'
@@ -571,6 +574,9 @@ const DIRS={
     leadRole:'art',
     d:'Radikaler Design-Purist und theatralischer Interface-Kritiker. Duldet keine Menüs mit mehr als einem einzigen Knopf und nennt alles andere eine Beleidigung für das Auge.',
     encStory:'Ein dramatischer Design-Purist stürmt ins Studio, deutet entsetzt auf euer HUD und ruft: „Sacré bleu! Das ist ein Überfall auf die menschliche Netzhaut! Weg mit den siebzehn Untermenüs — wir brauchen Eleganz, Weißraum und abgerundete Ecken!“',
+    encCollabLabel:'✨ Komplettes Interface nach seiner Design-Vision umbauen',
+    encPassLabel:'🙅‍♂️ Seinen Wutausbruch höflich ignorieren (+1 Moral)',
+    encPassEff:{moral:1},
     encEff:{gfx:9,gp:3,moral:-1},
     s:{vision:4,technik:1,fuehrung:1,business:3,hype:4,polish:3},
     aff:{mobile:2,racing:1,adventure:1},perks:['kritik'],flaws:['diva','perfekt'],ab:'minimal'
@@ -584,6 +590,9 @@ const DIRS={
     leadRole:'senior',
     d:'Der bärtige Open-Source-Guru im grünen Flanellhemd und Wollsocken, mit einem kleinen Pinguin auf der Schulter. Hasst unsauberen Code, repariert aber jeden Server-Kernel.',
     encStory:'Ein bärtiger Programmierer in Wollsocken und grünem Flanellhemd — mit einem kleinen Pinguin auf der Schulter — haut im Serverraum auf das blinkende Rack: „Wer hat diesen Speicher-Müll verbrochen?! Lasst mich sofort an die Konsole, bevor mir der Kragen platzt!“',
+    encCollabLabel:'🐧 Ihn den kompletten Engine-Kernel reparieren lassen',
+    encPassLabel:'🛡️ Euren eigenen Code verteidigen (+1 Moral, +2 Gameplay)',
+    encPassEff:{moral:1,gp:2},
     encEff:{bugs:-9,gfx:4,moral:-1},
     s:{vision:1,technik:4,fuehrung:0,business:1,hype:1,polish:4},
     aff:{mmorpg:2,koop:2,aufbau:1},perks:['engine'],flaws:['diva'],ab:'kernel'
@@ -597,6 +606,9 @@ const DIRS={
     leadRole:'bizdev',
     d:'Tritt ohne mit der Wimper zu zucken im grauen T-Shirt aus einem Daten-Portal. Kennt jede Klick-Metrik eurer Spieler und will aus allem ein soziales Metaverse bauen.',
     encStory:'Ein blasser, verdächtig ruhig blinzelnder Tech-CEO im grauen Shirt tritt aus einem leuchtenden Binärcode-Portal im Serverraum und hält einen Geldsack hoch: „Hallo, menschliche Entwickler. Wenn ihr meine Telemetrie-Schnittstelle einbaut, finanziere ich eure Server.“',
+    encCollabLabel:'📡 Telemetrie-Deal für Server-Finanzierung eingehen',
+    encPassLabel:'🔒 Privatsphäre der Spieler schützen (+1 Moral, +1 Hype)',
+    encPassEff:{moral:1,hype:1},
     encEff:{budget:35,bugs:-3,hype:-1},
     s:{vision:1,technik:3,fuehrung:1,business:4,hype:1,polish:1},
     aff:{mobile:2,br:2,mmorpg:1},perks:['netz'],flaws:['social'],ab:'telemetry'
@@ -610,6 +622,9 @@ const DIRS={
     leadRole:'community',
     d:'Zwei überdrehte Stanford-Mathegenies auf Rollerskates mit riesiger Lupe und bunten 90er-Windbreakern. Ihr Such-Algorithmus lässt die Wishlists explodieren.',
     encStory:'Scheppernd rollen zwei junge Forscher auf Inlineskates mit einer überdimensionalen Lupe und fliegenden Aktenstapeln mitten in euer Büro: „Wir indizieren das gesamte Netz! Wollt ihr unseren neuen Ranking-Algorithmus testen, damit jeder Spieler euch sofort findet?“',
+    encCollabLabel:'🔍 Spiel für ihren neuen Such-Algorithmus optimieren',
+    encPassLabel:'🎮 Lieber auf Spielspaß & Mundpropaganda setzen (+2 Gameplay, +1 Moral)',
+    encPassEff:{gp:2,moral:1},
     encEff:{wl:6,hype:3},
     s:{vision:3,technik:4,fuehrung:1,business:3,hype:3,polish:1},
     aff:{mobile:2,aufbau:1,mmorpg:1},perks:['engine','glueck'],flaws:['creep'],ab:'pagerank'

@@ -769,15 +769,16 @@ function renderLegendEncounter(m){
         ${chips(previewSafe(leg.encEff||{}))}
       </button>
       <button class="opt" id="legCollabBtn">
-        <span class="t">🤝 Gemeinsame Gast-Session im Studio (${!alreadyUnlocked?'schaltet bei Erfolg frei!':'Sofort-Boost'})</span>
+        <span class="t">${leg.encCollabLabel?`${esc(leg.encCollabLabel)} (${!alreadyUnlocked?'schaltet bei Erfolg frei!':'Sofort-Boost'})`:`🤝 Gemeinsame Gast-Session im Studio (${!alreadyUnlocked?'schaltet bei Erfolg frei!':'Sofort-Boost'})`}</span>
         <span class="check">${STATS[o.st]} · SG ${target} (${pct} %)</span>
         <span class="d">Kein Handgeld nötig: Überzeugt ${esc(leg.n)} im Fachgespräch mit W100 ${fmt(mod)} gegen SG ${target}, um den vollen Effekt ${!alreadyUnlocked?'und die dauerhafte Freischaltung ':''}zu erhalten!</span>
         ${chips(previewSafe(leg.encEff||{}))}
       </button>
       <button class="opt" id="legPassBtn">
-        <span class="t">☕ Freundlich plaudern & Autogramm holen</span>
+        <span class="t">${leg.encPassLabel?esc(leg.encPassLabel):'☕ Freundlich plaudern & Autogramm holen'}</span>
         <span class="check safe">ohne Wurf</span>
-        <span class="d">Keine Kosten, kein Risiko. Das Team freut sich über den hohen Besuch (+1 Moral).</span>
+        <span class="d">Keine Kosten, kein Risiko. Das Team freut sich über den hohen Besuch.</span>
+        ${leg.encPassEff?chips(previewSafe(leg.encPassEff)):''}
       </button>
     </div>`;
 
