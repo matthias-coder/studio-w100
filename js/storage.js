@@ -209,7 +209,7 @@ function generateChronicleText(){
   const d=C.dir;
   const eng=st.engine;
   const lines=[];
-  lines.push(`# 🎲 STUDIO W100 — STUDIO-CHRONIK: ${st.name.toUpperCase()}`);
+  lines.push(`# 🎲 STUDIO W100: GOLDSTATUS (Das Gamedev-RPG) — STUDIO-CHRONIK: ${st.name.toUpperCase()}`);
   lines.push(`Spieler-Profil: ${p?.userName||'Standard'} | Exportiert am: ${new Date().toLocaleDateString('de-DE')}`);
   lines.push('');
   lines.push(`## 🏢 Studio-Übersicht`);

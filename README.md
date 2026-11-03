@@ -1,6 +1,6 @@
-# 🎲 Studio W100 — Das Spielestudio-Aufbauspiel (Tablet & Desktop Command Center Edition)
+# 🎲 Studio W100: Goldstatus — Das Gamedev- & Pen-&-Paper-RPG
 
-Ein rundenbasiertes Tabletop- & Browser-Aufbauspiel rund um die Leitung eines eigenen Spielestudios — komplett auf Deutsch, mit **W100-Würfelsystem (1–100)**, **Gameplay/Grafik-Splitting**, **alternder & lizenzierbarer Eigenbau-Engine mit interaktivem Tech-Tree**, **aufsteigendem Lead-Personal**, **Branchen-Rivalen & Game of the Year (GOTY) Awards** sowie einem **loginlosen Multi-User-Speichersystem** für **GitHub Pages**.
+Ein rundenbasiertes **Gamedev-Rollenspiel & Tabletop-Aufbauspiel** rund um die Leitung eines eigenen Spielestudios — komplett auf Deutsch, mit **Charakterbogen für deinen Game Director**, **W100-Prozentwürfelsystem (1–100)**, **Gameplay/Grafik-Splitting**, **alternder & lizenzierbarer Eigenbau-Engine mit interaktivem Tech-Tree**, **aufsteigendem Lead-Personal (XP & Stufen 1–5)**, **Branchen-Rivalen & Game of the Year (GOTY) Awards** sowie einem **loginlosen Multi-User-Speichersystem** für **GitHub Pages**.
 
 ---
 
