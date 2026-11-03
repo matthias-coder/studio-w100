@@ -87,7 +87,7 @@
       if(b.dataset.c){
         delete b.dataset.c;
         b.textContent='Karriere neu starten';
-        C=null;S=null;wsTab='board';render();save();
+        C=null;S=null;if(typeof setupDraft!=='undefined'){setupDraft=null;setupStep=1}wsTab='board';render();save();
       }else{
         b.dataset.c='1';
         b.textContent='Wirklich alles löschen?';
@@ -99,6 +99,7 @@
     if(S&&(S.screen==='roll'||(S.screen==='manual'&&!manual))){
       const p=S.pending;S.pending=null;
       if(p&&p.kind==='rand'){S.rnd=p.ev;S.screen='random'}
+      else if(p&&p.kind==='legend'){S.curLegend=p.ev;S.screen='legend'}
       else if(p&&p.kind==='rescue'){S.rescued=S.rescued.filter(x=>x!==p.ev);S.screen='crisis'}
       else if(p&&['shop','hire','contract'].includes(p.kind))S.screen='shop';
       else if(p&&p.kind==='dlc')S.screen='end';

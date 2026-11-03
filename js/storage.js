@@ -2,9 +2,42 @@
 const STORAGE_PROFILES_KEY='w20_profiles_v6';
 const STORAGE_ACTIVE_KEY='w20_active_slot_v6';
 const STORAGE_MANUAL_KEY='w20m';
+const STORAGE_UNLOCKED_KEY='w100_unlocked_chars_v1';
 
 let profiles=[];
 let activeSlotId='slot_1';
+let unlockedChars=[];
+
+function getStarterChars(){
+  return Object.keys(DIRS).filter(k=>DIRS[k].starter);
+}
+
+function getUnlockedChars(){
+  const starters=getStarterChars();
+  const fromC=(C&&Array.isArray(C.unlockedChars))?C.unlockedChars:[];
+  const merged=Array.from(new Set([...starters,...unlockedChars,...fromC])).filter(k=>DIRS[k]);
+  unlockedChars=merged;
+  return merged;
+}
+
+function isCharUnlocked(id){
+  if(!DIRS[id])return false;
+  if(DIRS[id].starter)return true;
+  return getUnlockedChars().includes(id);
+}
+
+function unlockChar(id){
+  if(!DIRS[id])return false;
+  const list=getUnlockedChars();
+  const isNew=!list.includes(id);
+  if(isNew)list.push(id);
+  unlockedChars=list;
+  if(C){
+    C.unlockedChars=Array.from(new Set([...(C.unlockedChars||[]),...list]));
+  }
+  try{localStorage.setItem(STORAGE_UNLOCKED_KEY,JSON.stringify(unlockedChars))}catch(e){}
+  return isNew;
+}
 
 function encodeSaveString(obj){
   try{
@@ -47,7 +80,11 @@ function normalizeCareer(c){
         xp:item.xp||0,
         sal:item.sal||(STAFF[item.id]?STAFF[item.id].sal:2),
         loyalty:item.loyalty??7,
-        tenure:item.tenure||0
+        tenure:item.tenure||0,
+        img:item.img||null,
+        isScene:!!item.isScene,
+        isLegend:!!item.isLegend,
+        legendId:item.legendId||null
       };
     });
   }else{
@@ -56,6 +93,14 @@ function normalizeCareer(c){
   if(c.studio.salaryDrift===undefined)c.studio.salaryDrift=0;
   if(c.studio.overheadDrift===undefined)c.studio.overheadDrift=0;
   if(!c.studio.exStaff)c.studio.exStaff=[];
+  if(c.dir&&c.dir.id&&DIRS[c.dir.id]&&!c.dir.img){
+    c.dir.img=DIRS[c.dir.id].img;
+    c.dir.isScene=!!DIRS[c.dir.id].isScene;
+  }
+  if(Array.isArray(c.unlockedChars)){
+    c.unlockedChars.forEach(k=>{if(!unlockedChars.includes(k))unlockedChars.push(k)});
+  }
+  c.unlockedChars=getUnlockedChars();
   if(c.studio.engine&&typeof c.studio.engine==='object'){
     c.studio.engine.version=c.studio.engine.version||1;
     c.studio.engine.age=c.studio.engine.age||0;
@@ -82,6 +127,11 @@ function normalizeProject(s){
 function initStorage(){
   try{
     manual=localStorage.getItem(STORAGE_MANUAL_KEY)==='1';
+    const rawUnl=localStorage.getItem(STORAGE_UNLOCKED_KEY);
+    if(rawUnl){
+      try{unlockedChars=JSON.parse(rawUnl)||[]}catch(e){unlockedChars=[]}
+    }
+    getUnlockedChars();
     const raw=localStorage.getItem(STORAGE_PROFILES_KEY);
     if(raw){
       profiles=JSON.parse(raw)||[];
@@ -137,6 +187,7 @@ function save(){
     localStorage.setItem(STORAGE_PROFILES_KEY,JSON.stringify(profiles));
     localStorage.setItem(STORAGE_ACTIVE_KEY,activeSlotId);
     localStorage.setItem(STORAGE_MANUAL_KEY,manual?'1':'0');
+    localStorage.setItem(STORAGE_UNLOCKED_KEY,JSON.stringify(getUnlockedChars()));
     localStorage.setItem('w20v5',JSON.stringify({C,S}));
     if(typeof updateProfileButton==='function')updateProfileButton();
   }catch(e){}

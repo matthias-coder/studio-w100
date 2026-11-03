@@ -6,7 +6,106 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','shop','crisis','roll','manual'];
+const ACTIVE=['event','mand','lang','result','random','legend','shop','crisis','roll','manual'];
+
+/* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
+function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
+  if(!img)return '';
+  return `<div class="char-crop ${size} ${isScene?'is-scene':''} ${locked?'locked':''}" ${!locked?`data-zoom-img="${esc(img)}" data-zoom-title="${esc(alt)}" title="Klicken für volle Sammelkarte" style="cursor:zoom-in"`:''}>
+    <img src="${esc(img)}" alt="${esc(alt)}" loading="lazy">
+    ${locked?'<span class="lock-ov" aria-hidden="true">🔒</span>':''}
+  </div>`;
+}
+
+function getStudioArt(){
+  if(!C)return STUDIO_IMAGES.garage;
+  const tier=S?S.tier:(C.studio.tier||'indie');
+  const hasMocap=S&&S.shop&&S.shop.includes('mocap');
+  const hasHw=S&&S.shop&&(S.shop.includes('hardware')||S.shop.includes('pipeline'));
+  if(tier==='aaa'&&(hasMocap||C.studio.fame>=45||(C.studio.engine?.version||0)>=2))return STUDIO_IMAGES.aaa;
+  if(tier==='aa'||tier==='aaa')return STUDIO_IMAGES.aa;
+  if(hasHw||C.hall.length>=1||(S&&S.round>=2))return STUDIO_IMAGES.loft;
+  return STUDIO_IMAGES.garage;
+}
+
+function studioBannerHTML(){
+  const art=getStudioArt();
+  return `<div class="studio-banner">
+    <img src="${esc(art.src)}" alt="${esc(art.label)}" loading="lazy">
+    <div class="studio-banner-cap">
+      <span>🏢 ${esc(art.label)}</span>
+      ${C?`<span>Fame ${C.studio.fame}/100</span>`:''}
+    </div>
+  </div>`;
+}
+
+function eventBannerHTML(kind,ev){
+  if(kind==='legend'){
+    const leg=DIRS[ev];
+    if(leg&&leg.isScene)return `<div class="enc-crop"><img src="${esc(leg.img)}" alt="${esc(leg.n)}" loading="lazy"></div>`;
+    return '';
+  }
+  if(kind==='crisis')return `<div class="event-banner"><img src="${EVENT_IMAGES.boardroom}" alt="Finanzierungsrunde" loading="lazy"></div>`;
+  if(kind==='launch'){
+    const src=(S&&S.res.bugs>=10)?EVENT_IMAGES.bug_crash:EVENT_IMAGES.stage;
+    return `<div class="event-banner"><img src="${src}" alt="Release-Tag" loading="lazy"></div>`;
+  }
+  if(kind==='sales'||kind==='end'){
+    const meta=S?.end?.meta??0;
+    const won=(S?.end?.awards||[]).some(a=>a.won);
+    if(meta>=75||won)return `<div class="event-banner mag-banner"><img src="${EVENT_IMAGES.magazine}" alt="PIXEL WORLD Magazin-Titelstory" loading="lazy"></div>`;
+    if(meta<52)return `<div class="event-banner"><img src="${EVENT_IMAGES.shitstorm}" alt="Vernichtende Kritiken" loading="lazy"></div>`;
+    return `<div class="event-banner"><img src="${EVENT_IMAGES.stage}" alt="Release-Show" loading="lazy"></div>`;
+  }
+  if(kind==='mand'){
+    if(ev==='engine')return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_kernel}" alt="Engine-Entscheidung" loading="lazy"></div>`;
+    if(ev==='platform')return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_os}" alt="Plattform-Entscheidung" loading="lazy"></div>`;
+    if(ev==='price'||ev==='license')return `<div class="event-banner"><img src="${EVENT_IMAGES.boardroom}" alt="Verhandlung" loading="lazy"></div>`;
+    return '';
+  }
+  if(kind==='card'||kind==='rand'){
+    const obj=kind==='card'?E[ev]:R[ev];
+    if(!obj)return '';
+    const t=(obj.t||'').toLowerCase();
+    if(t.includes('open-source')||t.includes('pull-request'))return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_kernel}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('artstyle')||t.includes('kreative differenzen'))return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_critic}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('ki-assistent')||t.includes('kopierschutz')||t.includes('monetarisierung'))return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_data}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('tiktok')||t.includes('handheld')||t.includes('demo-festival'))return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_algo}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('unitee')||t.includes('middleware')||t.includes('rechteinhaber'))return `<div class="enc-crop"><img src="${EVENT_IMAGES.enc_os}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('pitch')||t.includes('investor')||t.includes('aktionär')||t.includes('fusion')||t.includes('crowdfunding'))return `<div class="event-banner"><img src="${EVENT_IMAGES.boardroom}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('trailer')||t.includes('messe')||t.includes('streamer')||t.includes('versprechen')||t.includes('keynote')||t.includes('dokumentation'))return `<div class="event-banner"><img src="${EVENT_IMAGES.stage}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('zeitplan')||t.includes('crunch')||t.includes('game jam')||t.includes('releasetermin')||t.includes('gut genug'))return `<div class="event-banner"><img src="${EVENT_IMAGES.crunch}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('bug')||t.includes('praktikant')||t.includes('engine-kern')||t.includes('speicherstand')||t.includes('patch')||t.includes('build-maschine'))return `<div class="event-banner"><img src="${EVENT_IMAGES.bug_crash}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('ddos')||t.includes('server')||t.includes('beta')||t.includes('playtest'))return `<div class="event-banner"><img src="${EVENT_IMAGES.ddos}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('hacker')||t.includes('main-branch')||t.includes('gewitter')||t.includes('leak')||t.includes('schadcode'))return `<div class="event-banner"><img src="${EVENT_IMAGES.ransomware}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('review-bombing')||t.includes('level 3')||t.includes('wutausbruch')||t.includes('nachts')||t.includes('rezension'))return `<div class="event-banner"><img src="${EVENT_IMAGES.shitstorm}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+    if(t.includes('vertical slice')||t.includes('review-codes')||t.includes('award'))return `<div class="event-banner mag-banner"><img src="${EVENT_IMAGES.magazine}" alt="${esc(obj.t)}" loading="lazy"></div>`;
+  }
+  return '';
+}
+
+function bindZoomTriggers(root){
+  if(!root||!root.querySelectorAll)return;
+  root.querySelectorAll('[data-zoom-img]').forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      openCardZoom(el.dataset.zoomImg,el.dataset.zoomTitle||'Sammelkarte');
+    };
+  });
+}
+
+function openCardZoom(src,title){
+  const bd=$('profileModal');
+  const box=$('profileModalBody');
+  const hd=$('modalTitle');
+  if(!bd||!box)return;
+  if(hd)hd.textContent=title;
+  bd.hidden=false;
+  box.innerHTML=`
+    <img class="zoom-card-img" src="${esc(src)}" alt="${esc(title)}">
+    <p class="note" style="text-align:center;margin:0">Originale Pixel-Art-Sammelkarte (${esc(title)})</p>
+  `;
+}
 
 /* ===================== Sticky HUD & Phasen-Track ===================== */
 function renderHud(){
@@ -101,7 +200,7 @@ function engineBlock(){
 function staffBlock(){
   if(!C)return '';
   const list=C.studio.staff||[];
-  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/6)</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Im Reiter „🛒 Shop & Aufträge“ kannst du Spezialisten anwerben, die bis Stufe 5 aufsteigen.</p></div>`;
+  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/6)</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Im Reiter „🛒 Shop & Aufträge“ oder über 🌟 Legendäre Zufallsbegegnungen kannst du Spezialisten anwerben.</p></div>`;
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
   const canAct=S&&['event','shop'].includes(S.screen);
   return `<div class="blk">
@@ -116,11 +215,16 @@ function staffBlock(){
         const loyColor=loy>=7?'var(--good)':loy>=4?'var(--warn)':'var(--bad)';
         const bonusCost=Math.round(st.sal*1.5*sc*10)/10;
         return `<div class="staff-card ${risk}">
-          <div class="staff-top">
-            <b>${esc(st.personName)}</b>
-            <span class="staff-lvl">St. ${lv} · ${STAFF_TITLES[lv-1]}</span>
+          <div class="dir-row">
+            ${st.img?charPortraitHTML(st.img,st.isScene,'sm',false,st.personName):''}
+            <div class="dir-info">
+              <div class="staff-top">
+                <b>${st.isLegend?'🌟 ':''}${esc(st.personName)}</b>
+                <span class="staff-lvl">St. ${lv} · ${STAFF_TITLES[lv-1]}</span>
+              </div>
+              <div class="note">${def.n} · ${def.effDesc(lv)}</div>
+            </div>
           </div>
-          <div class="note">${def.n} · ${def.effDesc(lv)}</div>
           <div class="mini">
             <div><span>Erfahrung</span><span>${st.xp||0}${nextXp?' / '+nextXp+' XP':' XP (Max)'}</span></div>
             <div><span>Gehalt</span><span>${money(st.sal*sc)}/Monat</span></div>
@@ -139,12 +243,22 @@ function staffBlock(){
 
 function dirBlock(){
   const d=D();
-  return `<div class="blk"><span class="label">Game Director</span><div><b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span></div>
-    <div class="note">${dirStatLine(d.s)}</div>
+  const img=d.img||(DIRS[d.id]?.img)||null;
+  const isScene=!!(d.isScene||DIRS[d.id]?.isScene);
+  return `<div class="blk">
+    <span class="label">Game Director (Charakterbogen)</span>
+    <div class="dir-row">
+      ${img?charPortraitHTML(img,isScene,'md',false,d.n):''}
+      <div class="dir-info">
+        <div><b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span></div>
+        <div class="note">${dirStatLine(d.s)}</div>
+      </div>
+    </div>
     <div class="mini"><div><span>Fame</span><span>${C.dir.fame}/100</span></div><div><span>Privatkonto</span><span>${money(C.dir.wealth)}</span></div><div><span>Fertige Spiele</span><span>${C.dir.games}</span></div></div>
     <div class="traits">${d.perks.map(p=>`<div><b class="p">+ ${PERKS[p].n}</b><span>${PERKS[p].d}</span></div>`).join('')}${d.flaws.map(f=>`<div><b class="n">− ${FLAWS[f].n}</b><span>${FLAWS[f].d}</span></div>`).join('')}${S&&S.aff?`<div><b class="${S.aff>0?'p':'n'}">${S.aff>0?'+':'−'} Genre</b><span>${S.aff>0?'Liegt ihm':'Liegt ihm nicht'}: ${fmt(Math.sign(S.aff)*4+(hasP('spezial')&&S.aff>0?3:0))} auf alle Würfe</span></div>`:''}${S&&S.promises?`<div><b class="n">− Versprechen</b><span>${S.promises} offen, kostet ${2*S.promises} Wertungspunkte</span></div>`:''}</div>
-    ${S&&d.ab?`<div class="row"><button class="btn small ${S.abUsed?'ghost':'alt'}" id="abBtn" ${abilityReady()?'':'disabled'}>${S.abUsed?'Eingesetzt: ':''}${ABIL[d.ab].n}</button></div><span class="note">${ABIL[d.ab].d}${S.abUsed?'':d.ab==='reroll'?' Verfügbar nach einem Fehlschlag.':' Einmal pro Spiel.'}</span>`:''}
-    ${S&&C.dir.wealth>0&&ACTIVE.includes(S.screen)&&!['roll','manual'].includes(S.screen)?`<div class="row"><button class="btn small ghost" id="privBtn">Privatgeld zuschießen</button></div>`:''}</div>`;
+    ${S&&d.ab&&ABIL[d.ab]?`<div class="row"><button class="btn small ${S.abUsed?'ghost':'alt'}" id="abBtn" ${abilityReady()?'':'disabled'}>${S.abUsed?'Eingesetzt: ':''}${ABIL[d.ab].n}</button></div><span class="note">${ABIL[d.ab].d}${S.abUsed?'':d.ab==='reroll'?' Verfügbar nach einem Fehlschlag.':' Einmal pro Spiel.'}</span>`:''}
+    ${S&&C.dir.wealth>0&&ACTIVE.includes(S.screen)&&!['roll','manual'].includes(S.screen)?`<div class="row"><button class="btn small ghost" id="privBtn">Privatgeld zuschießen</button></div>`:''}
+  </div>`;
 }
 
 function milestoneBlock(){
@@ -189,6 +303,7 @@ function bindSheetEvents(sh){
   sh.querySelectorAll('[data-xp]').forEach(b=>b.onclick=()=>{if(C.dir.xp<=0)return;const k=b.dataset.xp;if(C.dir.s[k]>=4)return;C.dir.s[k]++;C.dir.xp--;renderSheet();save()});
   sh.querySelectorAll('[data-perk]').forEach(b=>b.onclick=()=>{C.dir.perks.push(b.dataset.perk);C.dir.perkUnlocked=true;renderSheet();save()});
   sh.querySelectorAll('[data-goto-ws]').forEach(b=>b.onclick=()=>{wsTab=b.dataset.gotoWs;render()});
+  bindZoomTriggers(sh);
 }
 
 function renderSheet(){
@@ -196,15 +311,21 @@ function renderSheet(){
   if(!sh)return;
   if(!S){
     if(!C){
-      sh.innerHTML=`<h2>So läuft Studio W100</h2>
+      const unlCount=getUnlockedChars().length;
+      const totCount=Object.keys(DIRS).length;
+      sh.innerHTML=`
+      ${studioBannerHTML()}
+      <h2>So läuft Studio W100</h2>
       <p class="note" style="margin:0">Ihr gründet ein Spielestudio und wählt einen Game Director. Jedes Spiel dauert zwölf Monate in sechs Phasen. Entscheidungen werden mit einem <b>W100</b> (1–100) plus Studiowert gegen einen Schwierigkeitsgrad (SG) gewürfelt. 96–100 ist ein kritischer Erfolg, 1–5 ein Patzer.</p>
-      <div class="blk"><span class="label">Gameplay & Grafik</span><p class="note" style="margin:0">Eure Qualität setzt sich aus <b>Gameplay</b> (Design & Spielspaß) und <b>Grafik</b> (Technik & Präsentation) zusammen — je nach Genre und Klasse unterschiedlich gewichtet.</p></div>
+      <div class="blk"><span class="label">🌟 26 Branchen-Legenden (${unlCount}/${totCount} entdeckt)</span><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen 20 Ikonen der Spielegeschichte tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf: Werbt ihr sie fürs Team an, sind sie dauerhaft auch als Start-Director freigeschaltet!</p></div>
       <div class="blk"><span class="label">Eigene Engine & Tech-Tree</span><p class="note" style="margin:0">Baut ihr eine eigene Engine, schaltet ihr im <b>Engine-Labor</b> bis zu 8 Spezial-Module frei und lizenziert sie an andere Studios. Doch Vorsicht: Ohne Generations-Upgrades veraltet sie nach einigen Spielen!</p></div>
-      <div class="blk"><span class="label">Rivalen, Trends & GOTY-Awards</span><p class="note" style="margin:0">Beobachtet den Markt-Trend, messt euch bei den jährlichen <b>Game of the Year Awards</b> mit 5 KI-Rivalen — und haltet euer Lead-Personal bei Laune, sonst gründen Abwanderer ihr eigenes Konkurrenz-Studio!</p></div>`;
+      <div class="blk"><span class="label">Rivalen, Trends & GOTY-Awards</span><p class="note" style="margin:0">Beobachtet den Markt-Trend, messt euch bei den jährlichen <b>Game of the Year Awards</b> mit 5 KI-Rivalen — und haltet euer Lead-Personal bei Laune!</p></div>`;
       return;
     }
     const d=D();
-    sh.innerHTML=`<div><div class="label">Studio-Zentrale</div><h2>${esc(C.studio.name)}</h2></div>
+    sh.innerHTML=`
+      ${studioBannerHTML()}
+      <div><div class="label">Studio-Zentrale</div><h2>${esc(C.studio.name)}</h2></div>
       <div class="mini">
         <div><span>Studio-Fame</span><span>${C.studio.fame}/100</span></div>
         <div><span>Studiokasse</span><span class="${C.studio.kasse<0?'neg':''}">${money(C.studio.kasse)}</span></div>
@@ -224,10 +345,12 @@ function renderSheet(){
   const t=T();
   const wGfx=Math.round(gfxWeight()*100);
   const wGp=100-wGfx;
-  sh.innerHTML=`<div>
+  sh.innerHTML=`
+    ${studioBannerHTML()}
+    <div>
       <div class="label">${t.n} · ${MODELS[S.model].n} · ${S.seq?'Fortsetzung':IPS[S.ip].n}</div>
       <h2>${esc(S.title)}</h2>
-      <div class="note">${esc(C.studio.name)} · ${GENRES[S.genre].n} · ${t.team} Leute${C.studio.staff.length?' + '+C.studio.staff.length+' Leads':''}${S.mods?' · Mod-Support':''}${S.ea?' · Early Access':''}${S.model==='f2p'?` · ${clamp(4+S.payers,1,12)} % Zahlende`:''}</div>
+      <div class="note">${esc(C.studio.name)} · ${genreName(S)} · ${t.team} Leute${C.studio.staff.length?' + '+C.studio.staff.length+' Leads':''}${(S.extras&&S.extras.length)?' · '+S.extras.map(k=>PROJECT_EXTRAS[k]?.n.replace(/^[^\s]+\s/,'')).filter(Boolean).join(', '):(S.mods?' · Mod-Support':'')+(S.ea?' · Early Access':'')}${S.model==='f2p'?` · ${clamp(4+S.payers,1,12)} % Zahlende`:''}</div>
       <div class="note">${[S.engine&&'Engine: '+(S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short),S.world&&'Welt: '+{open:'Open World',hub:'Hubs',level:'Level',schlauch:'Schlauch'}[S.world],S.plat&&'Plattform: '+{pc:'PC',konsole:'PC + Konsolen',exklusiv:'PlayStatus exklusiv',alle:'Überall'}[S.plat],S.age!=null&&'USK '+S.age].filter(Boolean).join(' · ')}</div>
     </div>
     <div class="qual-split">
@@ -260,13 +383,16 @@ function renderDock(){
   if(!dk)return;
 
   if(!C){
+    const unl=getUnlockedChars().length;
+    const tot=Object.keys(DIRS).length;
     dk.innerHTML=`<div class="blk">
       <span class="label">W100-Würfelsystem</span>
-      <p class="note" style="margin:0">In <b>Studio W100</b> wird jede riskante Entscheidung prozentgenau mit einem 100-seitigen Würfel (1–100) ausgewürfelt.</p>
+      <p class="note" style="margin:0">In <b>Studio W100: Goldstatus</b> wird jede riskante Entscheidung prozentgenau mit einem 100-seitigen Würfel (1–100) ausgewürfelt.</p>
       <div class="mini">
         <div><span>Kritischer Erfolg</span><span class="pos">96–100 (+1 Insp. & Lead-XP)</span></div>
         <div><span>Kritischer Patzer</span><span class="neg">1–5 (Zusatzschaden)</span></div>
         <div><span>Inspiration</span><span>2× W100 (besseres Ergebnis)</span></div>
+        <div><span>Entdeckte Legenden</span><span class="pos">${unl} / ${tot}</span></div>
       </div>
     </div>
     <div class="blk">
@@ -279,7 +405,7 @@ function renderDock(){
     return;
   }
 
-  const editable=S&&['event','mand','lang','random','result','shop','crisis'].includes(S.screen);
+  const editable=S&&['event','mand','lang','random','legend','result','shop','crisis'].includes(S.screen);
   const t=S?T():(C.studio.tier?TIERS[C.studio.tier]:TIERS.indie);
   const logCount=S&&S.log?S.log.length:0;
 
@@ -327,37 +453,43 @@ function renderDock(){
   dk.querySelectorAll('[data-goto-ws]').forEach(b=>b.onclick=()=>{wsTab=b.dataset.gotoWs;render()});
   dk.querySelectorAll('[data-dock-bonus]').forEach(b=>b.onclick=()=>rewardStaff(b.dataset.dockBonus,'bonus'));
   dk.querySelectorAll('[data-dock-raise]').forEach(b=>b.onclick=()=>rewardStaff(b.dataset.dockRaise,'raise'));
+  bindZoomTriggers(dk);
 }
 
 /* ===================== Mittlere Spalte: Workspace-Navigation (#wsNav) ===================== */
 function renderWsNav(){
   const nav=$('wsNav');
   if(!nav)return;
-  if(!C){nav.hidden=true;return}
   nav.hidden=false;
 
-  // Wenn ein modaler/erzwungener Screen läuft (Wurf, Notlage, Release), halten wir die Tabs informativ, erlauben aber den Wechsel zu Engine/Liga zur Einsicht
   const inShop=S&&S.screen==='shop';
   const activeTab=inShop&&wsTab==='board'?'shop':wsTab;
-  const eng=C.studio.engine;
+  const eng=C?.studio?.engine;
   const tpBadge=eng&&(eng.techPts||0)>0?`<span class="ws-badge">${eng.techPts}</span>`:'';
-  const staffBadge=C.studio.staff.length?`<span class="ws-badge">${C.studio.staff.length}/6</span>`:'';
-  const rivalsCount=getAllRivals().length;
+  const staffBadge=C&&C.studio.staff.length?`<span class="ws-badge">${C.studio.staff.length}/6</span>`:'';
+  const rivalsCount=C?getAllRivals().length:BASE_RIVALS.length;
+  const unlCount=getUnlockedChars().length;
+  const totCount=Object.keys(DIRS).length;
 
   nav.innerHTML=`
     <button type="button" class="ws-btn ${activeTab==='board'?'active':''}" data-wstab="board">
-      🃏 ${S?`Spieltisch (M${Math.min(S.round+1,12)})`:'Neues Projekt'}
+      🃏 ${S?`Spieltisch (M${Math.min(S.round+1,12)})`:C?'Neues Projekt':'Studio gründen'}
     </button>
     ${S&&['event','shop'].includes(S.screen)?`
       <button type="button" class="ws-btn ${activeTab==='shop'?'active':''}" data-wstab="shop">
         🛒 Shop, Leads & Aufträge ${staffBadge}
       </button>
     `:''}
-    <button type="button" class="ws-btn ${activeTab==='engine'?'active':''}" data-wstab="engine">
-      ⚙️ Engine-Labor ${tpBadge}
-    </button>
-    <button type="button" class="ws-btn ${activeTab==='league'?'active':''}" data-wstab="league">
-      🏆 Liga & Rivalen <span class="ws-badge">${rivalsCount}</span>
+    ${C?`
+      <button type="button" class="ws-btn ${activeTab==='engine'?'active':''}" data-wstab="engine">
+        ⚙️ Engine-Labor ${tpBadge}
+      </button>
+      <button type="button" class="ws-btn ${activeTab==='league'?'active':''}" data-wstab="league">
+        🏆 Liga & Rivalen <span class="ws-badge">${rivalsCount}</span>
+      </button>
+    `:''}
+    <button type="button" class="ws-btn ${activeTab==='legends'?'active':''}" data-wstab="legends">
+      🌟 Legenden <span class="ws-badge">${unlCount}/${totCount}</span>
     </button>
   `;
 
@@ -370,6 +502,39 @@ function renderWsNav(){
     }
     render();
   });
+}
+
+/* ===================== Legenden-Album (Alle 26 Ikonen & Freischalt-Status) ===================== */
+function renderLegendsView(m){
+  const unl=getUnlockedChars();
+  const entries=Object.entries(DIRS);
+  m.innerHTML=`<span class="stamp">🌟 Halle der Branchen-Legenden (${unl.length} / ${entries.length} freigeschaltet)</span>
+    <h3>Entdecke & Rekrutiere die Ikonen der Spielegeschichte</h3>
+    <p>6 Legenden stehen dir von Beginn an als <b>Game Director</b> zur Verfügung. Die übrigen 20 Persönlichkeiten triffst du während deiner Projekte als <b>Zufallsbegegnung</b>: Stellst du sie dort als Star-Lead ein (oder überzeugst sie in einer Gast-Session), sind sie <b>dauerhaft für alle künftigen Karrieren freigeschaltet</b>! <i>(Tipp: Klicke auf ein freigeschaltetes Porträt für die große Sammelkarte!)</i></p>
+    <div class="legend-grid">
+      ${entries.map(([k,o])=>{
+        const ok=isCharUnlocked(k);
+        const roleName=STAFF[o.leadRole]?.n||'Spezialist';
+        return `<div class="legend-card ${ok?'':'locked'}">
+          ${charPortraitHTML(o.img,o.isScene,'md',!ok,o.n)}
+          <div class="dir-info">
+            <div class="staff-top">
+              <b>${ok?esc(o.n):'??? · '+esc(o.tag)}</b>
+              <span class="chip ${ok?'p':''}">${ok?(o.starter?'Starter ✓':'Freigeschaltet ✓'):'🔒 Zufallsbegegnung'}</span>
+            </div>
+            <div class="note"><b>${esc(o.tag)}</b> · Lead-Rolle: ${roleName}</div>
+            <div class="note">${ok?esc(o.d):'Triff diese Legende während eines Projekts als Zufallsbegegnung und wirb sie für dein Team an, um sie dauerhaft freizuschalten.'}</div>
+            ${ok?`
+              <code style="font:500 11.5px var(--f-mono)">${dirStatLine(o.s)}</code>
+              <div class="note"><b>Fähigkeit:</b> ${ABIL[o.ab]?.n||o.ab} — ${ABIL[o.ab]?.d||''}</div>
+            `:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="row"><button class="btn" id="backBoard">Zurück zum Spieltisch</button></div>`;
+  bindZoomTriggers(m);
+  $('backBoard').onclick=()=>{wsTab='board';render()};
 }
 
 /* ===================== Engine-Labor (Interaktiver Tech-Tree) ===================== */
@@ -554,14 +719,73 @@ function monthNote(){
 }
 
 function headFor(kind,ev){
-  if(kind==='card'){const c=E[ev];return monthNote()+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p>${c.x}</p>`}
-  if(kind==='mand'){const c=getMand(ev);return `<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p>${c.x}</p>`}
-  if(kind==='rand'){const rv=R[ev];return `<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p>${rv.x}</p>`}
+  const banner=eventBannerHTML(kind,ev);
+  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p>${c.x}</p>`}
+  if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p>${c.x}</p>`}
+  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p>${rv.x}</p>`}
+  if(kind==='legend'){
+    const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',encStory:''};
+    return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende Monat ${S.round}</span>
+      <div class="legend-enc">
+        ${charPortraitHTML(leg.img,leg.isScene,'lg',false,leg.n)}
+        <div class="dir-info">
+          <h3>${esc(leg.n)} <small class="note">(${esc(leg.tag)})</small></h3>
+          <p style="margin:4px 0">${esc(leg.encStory||leg.d)}</p>
+        </div>
+      </div>`;
+  }
   if(kind==='shop'){const it=SHOP.find(x=>x.id===ev);return `<span class="stamp">Studio-Shop</span><h3>${it.n}</h3><p>${it.d}</p>`}
   if(kind==='hire'){const s=STAFF[ev];return `<span class="stamp">Personal</span><h3>${s.n}</h3><p>${s.d}</p>`}
   if(kind==='contract'){const ct=CONTRACTS.find(x=>x.id===ev)||{n:'Auftragsarbeit',d:''};return `<span class="stamp">Auftragsarbeit</span><h3>${ct.n}</h3><p>${ct.d}</p>`}
   if(kind==='dlc'){const d=DLC_OPTS.find(x=>x.id===ev);return `<span class="stamp">Post-Release</span><h3>${d.n}</h3><p>${d.d}</p>`}
-  const r=RESC.find(x=>x.id===ev);return `<span class="stamp">Notlage</span><h3>${r.n}</h3><p>${r.d}</p>`;
+  const r=RESC.find(x=>x.id===ev);return banner+`<span class="stamp">Notlage</span><h3>${r.n}</h3><p>${r.d}</p>`;
+}
+
+function renderLegendEncounter(m){
+  m.className='card rnd';
+  const legKey=S.curLegend;
+  const leg=DIRS[legKey];
+  if(!leg){goMonth();return}
+  const sc=T().scale;
+  const hireCost=Math.round(4*sc);
+  const role=leg.leadRole||'senior';
+  const roleDef=STAFF[role];
+  const o=getOpt({kind:'legend',ev:legKey});
+  const target=dc100(o.dc);
+  const mod=optMod(o)+(o.bonusV||0)+moralMod();
+  const pct=winChance(target,mod,false);
+  const alreadyUnlocked=isCharUnlocked(legKey);
+
+  m.innerHTML=budgetAlert()+headFor('legend',legKey)+`
+    <div class="alert ${alreadyUnlocked?'good':'mid'}">
+      <b>${alreadyUnlocked?'🌟 Bekannte Branchen-Ikone':'🔒 Noch unentdeckte Branchen-Legende!'}</b>
+      <span>${alreadyUnlocked?`Du hast ${esc(leg.n)} bereits freigeschaltet — du kannst ihn/sie jetzt als Star-Lead (${roleDef.n}, Stufe 2) für dieses Projekt verpflichten!`:`Wenn du <b>${esc(leg.n)}</b> als Star-Lead einstellst oder in der Gast-Session überzeugst, wird diese Legende <b>dauerhaft als Game Director für alle zukünftigen Spiele freigeschaltet</b>!`}</span>
+    </div>
+    <div class="opts">
+      <button class="opt" id="legHireBtn" ${S.res.budget<hireCost?'disabled':''}>
+        <span class="t">🌟 Als Star-Lead (${roleDef.n}, St. 2) einstellen ${!alreadyUnlocked?'& dauerhaft freischalten':''}</span>
+        <span class="check safe">Handgeld ${money(hireCost)} · ohne Wurf</span>
+        <span class="d">Tritt eurem Studio sofort auf Stufe 2 bei (${roleDef.effDesc(2)}), bringt seinen/ihren Signatur-Boost mit und wird dauerhaft im Legenden-Album freigeschaltet!</span>
+        ${chips(previewSafe(leg.encEff||{}))}
+      </button>
+      <button class="opt" id="legCollabBtn">
+        <span class="t">🤝 Gemeinsame Gast-Session im Studio (${!alreadyUnlocked?'schaltet bei Erfolg frei!':'Sofort-Boost'})</span>
+        <span class="check">${STATS[o.st]} · SG ${target} (${pct} %)</span>
+        <span class="d">Kein Handgeld nötig: Überzeugt ${esc(leg.n)} im Fachgespräch mit W100 ${fmt(mod)} gegen SG ${target}, um den vollen Effekt ${!alreadyUnlocked?'und die dauerhafte Freischaltung ':''}zu erhalten!</span>
+        ${chips(previewSafe(leg.encEff||{}))}
+      </button>
+      <button class="opt" id="legPassBtn">
+        <span class="t">☕ Freundlich plaudern & Autogramm holen</span>
+        <span class="check safe">ohne Wurf</span>
+        <span class="d">Keine Kosten, kein Risiko. Das Team freut sich über den hohen Besuch (+1 Moral).</span>
+      </button>
+    </div>`;
+
+  bindFin();
+  bindZoomTriggers(m);
+  const hb=$('legHireBtn');if(hb)hb.onclick=()=>chooseLegendAction('hire');
+  const cb=$('legCollabBtn');if(cb)cb.onclick=()=>chooseLegendAction('collab');
+  const pb=$('legPassBtn');if(pb)pb.onclick=()=>chooseLegendAction('pass');
 }
 
 function manualForm(){
@@ -583,24 +807,27 @@ function renderMain(){
   const m=$('main');if(!m)return;
   m.className='card';
 
-  // Wenn ein Spezial-Reiter (Engine-Labor oder Liga) ausgewählt ist, zeige diesen
+  // Spezial-Reiter (Legenden-Album, Engine-Labor oder Liga)
+  if(wsTab==='legends'){renderLegendsView(m);return}
   if(C&&wsTab==='engine'){renderEngineLab(m);return}
   if(C&&wsTab==='league'){renderLeagueView(m);return}
 
   if(!S){renderSetup(m);return}
   const sc=S.screen;
   if(sc==='event'){
-    const ev=E[S.deck[S.round]];
-    m.innerHTML=monthNote()+budgetAlert()+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev)+`<div class="row"><button class="btn small ghost" id="shopBtn">🛒 Shop, Leads & Auftragsarbeiten (${C.studio.staff.length}/6 Leads)</button></div>`;
+    const evIdx=S.deck[S.round];
+    const ev=E[evIdx];
+    m.innerHTML=monthNote()+budgetAlert()+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev)+`<div class="row"><button class="btn small ghost" id="shopBtn">🛒 Shop, Leads & Auftragsarbeiten (${C.studio.staff.length}/6 Leads)</button></div>`;
     bindOpts(m);bindFin();
     $('shopBtn').onclick=()=>{S.shopMsg=null;S.screen='shop';wsTab='shop';render();save()};
     return;
   }
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
+  if(sc==='legend'){renderLegendEncounter(m);return}
   if(sc==='roll'){
     const p=S.pending;
-    m.className='card'+(['rand','rescue'].includes(p.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend'].includes(p.kind)?' rnd':'');
     m.innerHTML=headFor(p.kind,p.ev)+`<div class="tray"><div class="dice" id="dice">${Array.from({length:p.adv?2:1},()=>dieSVG('?')).join('')}</div><div class="calc"><span class="label">Der W100 rollt …</span></div></div>`;
     return;
   }
@@ -612,10 +839,11 @@ function renderMain(){
   }
   if(sc==='result'){
     const L=S.last;
-    m.className='card'+(['rand','rescue'].includes(L.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
-    const nx={card:'Monat abschließen',mand:'Weiter',rand:`Weiter zu Monat ${S.round+1}`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage'}[L.kind];
+    const nx={card:'Monat abschließen',mand:'Weiter',rand:`Weiter zu Monat ${S.round+1}`,legend:`Weiter zu Monat ${S.round+1}`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage'}[L.kind];
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;
+    bindZoomTriggers(m);
     $('nx').onclick=()=>afterResult(L.kind);bindRR();
     return;
   }
@@ -640,7 +868,7 @@ function renderMain(){
   if(sc==='launch'){
     recalcQual();
     const wGfx=Math.round(gfxWeight()*100);
-    m.innerHTML=`<span class="label">Release-Tag</span><h3>„${esc(S.title)}“ ist fertig. Mehr oder weniger.</h3>
+    m.innerHTML=eventBannerHTML('launch')+`<span class="label">Release-Tag</span><h3>„${esc(S.title)}“ ist fertig. Mehr oder weniger.</h3>
       <p>Gesamt-Qualität <b>${S.res.qual}</b> (Gameplay <b>${S.res.gp}</b> [${100-wGfx} %] · Grafik <b>${S.res.gfx}</b> [${wGfx} %]), ${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${-S.res.zeit} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
       <div class="tray" id="dice">${dieSVG('?')}</div>
       <button class="btn" id="go">W100 Review-Wurf</button>`;
@@ -649,14 +877,14 @@ function renderMain(){
   }
   if(sc==='sales'){
     const e=S.end;
-    m.innerHTML=`<span class="label">Die Reviews & GOTY-Nominierungen sind da</span>
+    m.innerHTML=eventBannerHTML('sales')+`<span class="label">Die Reviews & GOTY-Nominierungen sind da</span>
       <div class="score">
         <div><span class="label">Wertungsschnitt</span><b>${e.meta}</b></div>
         <div><span class="label">Gameplay</span><b>${e.gp??S.res.gp}</b></div>
         <div><span class="label">Grafik</span><b>${e.gfx??S.res.gfx}</b></div>
         <div><span class="label">Wishlists</span><b>${nf(S.res.wl,0)}</b></div>
       </div>
-      <p>${e.late}${e.meta>=85?'Die Presse überschlägt sich vor Begeisterung!':e.meta>=70?'Gute bis sehr gute Kritiken.':e.meta>=50?'Gemischte Kritiken. „Mit Patches könnte das noch was werden.“':'Verrisse. Ein YouTuber macht ein 40-minütiges Video über eure Technik.'}</p>
+      <p>${e.late}${e.meta>=85?'Die Presse überschlägt sich vor Begeisterung — ihr landet auf dem Cover der PIXEL WORLD!':e.meta>=70?'Gute bis sehr gute Kritiken.':e.meta>=50?'Gemischte Kritiken. „Mit Patches könnte das noch was werden.“':'Verrisse. Ein YouTuber macht ein 40-minütiges Video über eure Technik.'}</p>
       ${e.awards&&e.awards.length?`<div class="award-box">
         <span class="label">🏆 Game of the Year (GOTY) Verleihung</span>
         ${e.awards.map(a=>`<div class="mini"><div><span><b>${esc(a.cat)}</b></span><span class="${a.won?'pos':''}">${esc(a.winner)} (${a.score} Pkt.) ${a.won?'🏆 GEWONNEN!':''}</span></div></div>`).join('')}
@@ -717,7 +945,7 @@ function renderShop(m){
      const has=!!st;
      const bonusCost=has?Math.round(st.sal*1.5*sc*10)/10:0;
      return `<div class="opt" style="cursor:default">
-       <span class="t">${has?`${esc(st.personName)} — ${s.n} (St. ${st.level})`:s.n}</span>
+       <span class="t">${has?`${st.isLegend?'🌟 ':''}${esc(st.personName)} — ${s.n} (St. ${st.level})`:s.n}</span>
        <span class="check ${has?'':'safe'}">${has?`Loyalität ${st.loyalty}/10 · ${money(st.sal*sc)}/M`:money(s.sal*sc)+'/Monat'}</span>
        <span class="d">${s.d} <b>Effekt:</b> ${s.effDesc(has?st.level:1)}.</span>
        <div class="row" style="grid-column:1/-1">
@@ -752,7 +980,7 @@ function renderCrisis(m){
   m.className='card rnd';
   const neg=S.res.budget<0;
   const opts=RESC.filter(rescueAvail);
-  m.innerHTML=`<span class="stamp">${neg?'Notlage':'Finanzierung'}</span><h3>${neg?'Das Konto ist leer':'Frisches Geld suchen'}</h3>
+  m.innerHTML=eventBannerHTML('crisis')+`<span class="stamp">${neg?'Notlage':'Finanzierung'}</span><h3>${neg?'Das Konto ist leer':'Frisches Geld suchen'}</h3>
    <p>${neg?`Euch fehlen ${money(-S.res.budget)}. Ohne Rettung ist das Studio insolvent. Jede Maßnahme geht nur einmal pro Spiel.`:`Noch habt ihr ${money(S.res.budget)}. Wer früh verhandelt, verhandelt besser: +8 auf alle Rettungswürfe.`}</p>
    ${S.crisisMsg?`<div class="alert mid"><b>${S.crisisMsg.n}</b><span>${S.crisisMsg.txt||''}</span>${chips(S.crisisMsg.ch)}</div>`:''}
    <div class="opts">${opts.map(r=>{
@@ -770,7 +998,7 @@ function renderCrisis(m){
 
 function renderOver(m){
   const t={budget:['Insolvenz','Das Konto ist leer. Der Insolvenzverwalter verkauft die Rechte, das Spiel erscheint nie.'],haus:['Alles verloren','Die Bank hat abgelehnt. Studio und Haus sind weg.'],moral:['Das Team ist weg','Die Moral ist auf null. Am Montag liegen die Kündigungen auf dem Tisch.']}[S.over]||['Ende',''];
-  m.innerHTML=`<span class="label">Ende Monat ${S.round}</span><h3>${t[0]}</h3><p>${t[1]}</p><p>${esc(C.dir.n)} kann mit ${money(C.dir.wealth)} Privatgeld und einem Gründerzuschuss von ${money(80)} ein neues Indie-Studio gründen. Studio-Fame startet bei null, das Personal ist weg (eure eigene Engine bleibt euch erhalten).</p>
+  m.innerHTML=`<span class="label">Ende Monat ${S.round}</span><h3>${t[0]}</h3><p>${t[1]}</p><p>${esc(C.dir.n)} kann mit ${money(C.dir.wealth)} Privatgeld und einem Gründerzuschuss von ${money(80)} ein neues Indie-Studio gründen. Studio-Fame startet bei null, das Personal ist weg (eure eigene Engine und alle freigeschalteten Branchen-Legenden bleiben euch erhalten).</p>
    <div class="ledger">${ledger(null)}</div><div class="row"><button class="btn" id="re">Neues Studio gründen</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
   $('re').onclick=refound;
   $('quit').onclick=()=>{C=null;S=null;render();save()};
@@ -816,7 +1044,7 @@ function renderEnd(m){
   const dlcAvail=!broke&&!S.dlcDone&&e.meta>=45;
   const mBurn=monthSum();
   const wonAwards=(e.awards||[]).filter(a=>a.won);
-  m.innerHTML=`<span class="label">Abrechnung „${esc(S.title)}“</span><h3>${e.v[0]}</h3>
+  m.innerHTML=eventBannerHTML('end')+`<span class="label">Abrechnung „${esc(S.title)}“</span><h3>${e.v[0]}</h3>
    <div class="score">
      <div><span class="label">Wertung</span><b>${e.meta}</b></div>
      <div><span class="label">Gameplay</span><b>${e.gp??S.res.gp}</b></div>
@@ -855,60 +1083,391 @@ function renderEnd(m){
    <div class="ledger">${ledger(e)}</div>
    <div class="row">${broke?'<button class="btn" id="re">Neues Studio gründen</button>':'<button class="btn" id="nextP">Nächstes Projekt planen</button>'}<button class="btn small ghost" id="expChron">Chronik exportieren</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
   m.querySelectorAll('[data-dlc]').forEach(b=>b.onclick=()=>startDlc(b.dataset.dlc));
-  if(broke)$('re').onclick=refound;else $('nextP').onclick=()=>{S=null;wsTab='board';render();save()};
+  if(broke)$('re').onclick=refound;else $('nextP').onclick=()=>{S=null;setupDraft=null;setupStep=2;wsTab='board';render();save()};
   $('expChron').onclick=()=>openProfileModal('chronicle');
-  $('quit').onclick=()=>{C=null;S=null;wsTab='board';render();save()};
+  $('quit').onclick=()=>{C=null;S=null;setupDraft=null;setupStep=1;wsTab='board';render();save()};
 }
 
-/* ===================== Gründung & Projektplanung ===================== */
+/* ===================== 4-Schritte-Assistent: Gründung & Projektplanung ===================== */
+let setupStep=1;
+let setupDraft=null;
+let showLockedSetupDirs=false;
+
+function ensureSetupDraft(){
+  const first=!C;
+  const tag=first?'new':('g'+C.gameNo);
+  if(setupDraft&&setupDraft._tag===tag)return;
+  const unl=getUnlockedChars();
+  const defDir=first?(unl[0]||Object.keys(DIRS)[0]):(C.dir.id||'keep');
+  setupDraft={
+    _tag:tag,
+    studioName:first?'Pixelpott Studios':C.studio.name,
+    dir:first?defDir:'keep',
+    title:randTitle(),
+    tier:'indie',
+    ip:'neu',
+    model:'kauf',
+    genre:'rpg',
+    subGenre:'none',
+    extras:[]
+  };
+  setupStep=first?1:2;
+}
+
+function launchSetupProject(){
+  ensureSetupDraft();
+  const first=!C;
+  const err=$('setupErr');
+  if(first){
+    const k=setupDraft.dir;
+    let dir;
+    if(k==='custom'){
+      if(ptsLeft()<0){
+        setupStep=1;renderMain();
+        const e2=$('setupErr');
+        if(e2){e2.hidden=false;e2.textContent=`Dein Director hat ${-ptsLeft()} Punkte zu viel. Senke einen Wert, streiche einen Vorteil oder nimm eine Macke.`}
+        return;
+      }
+      dir={id:'custom',n:B.n.trim()||'Namenloser Director',tag:'Eigener Director',d:'',s:{...B.s},aff:{},perks:[...B.perks],flaws:[...B.flaws],ab:null};
+    }else{
+      const dKey=DIRS[k]?k:Object.keys(DIRS)[0];
+      dir={id:dKey,...DIRS[dKey],s:{...DIRS[dKey].s},perks:[...DIRS[dKey].perks],flaws:[...DIRS[dKey].flaws],aff:{...DIRS[dKey].aff}};
+    }
+    C={
+      studio:{name:(setupDraft.studioName||'').trim()||'Pixelpott Studios',fame:0,kasse:0,staff:[],exStaff:[],engine:null,salaryDrift:0,overheadDrift:0},
+      dir:{...dir,fame:0,wealth:0,games:0,xp:0,perkUnlocked:false},
+      hall:[],gameNo:0,unlockedChars:getUnlockedChars()
+    };
+    rollMarketTrend();
+  }else{
+    C.studio.name=(setupDraft.studioName||'').trim()||C.studio.name;
+    if(setupDraft.dir&&setupDraft.dir!=='keep'&&DIRS[setupDraft.dir]&&isCharUnlocked(setupDraft.dir)){
+      const nk=setupDraft.dir;
+      C.dir={
+        id:nk,...DIRS[nk],s:{...DIRS[nk].s},perks:[...DIRS[nk].perks],flaws:[...DIRS[nk].flaws],aff:{...DIRS[nk].aff},
+        fame:C.dir.fame,wealth:C.dir.wealth,games:C.dir.games,xp:C.dir.xp,perkUnlocked:C.dir.perkUnlocked
+      };
+    }
+  }
+  const cfg={
+    title:(setupDraft.title||'').trim()||randTitle(),
+    genre:setupDraft.genre,
+    subGenre:setupDraft.subGenre!=='none'?setupDraft.subGenre:null,
+    tier:setupDraft.tier,
+    model:setupDraft.model,
+    ip:setupDraft.ip,
+    extras:[...setupDraft.extras],
+    mods:setupDraft.extras.includes('mods'),
+    ea:setupDraft.extras.includes('ea')
+  };
+  setupDraft=null;
+  wsTab='board';
+  startGame(cfg);
+}
+
 function renderSetup(m){
+  ensureSetupDraft();
   const first=!C;
   const kasse=first?null:C.studio.kasse;
   const seqs=first?[]:C.hall.map((h,i)=>[h,i]).filter(([h])=>h.meta!=null&&h.meta>=70&&!h.ipLost);
   const tr=C?.trend;
-  m.innerHTML=`<h3>${first?'Gründet euer Studio':'Das nächste Projekt'}</h3>
-   ${first?'':`<p>Studiokasse: <b>${money(kasse)}</b>. Das ist euer Budget für das nächste Spiel. Fame gibt euch Start-Hype und Wishlists.${C.studio.engine?` Eure <b>${esc(C.studio.engine.name)} v${C.studio.engine.version}.0</b> hat aktuell den Zustand: <b>${getEngineAgeInfo(C.studio.engine.age||0).label}</b>.`:''}</p>`}
-   ${tr?`<div class="alert mid"><b>Markt-Radar für das nächste Spiel</b><span>🔥 <b>Boom-Genre: ${GENRES[tr.hot]?.n}</b> (+25 % Verkäufe, +1 Hype) · ❄️ <b>Übersättigt: ${GENRES[tr.cold]?.n}</b> (−15 % Verkäufe). ${esc(tr.note||'')}</span></div>`:''}
-   <div class="field"><label class="label" for="nm">Studioname</label><input id="nm" type="text" value="${esc(first?'Pixelpott Studios':C.studio.name)}" maxlength="40"></div>
-   <div class="field"><label class="label" for="tt">Spieltitel</label><div class="inrow"><input id="tt" type="text" value="${esc(randTitle())}" maxlength="40"><button type="button" class="btn small ghost" id="ttR">Anderer Vorschlag</button></div></div>
-   <div class="field"><span class="label">Produktionsklasse</span><div class="choices">${Object.entries(TIERS).map(([k,t],i)=>{const ok=first||kasse>=t.min;return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${i===0?'checked':''} ${ok?'':'disabled'}><b>${t.n}</b><span>${t.d}</span><code>${first?'Start '+money(220*t.scale)+' · ':'mind. '+money(t.min)+' · '}${t.team} Leute · ca. ${money(13*t.scale)}/Monat<br>Preise ${t.prices.map(p=>nf(p,2)).join(' / ')} €</code><span>${t.note}</span></label>`}).join('')}</div></div>
-   <div class="field"><span class="label">Marke</span><div class="choices">
-     <label class="choice"><input type="radio" name="ip" id="ip-neu" value="neu" checked><b>${IPS.neu.n}</b><span>${IPS.neu.d}</span><code>${IPS.neu.note}</code></label>
-     ${seqs.map(([h,i])=>`<label class="choice"><input type="radio" name="ip" id="ip-seq${i}" value="seq:${i}" data-st="${esc(h.title)}"><b>Fortsetzung von „${esc(h.title)}“</b><span>Wertung ${h.meta}. Fans und Kritiker erinnern sich.</span><code>+${clamp(Math.floor((h.meta-60)/8),0,4)} Hype zusätzlich, Verkäufe ×${nf(1.3+(h.meta-70)/100,2)}, Start-Wishlists</code></label>`).join('')}
-     ${first?`<label class="choice"><input type="radio" name="ip" id="ip-franchise" value="franchise"><b>${IPS.franchise.n}</b><span>${IPS.franchise.d}</span><code>${IPS.franchise.note}</code></label>`:''}
-     <label class="choice"><input type="radio" name="ip" id="ip-lizenz" value="lizenz"><b>${IPS.lizenz.n}</b><span>${IPS.lizenz.d}</span><code>${IPS.lizenz.note}</code></label></div></div>
-   <div class="field"><span class="label">Geschäftsmodell</span><div class="choices">${Object.entries(MODELS).map(([k,o],i)=>`<label class="choice"><input type="radio" name="m" id="m-${k}" value="${k}" ${i===0?'checked':''}><b>${o.n}</b><span>${o.d}</span></label>`).join('')}</div></div>
-   <div class="field"><span class="label">Genre (bestimmt Studiowerte & Grafik/Gameplay-Gewichtung)</span><div class="choices">${Object.entries(GENRES).map(([k,g],i)=>{
-     const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
-     const isHot=tr&&tr.hot===k;
-     const isCold=tr&&tr.cold===k;
-     return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${i===0?'checked':''}><b>${g.n}</b><span>${g.d}</span><code>${Object.keys(STATS).map(s=>STATS[s]+' +'+(g.s[s]*4)).join(' · ')}<br>Gameplay ${Math.round((1-g.gfxW)*100)} % · Grafik ${Math.round(g.gfxW*100)} %</code>${isHot?'<span class="pos">🔥 Aktuelles Boom-Genre (+25 % Verkäufe, +1 Hype)</span>':''}${isCold?'<span class="neg">❄️ Aktuell übersättigt (−15 % Verkäufe)</span>':''}${engKnows?'<span class="pos">★ Eigene Engine beherrscht dieses Genre</span>':''}${g.fit!=='kauf'?`<span>Passt zu ${MODELS[g.fit].n}: +1 Hype</span>`:''}</label>`;
-   }).join('')}</div></div>
-   <div class="field"><span class="label">Extras</span><div class="choices">
-     <label class="choice"><input type="checkbox" id="xMods"><b>Mod-Support</b><span>Editor und Schnittstellen für die Community. Kostet monatlich, verlängert das Leben des Spiels.</span><code>+25 % Verkäufe (F2P +15 %)</code></label>
-     <label class="choice"><input type="checkbox" id="xEA"><b>Early Access</b><span>Die Beta ist ab Monat 8 käuflich. Bringt Geld und Bug-Meldungen, aber der Release wirkt weniger neu.</span><code>Einnahmen, −1 Bug pro Monat, Kritiker −2</code></label></div></div>
-   ${first?`<div class="field"><span class="label">Game Director</span><div class="choices">${Object.entries(DIRS).map(([k,o],i)=>`<label class="choice"><input type="radio" name="dir" id="d-${k}" value="${k}" ${i===0?'checked':''}><b>${o.n}</b><span>${o.tag}. ${o.d}</span><code>${dirStatLine(o.s)}</code><span>Fähigkeit: ${ABIL[o.ab].n}${o.perks.length?' · Vorteil: '+o.perks.map(p=>PERKS[p].n).join(', '):''} · Macke: ${o.flaws.map(f=>FLAWS[f].n).join(', ')||'keine'}</span>${Object.keys(o.aff).length?`<span>Genres: ${Object.entries(o.aff).map(([g,v])=>GENRES[g].n+' '+fmt(v*4)).join(', ')}</span>`:''}</label>`).join('')}<label class="choice"><input type="radio" name="dir" id="d-custom" value="custom"><b>Eigener Director</b><span>Werte mit ${DPTS} Punkten kaufen, Vorteile wählen, Macken für Extrapunkte nehmen.</span></label></div><div id="builder" hidden></div></div>`:`<p class="note">Director: <b>${esc(C.dir.n)}</b>. Erfahrungspunkte und neue Vorteile verteilst du links im Bogen.</p>`}
-   <p class="err" id="setupErr" hidden></p>
-   <button class="btn" id="go">${first?'Studio gründen':'Projekt starten'}</button>`;
-  $('ttR').onclick=()=>{$('tt').value=randTitle()};
-  m.querySelectorAll('input[name=ip]').forEach(r=>r.onchange=()=>{if(r.checked&&r.dataset.st){const base=r.dataset.st.replace(/ (\d+)$/,'');const n=(+((r.dataset.st.match(/ (\d+)$/)||[])[1]||1))+1;$('tt').value=base+' '+n}});
-  if(first)m.querySelectorAll('input[name=dir]').forEach(r=>r.onchange=()=>{const c=$('d-custom').checked;$('builder').hidden=!c;if(c)renderBuilder()});
-  $('go').onclick=()=>{
-    const err=$('setupErr');const val=n=>document.querySelector(`input[name=${n}]:checked`).value;
-    if(first){
-      const k=val('dir');let dir;
-      if(k==='custom'){
-        if(ptsLeft()<0){err.hidden=false;err.textContent=`Dein Director hat ${-ptsLeft()} Punkte zu viel. Senke einen Wert, streiche einen Vorteil oder nimm eine Macke.`;return}
-        dir={id:'custom',n:B.n.trim()||'Namenloser Director',tag:'Eigener Director',d:'',s:{...B.s},aff:{},perks:[...B.perks],flaws:[...B.flaws],ab:null};
-      }else{
-        dir={id:k,...DIRS[k],s:{...DIRS[k].s},perks:[...DIRS[k].perks],flaws:[...DIRS[k].flaws],aff:{...DIRS[k].aff}};
+  const unlList=getUnlockedChars();
+  const allDirs=Object.entries(DIRS).sort((a,b)=>(isCharUnlocked(b[0])?1:0)-(isCharUnlocked(a[0])?1:0));
+  const shownDirs=showLockedSetupDirs?allDirs:allDirs.filter(([k])=>isCharUnlocked(k));
+
+  const stepLabels=[
+    [1,'1. Studio & Director'],
+    [2,'2. Klasse & Modell'],
+    [3,'3. Genre & Mix'],
+    [4,'4. Extras & Start']
+  ];
+
+  const stepsBar=`<div class="wiz-steps" role="tablist" aria-label="Projekt-Assistent">
+    ${stepLabels.map(([n,lbl])=>`<button type="button" class="wiz-step ${setupStep===n?'active':setupStep>n?'done':''}" data-wstep="${n}">
+      <span class="num">${setupStep>n?'✓':n}</span>
+      <span>${lbl}</span>
+    </button>`).join('')}
+  </div>`;
+
+  let bodyHTML='';
+
+  if(setupStep===1){
+    bodyHTML=`
+      <h3>Schritt 1: ${first?'Gründet euer Studio':'Studio & Game Director'}</h3>
+      <p class="note" style="margin:0">${first?'Gebt eurem neuen Entwicklerstudio einen Namen und wählt euren Game Director. Weitere legendäre Persönlichkeiten schaltet ihr später durch Zufallsbegegnungen frei!':`Euer Studio <b>${esc(C.studio.name)}</b> plant das nächste Projekt. Ihr könnt euren bisherigen Director behalten oder zu einer freigeschalteten Legende wechseln.`}</p>
+      <div class="field">
+        <label class="label" for="nm">Studioname</label>
+        <input id="nm" type="text" value="${esc(setupDraft.studioName)}" maxlength="40">
+      </div>
+      <div class="field">
+        <div class="staff-top" style="flex-wrap:wrap;gap:6px">
+          <span class="label">Game Director wählen (${unlList.length} / ${allDirs.length} Legenden freigeschaltet)</span>
+          <button type="button" class="btn tiny ghost" id="togLockedDirs">${showLockedSetupDirs?`Nur Freigeschaltete zeigen (${unlList.length})`:`🔒 Alle ${allDirs.length} Legenden anzeigen`}</button>
+        </div>
+        <div class="legend-grid">
+          ${!first?`<label class="choice dir-choice">
+            <input type="radio" name="dir" value="keep" ${setupDraft.dir==='keep'?'checked':''}>
+            ${C.dir.img?charPortraitHTML(C.dir.img,C.dir.isScene,'sm',false,C.dir.n):''}
+            <div class="dir-body">
+              <b>⭐ Aktuell: ${esc(C.dir.n)} behalten</b>
+              <span>${esc(C.dir.tag||'Euer erfahrener Director')} · ${C.dir.games} Spiele veröffentlicht · Fame ${C.dir.fame}/100</span>
+              <code>${dirStatLine(C.dir.s)}</code>
+            </div>
+          </label>`:''}
+          ${shownDirs.map(([k,o])=>{
+            const ok=isCharUnlocked(k);
+            return `<label class="choice dir-choice ${ok?'':'locked'}">
+              <input type="radio" name="dir" id="d-${k}" value="${k}" ${setupDraft.dir===k?'checked':''} ${ok?'':'disabled'}>
+              ${charPortraitHTML(o.img,o.isScene,'sm',!ok,o.n)}
+              <div class="dir-body">
+                <b>${ok?esc(o.n):'🔒 '+esc(o.tag)}</b>
+                <span>${ok?`${esc(o.tag)}. ${esc(o.d)}`:'Triff diese Legende als Zufallsbegegnung während eines Projekts und wirb sie an, um sie dauerhaft freizuschalten!'}</span>
+                ${ok?`
+                  <code>${dirStatLine(o.s)}</code>
+                  <span>Fähigkeit: ${ABIL[o.ab]?.n||o.ab}${o.perks.length?' · Vorteil: '+o.perks.map(p=>PERKS[p].n).join(', '):''} · Macke: ${o.flaws.map(f=>FLAWS[f].n).join(', ')||'keine'}</span>
+                  ${Object.keys(o.aff).length?`<span>Genres: ${Object.entries(o.aff).map(([g,v])=>GENRES[g].n+' '+fmt(v*4)).join(', ')}</span>`:''}
+                `:''}
+              </div>
+            </label>`;
+          }).join('')}
+          ${first?`<label class="choice"><input type="radio" name="dir" id="d-custom" value="custom" ${setupDraft.dir==='custom'?'checked':''}><b>🛠️ Eigener Director</b><span>Werte mit ${DPTS} Punkten kaufen, Vorteile wählen, Macken für Extrapunkte nehmen.</span></label>`:''}
+        </div>
+        <div id="builder" ${first&&setupDraft.dir==='custom'?'':'hidden'}></div>
+      </div>
+      <p class="err" id="setupErr" hidden></p>
+      <div class="wiz-nav">
+        <span class="note">Schritt 1 von 4</span>
+        <div class="row">
+          <button type="button" class="btn" id="wizNext">Weiter: Klasse & Modell →</button>
+        </div>
+      </div>`;
+  }else if(setupStep===2){
+    bodyHTML=`
+      <h3>Schritt 2: Produktionsklasse, Marke & Geschäftsmodell</h3>
+      ${!first?`<p class="note" style="margin:0">Studiokasse: <b>${money(kasse)}</b>.${C.studio.engine?` Eure <b>${esc(C.studio.engine.name)} v${C.studio.engine.version}.0</b> hat den Zustand: <b>${getEngineAgeInfo(C.studio.engine.age||0).label}</b>.`:''}</p>`:''}
+      <div class="field">
+        <label class="label" for="tt">Arbeitstitel des Spiels</label>
+        <div class="inrow">
+          <input id="tt" type="text" value="${esc(setupDraft.title)}" maxlength="40">
+          <button type="button" class="btn small ghost" id="ttR">🎲 Anderer Vorschlag</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Produktionsklasse</span>
+        <div class="choices">${Object.entries(TIERS).map(([k,t])=>{
+          const ok=first||kasse>=t.min;
+          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${t.n}</b><span>${t.d}</span><code>${first?'Start '+money(220*t.scale)+' · ':'mind. '+money(t.min)+' · '}${t.team} Leute · ca. ${money(13*t.scale)}/Monat<br>Preise ${t.prices.map(p=>nf(p,2)).join(' / ')} €</code><span>${t.note}</span></label>`;
+        }).join('')}</div>
+      </div>
+      <div class="field">
+        <span class="label">Marke (IP)</span>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="ip" id="ip-neu" value="neu" ${setupDraft.ip==='neu'?'checked':''}><b>${IPS.neu.n}</b><span>${IPS.neu.d}</span><code>${IPS.neu.note}</code></label>
+          ${seqs.map(([h,i])=>`<label class="choice"><input type="radio" name="ip" id="ip-seq${i}" value="seq:${i}" data-st="${esc(h.title)}" ${setupDraft.ip===`seq:${i}`?'checked':''}><b>Fortsetzung von „${esc(h.title)}“</b><span>Wertung ${h.meta}. Fans und Kritiker erinnern sich.</span><code>+${clamp(Math.floor((h.meta-60)/8),0,4)} Hype zusätzlich, Verkäufe ×${nf(1.3+(h.meta-70)/100,2)}, Start-Wishlists</code></label>`).join('')}
+          ${first?`<label class="choice"><input type="radio" name="ip" id="ip-franchise" value="franchise" ${setupDraft.ip==='franchise'?'checked':''}><b>${IPS.franchise.n}</b><span>${IPS.franchise.d}</span><code>${IPS.franchise.note}</code></label>`:''}
+          <label class="choice"><input type="radio" name="ip" id="ip-lizenz" value="lizenz" ${setupDraft.ip==='lizenz'?'checked':''}><b>${IPS.lizenz.n}</b><span>${IPS.lizenz.d}</span><code>${IPS.lizenz.note}</code></label>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Geschäftsmodell</span>
+        <div class="choices">${Object.entries(MODELS).map(([k,o])=>`<label class="choice"><input type="radio" name="m" id="m-${k}" value="${k}" ${setupDraft.model===k?'checked':''}><b>${o.n}</b><span>${o.d}</span></label>`).join('')}</div>
+      </div>
+      <div class="wiz-nav">
+        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Studio & Director</button>
+        <button type="button" class="btn" id="wizNext">Weiter: Genre & Mix →</button>
+      </div>`;
+  }else if(setupStep===3){
+    const mainG=GENRES[setupDraft.genre]||GENRES.rpg;
+    const subKey=(setupDraft.subGenre&&setupDraft.subGenre!=='none'&&setupDraft.subGenre!==setupDraft.genre)?setupDraft.subGenre:null;
+    const subG=subKey?GENRES[subKey]:null;
+    const mixInfo=subKey?getGenreMixInfo(setupDraft.genre,subKey):null;
+    const blendGfxW=subG?(mainG.gfxW*0.7+subG.gfxW*0.3):mainG.gfxW;
+    const combinedStats=Object.keys(STATS).map(sk=>{
+      const v=(mainG.s[sk]||0)*4+(subG?(subG.s[sk]||0)*2:0);
+      return `${STATS[sk]} +${v}`;
+    }).join(' · ');
+
+    bodyHTML=`
+      <h3>Schritt 3: Genre & optionaler Genre-Mix</h3>
+      ${tr?`<div class="alert mid"><b>Aktueller Markt-Trend</b><span>🔥 <b>Boom-Genre: ${GENRES[tr.hot]?.n}</b> (+25 % Verkäufe, +1 Hype) · ❄️ <b>Übersättigt: ${GENRES[tr.cold]?.n}</b> (−15 % Verkäufe). ${esc(tr.note||'')}</span></div>`:''}
+      <div class="field">
+        <span class="label">1. Hauptgenre wählen (bestimmt das Grundgerüst & 100 % der Haupt-Studiowerte)</span>
+        <div class="choices">${Object.entries(GENRES).map(([k,g])=>{
+          const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
+          const isHot=tr&&tr.hot===k;
+          const isCold=tr&&tr.cold===k;
+          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n}</b><span>${g.d}</span><code>${Object.keys(STATS).map(s=>STATS[s]+' +'+(g.s[s]*4)).join(' · ')}<br>Gameplay ${Math.round((1-g.gfxW)*100)} % · Grafik ${Math.round(g.gfxW*100)} %</code>${isHot?'<span class="pos">🔥 Boom-Genre (+25 % Verkäufe, +1 Hype)</span>':''}${isCold?'<span class="neg">❄️ Übersättigt (−15 % Verkäufe)</span>':''}${engKnows?'<span class="pos">★ Eigene Engine beherrscht dieses Genre</span>':''}${g.fit!=='kauf'?`<span>Passt zu ${MODELS[g.fit].n}: +1 Hype</span>`:''}</label>`;
+        }).join('')}</div>
+      </div>
+      <div class="field">
+        <span class="label">2. Optionales Sub-Genre / Genre-Mix (bringt +50 % der Zweitgenre-Werte & Synergie-Effekte!)</span>
+        <div class="subgenre-pills">
+          <label class="subgenre-pill">
+            <div><input type="radio" name="subg" value="none" ${!subKey?'checked':''}><b>Kein Mix (Klassisch)</b></div>
+            <span class="note">Voller Fokus auf ${esc(mainG.n)} ohne Nebenmechaniken.</span>
+          </label>
+          ${Object.entries(GENRES).filter(([k])=>k!==setupDraft.genre).map(([k,g])=>{
+            const info=getGenreMixInfo(setupDraft.genre,k);
+            const badge=info?.tier==='dream'?'🌟 Traum-Kombi':info?.tier==='wild'?'⚡ Experiment':'✨ Mix';
+            return `<label class="subgenre-pill">
+              <div><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>+ ${esc(g.n)}</b></div>
+              <span class="note">${badge} · ${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(', ')}</span>
+            </label>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="synergy-box ${mixInfo?mixInfo.tier:''}">
+        <b>${mixInfo?mixInfo.label:`🎯 Klassischer Fokus: ${mainG.n}`}</b>
+        <span class="note">${mixInfo?mixInfo.d:mainG.d}</span>
+        <div class="chips">
+          <span class="chip">${combinedStats}</span>
+          <span class="chip">🎮 Gameplay ${Math.round((1-blendGfxW)*100)} % · 🎨 Grafik ${Math.round(blendGfxW*100)} %</span>
+          ${mixInfo&&mixInfo.eff?Object.entries(mixInfo.eff).map(([ek,ev])=>chip([ek,ek==='wl'?ev*1000:ev])).join(''):''}
+        </div>
+      </div>
+      <div class="wiz-nav">
+        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Klasse & Modell</button>
+        <button type="button" class="btn" id="wizNext">Weiter: Extras & Lizenzen →</button>
+      </div>`;
+  }else{
+    const t=TIERS[setupDraft.tier]||TIERS.indie;
+    const sc=t.scale;
+    const selDir=first?(setupDraft.dir==='custom'?{n:B.n||'Eigener Director',perks:B.perks}:(DIRS[setupDraft.dir]||DIRS.sid)):C.dir;
+    const startBudget=first?Math.round(220*sc*(selDir.perks?.includes('netz')?1.15:1)):Math.round(C.studio.kasse);
+    const ipKey=setupDraft.ip.startsWith('seq:')?'franchise':setupDraft.ip;
+    const ipFee=Math.round((IPS[ipKey]?.fee||0)*sc);
+    const extraUpfront=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.upfront||0)*sc),0);
+    const extraMonthly=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.monthly||0)*sc),0);
+    const netStartBudget=startBudget-ipFee-extraUpfront;
+    const subKey=(setupDraft.subGenre&&setupDraft.subGenre!=='none'&&setupDraft.subGenre!==setupDraft.genre)?setupDraft.subGenre:null;
+    const mixInfo=subKey?getGenreMixInfo(setupDraft.genre,subKey):null;
+    const isSportGenre=['sport','racing'].includes(setupDraft.genre)||['sport','racing'].includes(subKey);
+
+    bodyHTML=`
+      <h3>Schritt 4: Extras, Lizenzen & Projektstart</h3>
+      <p class="note" style="margin:0">Wählt zusätzliche Features, Lizenzen und Editionen für <b>„${esc(setupDraft.title)}“</b>. Vorabkosten werden direkt beim Projektstart vom Budget abgezogen.</p>
+      <div class="field">
+        <span class="label">Optionale Projekt-Extras & Lizenzen (${setupDraft.extras.length} gewählt)</span>
+        <div class="choices">
+          ${Object.entries(PROJECT_EXTRAS).map(([ek,ex])=>{
+            const checked=setupDraft.extras.includes(ek);
+            const upCost=ex.upfront?Math.round(ex.upfront*sc):0;
+            const mCost=ex.monthly?Math.round(ex.monthly*sc):0;
+            const sportHint=(ek==='sportLic'&&isSportGenre)?'<span class="pos">⚽ Perfekte Synergie mit eurem Sport-/Rennspiel (+25 % Verkäufe!)</span>':'';
+            return `<label class="choice">
+              <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}>
+              <b>${ex.n}</b>
+              <span>${ex.d}</span>
+              <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`Monatlich −${money(mCost)}/M · `:''}${ex.code}</code>
+              ${sportHint}
+            </label>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="setup-summary">
+        <span class="label">Projekt-Zusammenfassung vor dem Start</span>
+        <div class="mini">
+          <div><span>Studio & Director</span><span><b>${esc(setupDraft.studioName)}</b> · ${esc(selDir.n)}</span></div>
+          <div><span>Spiel & Rahmen</span><span><b>„${esc(setupDraft.title)}“</b> · ${t.n} · ${IPS[ipKey]?.n||'Fortsetzung'} · ${MODELS[setupDraft.model]?.n}</span></div>
+          <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subKey?' × '+GENRES[subKey]?.n:''}</b> ${mixInfo?`(${mixInfo.label})`:''}</span></div>
+          <div><span>Startkapital / Kasse</span><span>${money(startBudget)}</span></div>
+          ${(ipFee+extraUpfront)>0?`<div><span>Abzgl. Vorabkosten (Lizenz & Extras)</span><span class="neg">−${money(ipFee+extraUpfront)}</span></div>`:''}
+          <div><span><b>Verfügbares Budget in Monat 1</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(extraMonthly)}/M für Extras)`:''}</span></div>
+        </div>
+        ${netStartBudget<35*sc?`<div class="alert"><b>Warnung: Sehr knappes Startbudget!</b><span>Nach Abzug der Vorabkosten bleiben nur ${money(netStartBudget)}. Wählt im Zweifel ein teures Extra weniger!</span></div>`:''}
+      </div>
+      <p class="err" id="setupErr" hidden></p>
+      <div class="wiz-nav">
+        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Genre & Mix</button>
+        <button type="button" class="btn" id="go">🚀 ${first?'Studio gründen & Projekt starten':'Projekt jetzt starten'}</button>
+      </div>`;
+  }
+
+  m.innerHTML=stepsBar+bodyHTML;
+  bindZoomTriggers(m);
+
+  // Step-Tabs Navigation
+  m.querySelectorAll('[data-wstep]').forEach(b=>b.onclick=()=>{
+    setupStep=+b.dataset.wstep;
+    renderMain();
+  });
+
+  const nmIn=$('nm');
+  if(nmIn)nmIn.oninput=e=>{setupDraft.studioName=e.target.value};
+
+  const togLock=$('togLockedDirs');
+  if(togLock)togLock.onclick=()=>{showLockedSetupDirs=!showLockedSetupDirs;renderMain()};
+
+  m.querySelectorAll('input[name=dir]').forEach(r=>r.onchange=()=>{
+    if(r.checked){
+      setupDraft.dir=r.value;
+      const bld=$('builder');
+      if(bld){
+        bld.hidden=r.value!=='custom';
+        if(r.value==='custom')renderBuilder();
       }
-      C={studio:{name:$('nm').value.trim()||'Pixelpott Studios',fame:0,kasse:0,staff:[],exStaff:[],engine:null,salaryDrift:0,overheadDrift:0},dir:{...dir,fame:0,wealth:0,games:0,xp:0,perkUnlocked:false},hall:[],gameNo:0};
-      rollMarketTrend();
-    }else C.studio.name=$('nm').value.trim()||C.studio.name;
-    wsTab='board';
-    startGame({title:$('tt').value.trim(),genre:val('g'),tier:val('t'),model:val('m'),ip:val('ip'),mods:$('xMods').checked,ea:$('xEA').checked});
+    }
+  });
+  if(first&&setupDraft.dir==='custom'&&$('builder'))renderBuilder();
+
+  const ttIn=$('tt');
+  if(ttIn)ttIn.oninput=e=>{setupDraft.title=e.target.value};
+  const ttR=$('ttR');
+  if(ttR)ttR.onclick=()=>{setupDraft.title=randTitle();if($('tt'))$('tt').value=setupDraft.title};
+
+  m.querySelectorAll('input[name=t]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.tier=r.value});
+  m.querySelectorAll('input[name=ip]').forEach(r=>r.onchange=()=>{
+    if(r.checked){
+      setupDraft.ip=r.value;
+      if(r.dataset.st){
+        const base=r.dataset.st.replace(/ (\d+)$/,'');
+        const n=(+((r.dataset.st.match(/ (\d+)$/)||[])[1]||1))+1;
+        setupDraft.title=base+' '+n;
+        if($('tt'))$('tt').value=setupDraft.title;
+      }
+    }
+  });
+  m.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.model=r.value});
+
+  m.querySelectorAll('input[name=g]').forEach(r=>r.onchange=()=>{
+    if(r.checked){
+      setupDraft.genre=r.value;
+      if(setupDraft.subGenre===r.value)setupDraft.subGenre='none';
+      renderMain();
+    }
+  });
+  m.querySelectorAll('input[name=subg]').forEach(r=>r.onchange=()=>{
+    if(r.checked){
+      setupDraft.subGenre=r.value;
+      renderMain();
+    }
+  });
+
+  m.querySelectorAll('[data-extra]').forEach(chk=>chk.onchange=()=>{
+    const ek=chk.dataset.extra;
+    if(chk.checked){
+      if(!setupDraft.extras.includes(ek))setupDraft.extras.push(ek);
+    }else{
+      setupDraft.extras=setupDraft.extras.filter(x=>x!==ek);
+    }
+    renderMain();
+  });
+
+  const prevBtn=$('wizPrev');
+  if(prevBtn)prevBtn.onclick=()=>{setupStep=Math.max(1,setupStep-1);renderMain()};
+  const nextBtn=$('wizNext');
+  if(nextBtn)nextBtn.onclick=()=>{
+    if(setupStep===1&&first&&setupDraft.dir==='custom'&&ptsLeft()<0){
+      const err=$('setupErr');
+      if(err){err.hidden=false;err.textContent=`Dein Director hat ${-ptsLeft()} Punkte zu viel. Senke einen Wert, streiche einen Vorteil oder nimm eine Macke.`}
+      return;
+    }
+    setupStep=Math.min(4,setupStep+1);
+    renderMain();
   };
+
+  const goBtn=$('go');
+  if(goBtn)goBtn.onclick=launchSetupProject;
 }
 
 function renderBuilder(){
@@ -935,7 +1494,9 @@ function updateProfileButton(){
 
 function openProfileModal(defaultTab='profiles'){
   const bd=$('profileModal');
+  const hd=$('modalTitle');
   if(!bd)return;
+  if(hd)hd.textContent='Spieler-Profile & Fortschritts-Export';
   bd.hidden=false;
   renderProfileModal(defaultTab);
 }
