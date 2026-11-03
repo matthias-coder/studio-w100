@@ -61,23 +61,102 @@ const IPS={
   lizenz:{n:'Lizenzspiel',d:'Das Spiel zum Film, zur Serie oder zum Comic.',note:'+3 Hype, Lizenzgebühr, 15 % Umsatzabgabe, Kritiker −3, Design −4',hype:3,sales:1.5,review:-3,fee:30,cut:.15,design:-4}
 };
 
-const VIOL=['metroidvania','koop','mmorpg','br','rpg','horror'];
+const VIOL=['action','actadv','rpg','survival'];
 
 // gfxWeight bestimmt, wie stark Grafik (vs. Gameplay) in die Gesamtwertung des Genres einfließt
 const GENRES={
-  metroidvania:{n:'Metroidvania',d:'Verwinkelte Karte, Doppelsprung, viel Liebe zum Detail.',s:{design:2,technik:1,team:1,business:0},b:{gp:3},gfxW:0.35,fit:'kauf',w:['hub'],bad:['open']},
-  aufbau:{n:'Aufbausimulation',d:'Produktionsketten, Tabellen, Siedler-Gefühl.',s:{design:1,technik:2,team:0,business:1},b:{gp:3},gfxW:0.35,fit:'kauf',w:['open','level'],bad:['schlauch']},
-  koop:{n:'Koop-Shooter',d:'Vier Leute, ein Ziel, viel Netzwerkcode.',s:{design:0,technik:2,team:1,business:1},b:{hype:1,gfx:3},gfxW:0.50,fit:'kauf',w:['level','hub'],bad:[]},
-  adventure:{n:'Point-and-Click',d:'Rätsel, Dialoge, ein sprechender Papagei.',s:{design:2,technik:0,team:1,business:1},b:{gp:6,gfx:2},gfxW:0.30,fit:'kauf',w:['level','schlauch','hub'],bad:['open']},
-  mmorpg:{n:'Online-Rollenspiel',d:'Riesige Welt, Gilden, Raids. Und tausend Server-Probleme.',s:{design:1,technik:2,team:1,business:0},b:{hype:1,bugs:3},gfxW:0.45,fit:'abo',w:['open'],bad:['schlauch','level']},
-  br:{n:'Battle Royale',d:'Hundert Leute, eine Insel, der Kreis wird kleiner.',s:{design:0,technik:2,team:1,business:1},b:{hype:1,gp:2},gfxW:0.45,fit:'f2p',w:['open'],bad:['schlauch']},
-  racing:{n:'Rennspiel',d:'Strecken, Reifenabnutzung, Fotomodus.',s:{design:1,technik:2,team:0,business:1},b:{gfx:6},gfxW:0.60,fit:'kauf',w:['level','hub'],bad:[]},
-  sport:{n:'Fußballspiel',d:'Flanken, Fallrückzieher, Transfermarkt.',s:{design:1,technik:1,team:1,business:1},b:{gp:2,gfx:2},gfxW:0.45,fit:'kauf',w:['level'],bad:['open','schlauch']},
-  cozy:{n:'Cozy-Farming',d:'Rüben gießen, Hühner streicheln, Dorffest.',s:{design:2,technik:0,team:2,business:0},b:{moral:1,gp:3},gfxW:0.30,fit:'kauf',w:['hub','open'],bad:['schlauch']},
-  mobile:{n:'Mobile-Puzzle',d:'Drei in einer Reihe, aber mit Geschichte.',s:{design:1,technik:1,team:0,business:2},b:{gp:2},gfxW:0.30,fit:'f2p',w:['level'],bad:['open']},
-  rpg:{n:'Story-Rollenspiel',d:'Hundert Stunden Quests, Begleiter-Romanzen, dicke Dialogbäume.',s:{design:2,technik:1,team:1,business:0},b:{gp:4,gfx:3,bugs:2},gfxW:0.45,fit:'kauf',w:['open','hub'],bad:['schlauch']},
-  horror:{n:'Survival-Horror',d:'Taschenlampe, wenig Munition, Geräusche im Flur.',s:{design:2,technik:1,team:0,business:1},b:{hype:1,gfx:5},gfxW:0.55,fit:'kauf',w:['schlauch','hub'],bad:['open']}
+  action:{n:'Action & Shooter',d:'Schnelle Reflexe, Gunplay, Combos. Riesiger Markt, harte Konkurrenz.',s:{design:0,technik:2,team:1,business:1},b:{hype:1,gfx:3},gfxW:0.55,fit:'kauf',w:['level','open'],bad:[],subs:{
+    fps:{n:'Ego-Shooter (FPS)',d:'Präzises Zielen, Taktik- und Hero-Maps, Ranglisten.',s:{technik:2},b:{gp:4},gfxW:0.55},
+    looter:{n:'Looter- & Extraction-Shooter',d:'Beute, Builds, Raids und das Risiko beim Rausgehen.',s:{business:2},b:{hype:2,bugs:2},gfxW:0.55,w:['open','hub']},
+    br:{n:'Battle Royale',d:'Hundert Leute, eine Insel, der Kreis wird kleiner.',s:{business:2},b:{hype:2,bugs:4},gfxW:0.45,fit:'f2p',w:['open'],bad:['schlauch','level']},
+    hackslay:{n:'Hack & Slay',d:'Stilwertung, Combos, absurde Bosse.',s:{design:2},b:{gp:4},gfxW:0.50,w:['level','schlauch']},
+    fighting:{n:'Prügelspiel',d:'2D, 3D oder Plattform-Fighter: Frame-Daten, Combos, Turniere.',s:{team:2},b:{gp:4,hype:2},gfxW:0.45,w:['level'],bad:['open','schlauch']}
+  }},
+  actadv:{n:'Action-Adventure',d:'Erkunden, Kämpfen, Entdecken. Die großen Blockbuster-Bühnen.',s:{design:1,technik:2,team:1,business:0},b:{gp:2,gfx:4},gfxW:0.55,fit:'kauf',w:['open','hub'],bad:[],subs:{
+    openworld:{n:'Open World',d:'Eine riesige Welt und hundert Nebenaufgaben.',s:{technik:2},b:{gfx:6,bugs:4},gfxW:0.60,w:['open'],bad:['schlauch','level']},
+    metroidvania:{n:'Metroidvania',d:'Verwinkelte Karte, Doppelsprung, Abkürzungen.',s:{design:2},b:{gp:6},gfxW:0.35,w:['hub'],bad:['open']},
+    soulslike:{n:'Soulslike',d:'Ausdauerleiste, Lagerfeuer, berüchtigte Bosse.',s:{design:1,team:1},b:{gp:4,hype:2},gfxW:0.50,w:['hub','open']},
+    horror:{n:'Survival-Horror',d:'Taschenlampe, wenig Munition, Geräusche im Flur.',s:{design:2},b:{hype:2,gfx:4},gfxW:0.55,w:['schlauch','hub'],bad:['open']},
+    stealth:{n:'Stealth & Immersive Sim',d:'Schleichen, Hacken, zehn Wege durch jedes Level.',s:{technik:1,design:1},b:{gp:6,bugs:2},gfxW:0.45,w:['hub','level']}
+  }},
+  adventure:{n:'Adventure',d:'Geschichte, Rätsel und Atmosphäre. Langlebig und dankbar für Nischen.',s:{design:2,technik:0,team:1,business:1},b:{gp:4},gfxW:0.40,fit:'kauf',w:['hub','schlauch','level'],bad:['open'],subs:{
+    pnc:{n:'Point & Click',d:'Rätsel, Dialoge, ein sprechender Papagei.',s:{design:2},b:{gp:6},gfxW:0.30},
+    vn:{n:'Visual Novel',d:'Verzweigte Geschichte und unvergessliche Figuren.',s:{team:2},b:{gp:4,bugs:-4},gfxW:0.25},
+    narrative:{n:'Erzähl-Erkundung',d:'Wandern, lauschen, Briefe finden. Ein Walking Simulator mit Herz.',s:{design:2},b:{gfx:6},gfxW:0.55,w:['schlauch','hub']},
+    interactive:{n:'Interaktiver Film',d:'Entscheidungen, Schauspieler, Motion-Capture.',s:{technik:2},b:{gfx:6,hype:2},gfxW:0.65,w:['schlauch']},
+    puzzleadv:{n:'Puzzle-Adventure & Escape Room',d:'Ein Raum, hundert Hinweise, ein Ausgang.',s:{team:2},b:{gp:6},gfxW:0.35,w:['level','hub']}
+  }},
+  rpg:{n:'Rollenspiel',d:'Charakterentwicklung, Quests, Beute. Spieler bleiben jahrelang.',s:{design:2,technik:1,team:1,business:0},b:{gp:4,gfx:2,bugs:2},gfxW:0.45,fit:'kauf',w:['open','hub'],bad:['schlauch'],subs:{
+    crpg:{n:'Klassisches RPG (CRPG)',d:'Würfelproben, Dialogbäume, Begleiter-Romanzen.',s:{design:2},b:{gp:6},gfxW:0.35,w:['hub','open']},
+    arpg:{n:'Action-RPG',d:'Loot, Bosse und Builds in Echtzeit.',s:{technik:2},b:{gfx:4,hype:2}},
+    jrpg:{n:'JRPG',d:'Rundenkämpfe, eine bunte Party und eine epische Geschichte.',s:{team:2},b:{gp:4,hype:2},w:['hub','level']},
+    mmorpg:{n:'MMORPG',d:'Gilden, Raids und tausend Server-Probleme.',s:{business:2},b:{hype:2,bugs:6},fit:'abo',w:['open'],bad:['schlauch','level']},
+    monster:{n:'Monster-Sammeln',d:'Fangen, entwickeln, tauschen.',s:{design:1,business:1},b:{gp:4,hype:2},gfxW:0.40}
+  }},
+  strategy:{n:'Strategie',d:'Planen, Bauen, Erobern. Auf dem PC eine treue Langzeit-Nische.',s:{design:1,technik:2,team:0,business:1},b:{gp:4},gfxW:0.30,fit:'kauf',w:['open','level'],bad:['schlauch'],subs:{
+    rts:{n:'Echtzeit-Strategie (RTS)',d:'Basenbau, Einheiten, Klick-Geschwindigkeit.',s:{technik:2},b:{gp:4}},
+    tbs:{n:'Rundenstrategie',d:'Taktikgitter und „nur noch eine Runde“.',s:{design:2},b:{gp:6},gfxW:0.25,w:['level','hub']},
+    grand:{n:'4X & Grand Strategy',d:'Erkunden, Expandieren, Ausbeuten, Auslöschen. Über Jahrhunderte.',s:{business:1,design:1},b:{gp:8,bugs:4},gfxW:0.25,w:['open']},
+    towerdef:{n:'Tower Defense',d:'Türme bauen, Wellen überleben.',s:{design:2},b:{gp:4,bugs:-2},w:['level']},
+    moba:{n:'MOBA & Auto Battler',d:'Drei Lanes, hundert Helden, eine anstrengende Community.',s:{business:2},b:{hype:2,bugs:4},gfxW:0.40,fit:'f2p',w:['level']}
+  }},
+  sim:{n:'Simulation',d:'Bauen, Verwalten, Optimieren. Riesige, treue Fangemeinden.',s:{design:1,technik:1,team:0,business:2},b:{gp:4},gfxW:0.35,fit:'kauf',w:['open','hub'],bad:['schlauch'],subs:{
+    citybuild:{n:'Aufbau & Tycoon',d:'Produktionsketten, Tabellen, Siedler-Gefühl.',s:{technik:2},b:{gp:6},w:['open','level']},
+    life:{n:'Lebenssimulation',d:'Häuser bauen, Leben ruinieren, Pool ohne Leiter.',s:{design:2},b:{gp:4,hype:2}},
+    cozy:{n:'Farming & Cozy',d:'Rüben gießen, Hühner streicheln, Dorffest.',s:{team:2},b:{gp:4,moral:2},gfxW:0.30},
+    factory:{n:'Factory & Colony Sim',d:'Förderbänder optimieren, Kolonisten retten.',s:{technik:2},b:{gp:8,bugs:4},gfxW:0.20,w:['open']},
+    job:{n:'Job- & Fahrzeug-Sim',d:'Trucks, Traktoren, Hochdruckreiniger. Seltsam entspannend.',s:{business:2},b:{hype:2},gfxW:0.45,w:['open','level']}
+  }},
+  sports:{n:'Sport & Rennen',d:'Stadion, Strecke, Saison. Fans wollen Echtheit oder Spaß, nicht beides halb.',s:{design:1,technik:2,team:0,business:1},b:{gp:2,gfx:4},gfxW:0.50,fit:'kauf',w:['level','hub'],bad:['schlauch'],subs:{
+    sim:{n:'Sportsimulation',d:'Lizenzen, Motion-Capture, echte Kader.',s:{technik:2},b:{gfx:6},gfxW:0.55,bad:['open','schlauch']},
+    manager:{n:'Sportmanager',d:'Taktiktafel, Transfermarkt, Tabellen.',s:{business:2},b:{gp:8},gfxW:0.20},
+    arcaderacer:{n:'Arcade- & Fun-Racer',d:'Drift, Nitro, Bananenschalen.',s:{design:2},b:{gp:4,hype:2},gfxW:0.45},
+    simracer:{n:'Rennsimulation',d:'Reifenabnutzung, Setup-Menüs, Lenkrad-Support.',s:{technik:2},b:{gfx:4},gfxW:0.65},
+    extreme:{n:'Extremsport',d:'Skateparks, Tricks, Punkrock-Soundtrack.',s:{team:2},b:{gp:4,hype:2},gfxW:0.45,w:['level','open']}
+  }},
+  survival:{n:'Survival & Sandbox',d:'Sammeln, Bauen, Überleben. Lebt von Updates und Streamern.',s:{design:1,technik:2,team:1,business:0},b:{gp:4,bugs:2},gfxW:0.40,fit:'kauf',w:['open'],bad:['schlauch','level'],subs:{
+    crafting:{n:'Survival-Crafting',d:'Holz hacken, Basis bauen, nachts überleben.',s:{technik:2},b:{gp:4}},
+    sandbox:{n:'Sandbox',d:'Blöcke, Kreativmodus, eine unendliche Welt.',s:{design:2},b:{gp:6,gfx:-2},gfxW:0.25},
+    mphorror:{n:'Multiplayer-Horror',d:'Vier Freunde, ein Monster, viel Geschrei im Voice-Chat.',s:{team:2},b:{hype:4},gfxW:0.45,w:['level','hub'],bad:[]}
+  }},
+  puzzle:{n:'Puzzle & Denkspiele',d:'Kleine Teams, klare Ideen. Auf dem Handy ein Dauerbrenner.',s:{design:2,technik:0,team:1,business:1},b:{gp:3},gfxW:0.30,fit:'kauf',w:['level'],bad:['open'],subs:{
+    logic:{n:'Logik & Rätsel',d:'Saubere Regeln, ein Aha-Moment pro Level.',s:{design:2},b:{gp:6}},
+    physics:{n:'Physik-Puzzle',d:'Portale, Seilzüge, Kettenreaktionen.',s:{technik:2},b:{gp:4,bugs:2},gfxW:0.35},
+    match:{n:'Match-3 & Casual',d:'Drei in einer Reihe, tägliche Belohnungen, fürs Handy gemacht.',s:{business:2},b:{hype:2},fit:'f2p',mobile:true},
+    cards:{n:'Karten & Deckbuilder',d:'Synergien, Seltenheiten, eine Karte zu viel auf der Hand.',s:{design:1,business:1},b:{gp:6},gfxW:0.25}
+  }},
+  platformer:{n:'Plattformer',d:'Springen, Timing, Leveldesign. Gameplay schlägt alles.',s:{design:2,technik:1,team:1,business:0},b:{gp:4},gfxW:0.40,fit:'kauf',w:['level'],bad:['open'],subs:{
+    p2d:{n:'2D-Plattformer',d:'Pixelgenaue Sprünge und handgezeichnete Welten.',s:{design:2},b:{gp:4},gfxW:0.35},
+    p3d:{n:'3D-Plattformer',d:'Kamera, Sammelobjekte, verspielte Welten.',s:{technik:2},b:{gfx:6},gfxW:0.50,w:['level','hub']},
+    precision:{n:'Precision-Platformer',d:'Tausend Tode, ein perfekter Lauf.',s:{team:2},b:{gp:6,hype:2},gfxW:0.30}
+  }}
 };
+// Sub-Genre-Definition eines Projekts (oder null)
+const subGenreOf=(g,sub)=>GENRES[g]?.subs?.[sub]||null;
+const defaultSub=g=>Object.keys(GENRES[g]?.subs||{})[0]||null;
+
+/* Genre-übergreifende Modifikatoren: optional, einer pro Projekt.
+   syn/clash: Hauptgenre ('rpg') oder Sub-Genre ('rpg.mmorpg') mit Synergie bzw. Reibung */
+const GENRE_MODS={
+  roguelike:{n:'Roguelike-Elemente',d:'Prozedurale Runs und permanente Freischaltungen. Hoher Wiederspielwert.',b:{gp:4},sales:1.05,
+    syn:['actadv','platformer','action.hackslay','puzzle.cards','strategy.towerdef'],clash:['adventure','sim.life','rpg.mmorpg']},
+  horror:{n:'Horror-Stimmung',d:'Dunkle Atmosphäre und Schockmomente, egal in welchem Genre.',b:{hype:2,gfx:2},sales:1,
+    syn:['adventure','survival','actadv'],clash:['sim.cozy','sports','puzzle.match','platformer.p3d']},
+  live:{n:'Live Service',d:'Saisons, Battle Pass, laufende Updates. Teuer im Betrieb, stark mit Free-to-Play oder Abo.',b:{hype:2,bugs:4},monthly:1,sales:{kauf:1.05,abo:1.25,f2p:1.3},
+    syn:['rpg.mmorpg','action','strategy.moba','survival','sports.sim'],clash:['adventure','puzzle.logic','platformer','rpg.crpg']},
+  party:{n:'Party & Couch-Koop',d:'Für vier auf dem Sofa: kurze Runden, viel Chaos.',b:{hype:2,gp:2},sales:1.1,
+    syn:['platformer','sports.arcaderacer','action.fighting','puzzle'],clash:['rpg','strategy.grand','adventure.vn','sim.factory']},
+  vr:{n:'VR-Fassung',d:'Mittendrin statt nur dabei. Kleinerer Markt, aber viel Aufmerksamkeit.',b:{hype:3,gfx:-4,bugs:4},sales:0.6,
+    syn:['actadv','sim.job','puzzle.physics','sports.simracer','adventure.narrative'],clash:['strategy','sim.factory','puzzle.cards']}
+};
+const MOD_SYN={gp:4,hype:1},MOD_CLASH={gp:-4,bugs:3};
+// 'syn', 'clash' oder null für die Kombination aus Genre, Sub-Genre und Modifikator
+function modFit(g,sub,mod){
+  const m=GENRE_MODS[mod];if(!m)return null;
+  const hit=list=>list.includes(g)||list.includes(g+'.'+sub);
+  return hit(m.syn)?'syn':hit(m.clash)?'clash':null;
+}
+const modSales=(mod,model)=>{const v=GENRE_MODS[mod]?.sales;return typeof v==='object'?(v[model]||1):(v||1)};
 
 /* ===================== Engine-Matrix, Alterung & Eigene Engine ===================== */
 const ENGINE_AGE_STATES=[
@@ -105,8 +184,8 @@ const ENGINE_DEFS={
     n:'Surreal Engine',
     short:'Surreal',
     d:'Fotorealistische 3D-Grafik ab Werk (+10 Grafik). Ab 1 Mio € Umsatz gehen 5 % an den Hersteller. Für kleine 2D-/Mobile-Spiele viel zu schwerfällig.',
-    good:['koop','mmorpg','br','racing','rpg','horror'],
-    bad:['mobile','cozy','adventure','metroidvania'],
+    good:['action','actadv','rpg','sports','survival'],
+    bad:['puzzle'],
     goodEff:{gfx:6,gp:2,hype:1},
     badEff:{gfx:-2,gp:-6,bugs:4,zeit:-1},
     goodNote:'Surreal glänzt bei 3D-Präsentation (+6 Grafik, +2 Gameplay, +1 Hype)',
@@ -116,8 +195,8 @@ const ENGINE_DEFS={
     n:'Unitee',
     short:'Unitee',
     d:'Schnell eingerichtet, riesiger Asset-Store, stark bei Indie, 2D, Aufbau und Mobile. Schwächelt bei riesigen Online-Welten.',
-    good:['metroidvania','aufbau','cozy','mobile','sport','adventure'],
-    bad:['mmorpg','br'],
+    good:['puzzle','adventure','sim','platformer','strategy'],
+    bad:['survival'],
     goodEff:{gp:4,gfx:2,bugs:-1},
     badEff:{gfx:-4,gp:-3,bugs:5},
     goodNote:'Unitee passt ideal zum Genre (+4 Gameplay, +2 Grafik, −1 Bug)',
@@ -127,8 +206,8 @@ const ENGINE_DEFS={
     n:'Godoh (Open Source)',
     short:'Godoh',
     d:'Kostenlos und offen, geliebt für 2D, Point-and-Click und Gameplay-Hits. Bei aufwendigen 3D-/Online-Projekten fehlt die Grafik-Power.',
-    good:['metroidvania','adventure','cozy','mobile'],
-    bad:['koop','mmorpg','br','racing','horror'],
+    good:['puzzle','adventure','platformer','strategy'],
+    bad:['action','actadv','sports'],
     goodEff:{gp:6,gfx:1,moral:1},
     badEff:{gfx:-8,gp:-3,bugs:4,zeit:-1},
     goodNote:'Godoh ist wie gemacht für euer Gameplay (+6 Gameplay, +1 Grafik, +1 Moral)',
@@ -159,10 +238,10 @@ const CONTRACTS=[
 /* ===================== Konkurrenz-Studios (Rivalen & GOTY-Rennen) ===================== */
 const BASE_RIVALS=[
   {id:'nordlicht',name:'Nordlicht Interactive',fav:'rpg',skill:68,tag:'Skandinavische Rollenspiel-Schmiede mit riesiger Fangemeinde'},
-  {id:'aether',name:'AetherWorks',fav:'koop',skill:72,tag:'Technik-Gigant, bekannt für spektakuläre 3D-Grafik und Shooter'},
-  {id:'valkyrie',name:'Valkyrie Soft',fav:'metroidvania',skill:66,tag:'Kult-Studio für messerscharfes Gameplay und knackige Bosse'},
-  {id:'redsun',name:'Red Sun Digital',fav:'racing',skill:70,tag:'Perfektionisten für Tempo, Physik und glänzende Karosserien'},
-  {id:'alpenhorn',name:'Alpenhorn Games',fav:'aufbau',skill:65,tag:'Meister komplexer Wirtschaftskreisläufe und gemütlicher Welten'}
+  {id:'aether',name:'AetherWorks',fav:'action',skill:72,tag:'Technik-Gigant, bekannt für spektakuläre 3D-Grafik und Shooter'},
+  {id:'valkyrie',name:'Valkyrie Soft',fav:'actadv',skill:66,tag:'Kult-Studio für messerscharfes Gameplay und knackige Bosse'},
+  {id:'redsun',name:'Red Sun Digital',fav:'sports',skill:70,tag:'Perfektionisten für Tempo, Physik und glänzende Karosserien'},
+  {id:'alpenhorn',name:'Alpenhorn Games',fav:'sim',skill:65,tag:'Meister komplexer Wirtschaftskreisläufe und gemütlicher Welten'}
 ];
 
 /* ===================== Interviews (Fragenpool INTERVIEW_QS in content-extra.js) ===================== */
@@ -438,7 +517,7 @@ const DIRS={
     encStory:'Ein freundlicher Herr in Strickweste legt eine leuchtende sechseckige Geländekachel auf euren Konferenztisch und blickt auf seine goldene Taschenuhr: „Eurer Spielschleife fehlt die magische ‚Nur-noch-eine-Runde‘-Formel. Wollt ihr, dass ich euren Spielfluss überarbeite?“',
     encEff:{gp:8,bugs:-2},
     s:{vision:3,technik:2,fuehrung:2,business:1,hype:0,polish:3},
-    aff:{aufbau:2,rpg:1},perks:['spezial'],flaws:['perfekt'],ab:'reroll'
+    aff:{sim:2,rpg:1},perks:['spezial'],flaws:['perfekt'],ab:'reroll'
   },
   trainmag:{
     n:'Jon Trainmag',
@@ -450,7 +529,7 @@ const DIRS={
     encStory:'Ein Mann mit Brille, VR-Headset um den Hals und einer Raketendüse unterm Arm starrt auf euren Monitor: „Eure Framerate schwankt um 0,4 Millisekunden. Gebt mir eine Kiste Diät-Cola und ein Wochenende, dann schreibe ich euch den Renderer in Assembler neu.“',
     encEff:{gfx:8,bugs:-6},
     s:{vision:1,technik:4,fuehrung:0,business:1,hype:1,polish:2},
-    aff:{koop:2,br:1,horror:1,racing:1},perks:['engine'],flaws:[],ab:'rewrite'
+    aff:{action:2,actadv:1,sports:1},perks:['engine'],flaws:[],ab:'rewrite'
   },
   kojimba:{
     n:'Hideo Kojimba',
@@ -462,7 +541,7 @@ const DIRS={
     encStory:'Im Flur steht plötzlich ein Herr im Trenchcoat mit Filmklappe und einer gelb leuchtenden Kapsel: „Eurem Spiel fehlt das existenziell-filmische Strand-Phänomen! Lasst mich Regie, Schnitt, Drehbuch und Catering übernehmen.“',
     encEff:{gfx:6,hype:3,wl:3},
     s:{vision:4,technik:2,fuehrung:2,business:1,hype:4,polish:2},
-    aff:{adventure:1,horror:1,rpg:1},perks:['netz'],flaws:['kosten','diva'],ab:'promi'
+    aff:{adventure:1,actadv:1,rpg:1},perks:['netz'],flaws:['kosten','diva'],ab:'promi'
   },
   molynox:{
     n:'Piet Moulin',
@@ -474,7 +553,7 @@ const DIRS={
     encStory:'Mit wehendem Schal und leuchtender goldener Eichel in der Hand stürmt Piet Moulin in euer Büro: „Freunde! Wenn der Spieler diesen Samen pflanzt, spürt er den Wind der Ewigkeit! Lasst mich mit der Presse reden — sie werden weinen vor Glück!“',
     encEff:{hype:4,wl:4,gp:2},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:4,polish:0},
-    aff:{aufbau:1,rpg:1,cozy:1},perks:[],flaws:['verspricht'],ab:'ankuend'
+    aff:{sim:1,rpg:1},perks:[],flaws:['verspricht'],ab:'ankuend'
   },
   williams:{
     n:'Roberta Waldfee',
@@ -486,7 +565,7 @@ const DIRS={
     encStory:'Eine Dame in bestickter viktorianischer Weste schlägt ein dickes Märchenbuch mit goldener Schreibfeder auf: „Eure Welt braucht mehr Poesie, Königsschlösser — und mindestens zwanzig überraschende Wege, wie der Held aus Versehen eine Klippe hinunterstürzt!“',
     encEff:{gp:7,gfx:4},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:1,polish:2},
-    aff:{adventure:2,rpg:1,cozy:1},perks:['kritik'],flaws:['perfekt'],ab:'fairytale'
+    aff:{adventure:2,rpg:1,sim:1},perks:['kritik'],flaws:['perfekt'],ab:'fairytale'
   },
   persson:{
     n:'Magnus Klötzchen',
@@ -498,7 +577,7 @@ const DIRS={
     encStory:'Ein bärtiger Entwickler mit Filzhut hält schüchtern einen leuchtenden Gras-Würfel und eine Pixel-Spitzhacke hoch: „Ich rede nicht gern vor großen Gruppen, aber ich habe heute Nacht einen prozeduralen Voxel-Generator für euch gecodet.“',
     encEff:{gp:7,bugs:-3,wl:2},
     s:{vision:3,technik:3,fuehrung:1,business:1,hype:1,polish:2},
-    aff:{aufbau:2,cozy:2,metroidvania:1},perks:['ea'],flaws:[],ab:'community'
+    aff:{sim:2,actadv:1},perks:['ea'],flaws:[],ab:'community'
   },
 
   // === 20 FREISCHALTBARE LEGENDEN (tauchen als Zufallsbegegnung auf & lassen sich einstellen!) ===
@@ -512,7 +591,7 @@ const DIRS={
     encStory:'In einem glänzenden Raumanzug schwebt der „Crowdfund-Admiral“ herein und projiziert ein holografisches Raumschiff an die Wand: „Warum ein fertiges Spiel verkaufen, wenn eure Fans heute schon für 800 Euro Konzeptzeichnungen von Raumschiff-Bettwäsche kaufen würden?“',
     encEff:{budget:35,hype:2,zeit:-1},
     s:{vision:4,technik:1,fuehrung:1,business:3,hype:4,polish:0},
-    aff:{koop:1,mmorpg:2,racing:1},perks:['netz'],flaws:['creep','kosten'],ab:'cash'
+    aff:{action:1,rpg:2,sports:1},perks:['netz'],flaws:['creep','kosten'],ab:'cash'
   },
   romero:{
     n:'Johnny Ramires',
@@ -524,7 +603,7 @@ const DIRS={
     encStory:'Heavy-Metal-Riffs dröhnen aus dem Flur! Ein langhaariger Designer mit Sonnenbrille und Nietenweste lehnt lässig am brennenden Arcade-Automaten: „Euer Spiel ist viel zu brav, Leute. Lasst mich ein paar geheime Raketenwerfer-Arenen und 90er-Attitüde einbauen!“',
     encEff:{gp:7,hype:3,bugs:1},
     s:{vision:3,technik:2,fuehrung:1,business:1,hype:4,polish:0},
-    aff:{koop:2,br:2,metroidvania:1},perks:['spezial'],flaws:['diva','social'],ab:'shred'
+    aff:{action:2,actadv:1},perks:['spezial'],flaws:['diva','social'],ab:'shred'
   },
   mizaki:{
     n:'Hidetaka Mizaki',
@@ -536,7 +615,7 @@ const DIRS={
     encStory:'Ein überaus höflicher Herr im Anzug steht plötzlich im Konferenzraum — unter seinen Schuhen blubbert eine giftgrüne Pfütze: „Entschuldigung, aber wäre Ihr drittes Kapitel nicht viel berührender, wenn der Spieler dort langsam vergiftet wird und ein riesiges Schwert ihn zermalmt?“',
     encEff:{gp:9,gfx:4},
     s:{vision:4,technik:2,fuehrung:2,business:1,hype:1,polish:4},
-    aff:{metroidvania:2,rpg:2,horror:1,cozy:-1,mobile:-1},perks:['kritik'],flaws:['perfekt'],ab:'tiefe'
+    aff:{actadv:2,rpg:2,sim:-1,puzzle:-1},perks:['kritik'],flaws:['perfekt'],ab:'tiefe'
   },
   wright:{
     n:'Willi Werkel',
@@ -548,7 +627,7 @@ const DIRS={
     encStory:'Ein gut gelaunter Tüftler im roten Hawaiihemd stellt eine gläserne Ameisenfarm und ein Modell-Hochhaus auf euren Schreibtisch: „Was passiert eigentlich in eurer KI, wenn wir einen Tornado loslassen und gleichzeitig die Pool-Leiter löschen? Lasst es uns herausfinden!“',
     encEff:{gp:8,gfx:3},
     s:{vision:4,technik:3,fuehrung:2,business:1,hype:1,polish:2},
-    aff:{aufbau:2,cozy:2,mobile:1},perks:['spezial'],flaws:['creep'],ab:'sim'
+    aff:{sim:2,puzzle:1},perks:['spezial'],flaws:['creep'],ab:'sim'
   },
   newell:{
     n:'Gabor Neumann',
@@ -560,7 +639,7 @@ const DIRS={
     encStory:'Ein gemütlicher Herr mit Vollbart, roter Brechstange und einem leuchtenden „−90 % RABATT“-Schild lehnt am Tresor: „Ich kann euch zwar nicht bei einem dritten Teil helfen — diese Zahl existiert für mich nicht —, aber ich kann euer Spiel auf die Startseite des nächsten Mega-Sales setzen.“',
     encEff:{budget:30,wl:5,hype:2},
     s:{vision:2,technik:2,fuehrung:3,business:4,hype:3,polish:2},
-    aff:{koop:2,br:1,mmorpg:1},perks:['netz','ea'],flaws:['perfekt'],ab:'sale'
+    aff:{action:2,rpg:1},perks:['netz','ea'],flaws:['perfekt'],ab:'sale'
   },
   miyamotto:{
     n:'Shigeru Miyamotto',
@@ -572,7 +651,7 @@ const DIRS={
     encStory:'Ein strahlender Altmeister in bunter Bastelschürze zieht einen kleinen Blech-Roboter auf eurem Schreibtisch auf: „Wenn sich das Springen schon ohne Grafik nach purem Glück anfühlt, habt ihr gewonnen! Sollen wir gemeinsam am Spielgefühl feilen?“',
     encEff:{gp:10,gfx:4,moral:1},
     s:{vision:4,technik:2,fuehrung:3,business:1,hype:2,polish:4},
-    aff:{metroidvania:2,cozy:2,racing:1,adventure:1},perks:['kritik'],flaws:['perfekt'],ab:'tisch'
+    aff:{actadv:2,sim:2,sports:1,adventure:1},perks:['kritik'],flaws:['perfekt'],ab:'tisch'
   },
   gates:{
     n:'Billi Torweg',
@@ -588,7 +667,7 @@ const DIRS={
     encPassEff:{moral:1,hype:1},
     encEff:{budget:40,wl:3,bugs:2},
     s:{vision:2,technik:3,fuehrung:1,business:4,hype:2,polish:0},
-    aff:{aufbau:2,sport:1,mmorpg:1},perks:['netz','spar'],flaws:['buggy'],ab:'monopol'
+    aff:{sim:2,sports:1,rpg:1},perks:['netz','spar'],flaws:['buggy'],ab:'monopol'
   },
   jobs:{
     n:'Stefan Obst',
@@ -604,7 +683,7 @@ const DIRS={
     encPassEff:{moral:1},
     encEff:{gfx:9,gp:3,moral:-1},
     s:{vision:4,technik:1,fuehrung:1,business:3,hype:4,polish:3},
-    aff:{mobile:2,racing:1,adventure:1},perks:['kritik'],flaws:['diva','perfekt'],ab:'minimal'
+    aff:{puzzle:2,sports:1,adventure:1},perks:['kritik'],flaws:['diva','perfekt'],ab:'minimal'
   },
   torvalds:{
     n:'Linus Tundravalds',
@@ -620,7 +699,7 @@ const DIRS={
     encPassEff:{moral:1,gp:2},
     encEff:{bugs:-9,gfx:4,moral:-1},
     s:{vision:1,technik:4,fuehrung:0,business:1,hype:1,polish:4},
-    aff:{mmorpg:2,koop:2,aufbau:1},perks:['engine'],flaws:['diva'],ab:'kernel'
+    aff:{rpg:2,action:2,sim:1},perks:['engine'],flaws:['diva'],ab:'kernel'
   },
   zuckerberg:{
     n:'Markus Zuckerborg',
@@ -636,7 +715,7 @@ const DIRS={
     encPassEff:{moral:1,hype:1},
     encEff:{budget:35,bugs:-3,hype:-1},
     s:{vision:1,technik:3,fuehrung:1,business:4,hype:1,polish:1},
-    aff:{mobile:2,br:2,mmorpg:1},perks:['netz'],flaws:['social'],ab:'telemetry'
+    aff:{puzzle:2,action:2,rpg:1},perks:['netz'],flaws:['social'],ab:'telemetry'
   },
   pagebrin:{
     n:'Lars Seite & Sergej Brille',
@@ -652,7 +731,7 @@ const DIRS={
     encPassEff:{gp:2,moral:1},
     encEff:{wl:6,hype:3},
     s:{vision:3,technik:4,fuehrung:1,business:3,hype:3,polish:1},
-    aff:{mobile:2,aufbau:1,mmorpg:1},perks:['engine','glueck'],flaws:['creep'],ab:'pagerank'
+    aff:{puzzle:2,sim:1,rpg:1},perks:['engine','glueck'],flaws:['creep'],ab:'pagerank'
   },
   koehler:{
     n:'Gerd Tabellenkalk',
@@ -664,7 +743,7 @@ const DIRS={
     encStory:'Mit einem dicken Leitz-Ordner unterm Arm und einer frisch gegrillten Stadion-Bratwurst in der Hand schaut Gerd Tabellenkalk auf eure Bildschirme: „Kinder, eure Wirtschaftskurve hat in Monat 7 einen Knick! Ich hab euch mal schnell ein Makro mit 40.000 Zeilen gebaut.“',
     encEff:{gp:8,bugs:-4},
     s:{vision:2,technik:3,fuehrung:2,business:3,hype:0,polish:3},
-    aff:{sport:2,aufbau:2},perks:['spar','spezial'],flaws:[],ab:'excel'
+    aff:{sports:2,sim:2},perks:['spar','spezial'],flaws:[],ab:'excel'
   },
   spector:{
     n:'Werner Spektral',
@@ -676,7 +755,7 @@ const DIRS={
     encStory:'Aus dem Lüftungsschacht über eurer Kaffeemaschine klettert ein bärtiger Herr im Trenchcoat mit Schraubenschlüssel und Keycard: „Warum zwingt ihr den Spieler durch die Vordertür? Gebt ihm drei Wege, vier moralische Grauzonen und den Zahlencode 0451!“',
     encEff:{gp:9,bugs:-2},
     s:{vision:4,technik:2,fuehrung:2,business:1,hype:1,polish:3},
-    aff:{rpg:2,metroidvania:2,adventure:1},perks:['spezial'],flaws:['creep'],ab:'vent'
+    aff:{rpg:2,actadv:2,adventure:1},perks:['spezial'],flaws:['creep'],ab:'vent'
   },
   hauard:{
     n:'Taddäus Hauward',
@@ -688,7 +767,7 @@ const DIRS={
     encStory:'In einer schicken braunen Lederjacke stellt Taddäus Hauward einen leuchtenden „Fantasy“-Spielekarton und einen umgebauten Küchen-Toaster auf den Tisch: „Seht ihr diesen Berg im Hintergrund? Man kann hinaufgehen. Und ich habe euer Spiel gerade auf diesen Toaster portiert!“',
     encEff:{hype:3,wl:4,gp:4,bugs:2},
     s:{vision:2,technik:2,fuehrung:2,business:3,hype:4,polish:0},
-    aff:{mmorpg:1,aufbau:1,rpg:2},perks:['netz'],flaws:['buggy','verspricht'],ab:'works'
+    aff:{rpg:2,sim:1},perks:['netz'],flaws:['buggy','verspricht'],ab:'works'
   },
   lake:{
     n:'Sami See',
@@ -700,7 +779,7 @@ const DIRS={
     encStory:'Draußen prasselt der Regen ans Fenster, als ein finnischer Autor mit dampfender Kaffeetasse und losen Manuskriptblättern sein markantes Detektiv-Grinsen aufsetzt: „Die Dunkelheit schreibt die Geschichte um. Ich habe drei Seiten Meta-Drehbuch und sehr viel Kaffee mitgebracht.“',
     encEff:{gp:7,gfx:5,hype:1},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:3,polish:2},
-    aff:{horror:2,adventure:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'noir'
+    aff:{actadv:2,adventure:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'noir'
   },
   gilbert:{
     n:'Ronny Goldbart',
@@ -712,7 +791,7 @@ const DIRS={
     encStory:'Mit gezücktem Piratensäbel und einem Gummihuhn mit Seilrolle springt Ronny Goldbart auf euren Schreibtisch: „Eure Dialoge kämpfen wie ein dummer Bauer! Lasst mich eure Rätsel-Ketten und den Humor auf Vordermann bringen, ihr Landratten!“',
     encEff:{gp:8,moral:2},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:2,polish:3},
-    aff:{adventure:2,metroidvania:1,cozy:1},perks:['spezial','crunch'],flaws:[],ab:'insult'
+    aff:{adventure:2,actadv:1,sim:1},perks:['spezial','crunch'],flaws:[],ab:'insult'
   },
   schafer:{
     n:'Timmy Schäfer',
@@ -724,7 +803,7 @@ const DIRS={
     encStory:'Aus einer hölzernen „Chron-o-John“-Zeitreise-Kabine stolpert ein gut gelaunter Designer im 90er-Musterhemd, während ein lila Tentakel nach seiner Schulter greift: „Keine Panik! Ich komme aus der Zukunft — wenn wir jetzt mehr schrägen Cartoon-Humor einbauen, wird das Spiel ein Klassiker!“',
     encEff:{gp:7,moral:2,zeit:1},
     s:{vision:4,technik:1,fuehrung:3,business:1,hype:2,polish:1},
-    aff:{adventure:2,cozy:1,metroidvania:1},perks:['crunch'],flaws:['kosten'],ab:'fans'
+    aff:{adventure:2,sim:1,actadv:1},perks:['crunch'],flaws:['kosten'],ab:'fans'
   },
   jensen:{
     n:'Jana Jenseits',
@@ -736,7 +815,7 @@ const DIRS={
     encStory:'Im Schein einer Straßenlaterne lehnt Jana Jenseits mit roten Lederhandschuhen, Kassettenrekorder und einem in Leder gebundenen Okkultismus-Folianten: „Eurer Geschichte fehlt das echte historische Fundament und ein Hauch Gänsehaut. Sollen wir in den Archiven graben?“',
     encEff:{gp:8,gfx:4},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:2,polish:3},
-    aff:{adventure:2,horror:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'occult'
+    aff:{adventure:2,actadv:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'occult'
   },
   purcell:{
     n:'Stefan Purzel',
@@ -748,7 +827,7 @@ const DIRS={
     encStory:'Ein breit grinsender Illustrator im Trenchcoat — mit einem manisch lachenden weißen Hasen auf der Schulter — wirbelt einen riesigen Cartoon-Revolver und eine Zeichenfeder durch die Luft: „Braucht euer Projekt zufällig mehr Slapstick-Explosionen, Highway-Verfolgungsjagden und bissige Sprüche?“',
     encEff:{gfx:6,gp:6,hype:1},
     s:{vision:3,technik:1,fuehrung:2,business:1,hype:3,polish:2},
-    aff:{adventure:2,koop:1,racing:1},perks:['glueck'],flaws:['creep'],ab:'chaos'
+    aff:{adventure:2,action:1,sports:1},perks:['glueck'],flaws:['creep'],ab:'chaos'
   },
   pankratz:{
     n:'Björn Erzbaron',
@@ -760,7 +839,7 @@ const DIRS={
     encStory:'Am Eingang eurer Büroküche brät ein bärtiger Veteran in Lederweste eine riesige Fleischkeule über dem Toaster und winkt mit der Spitzhacke: „Hör mal zu, Kleiner: In deiner offenen Welt fehlt noch ordentlich Dreck, rauer Ton und eine magische Barriere. Lass mich mal ran!“',
     encEff:{gp:8,moral:2,wl:2},
     s:{vision:3,technik:1,fuehrung:3,business:1,hype:2,polish:1},
-    aff:{rpg:2,metroidvania:1,aufbau:1},perks:['spezial','crunch'],flaws:['buggy'],ab:'kolonie'
+    aff:{rpg:2,actadv:1,sim:1},perks:['spezial','crunch'],flaws:['buggy'],ab:'kolonie'
   }
 };
 
@@ -821,39 +900,5 @@ const PROJECT_EXTRAS={
 };
 
 /* ===================== Genre-Mix Synergien (Setup Screen 3) ===================== */
-const GENRE_MIX_PAIRS={
-  'aufbau+rpg':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Königreich- & Rollenspiel',d:'Helden-Quests treffen auf Siedlungsbau — enorme Langzeitmotivation!',eff:{gp:5,hype:1}},
-  'metroidvania+rpg':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Soulsvania / Action-RPG',d:'Präzise Erkundung mit tiefem Charakter-Build — Kritiker lieben es!',eff:{gp:5,gfx:2}},
-  'adventure+rpg':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Story-getriebenes Epos',d:'Entscheidungen, Dialogbäume und große Rollenspiel-Welt.',eff:{gp:5,hype:1}},
-  'horror+koop':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Koop-Survival-Horror',d:'Gemeinsam im Dunkeln schreien — ein absoluter Streamer-Magnet!',eff:{gp:4,hype:2,wl:2}},
-  'adventure+horror':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Mystery- & Psycho-Thriller',d:'Dichte Rätsel-Atmosphäre und unheimliche Wendungen.',eff:{gp:5,gfx:2}},
-  'aufbau+cozy':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Wohlfühl-Aufbauspiel',d:'Entspanntes Bauen und Gärtnern ohne Zeitdruck.',eff:{gp:4,moral:1,wl:2}},
-  'aufbau+sport':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Sport- & Vereinsmanager',d:'Taktiktafel, Transfermarkt und Stadionausbau in Perfektion!',eff:{gp:6,bugs:-1}},
-  'racing+sport':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Motorsport-Karriere',d:'Rennsport-Action mit Lizenz- und Team-Atmosphäre.',eff:{gp:4,gfx:3,hype:1}},
-  'koop+mmorpg':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Soziales Online-Abenteuer',d:'Gilden, Raids und nahtloses Koop-Zusammenspiel.',eff:{gp:4,hype:2,bugs:1}},
-  'br+koop':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Squad-Shooter / Extraction',d:'Taktisches Teamplay ums Überleben.',eff:{gp:4,hype:2}},
-  'adventure+cozy':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Herzliches Erzähl-Abenteuer',d:'Liebenswerte Figuren und handgemachte Rätsel.',eff:{gp:4,gfx:2,moral:1}},
-  'horror+metroidvania':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Gothic-Metroidvania',d:'Dunkle Kathedralen, verfluchte Bosse und versteckte Pfade.',eff:{gp:4,gfx:3}},
-  'cozy+mobile':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Pocket-Wohlfühlspiel',d:'Perfekt für zwischendurch auf jedem Bildschirm.',eff:{gp:3,hype:1,wl:2}},
-  'aufbau+mobile':{tier:'dream',cls:'p',label:'🌟 Traum-Kombi: Pocket-Tycoon',d:'Hoher „Nur noch kurz ernten“-Faktor.',eff:{gp:3,hype:1,wl:2}},
-  'cozy+horror':{tier:'wild',cls:'',label:'⚡ Kult-Experiment: Cute-but-Creepy Horror',d:'Erst niedlich, dann verstörend — schwer zu balancieren, aber virales Kult-Potenzial!',eff:{gp:4,hype:2,bugs:2}},
-  'br+cozy':{tier:'wild',cls:'',label:'⚡ Wildes Experiment: Kuschel-Battle-Royale',d:'Bunter Party-Hindernislauf ums letzte Krönchen — technisch knifflig!',eff:{gp:3,hype:1,bugs:2}},
-  'adventure+mmorpg':{tier:'wild',cls:'',label:'⚡ Ambitionierter Mix: Story-MMO',d:'Vollvertonte Einzelspieler-Story in einer Online-Welt verschlingt Ressourcen.',eff:{gp:5,bugs:3,zeit:-1}},
-  'horror+sport':{tier:'wild',cls:'',label:'⚡ Kurioser Mix: Monster-Liga-Sport',d:'Mutige Nische zwischen Stadion und Gruft!',eff:{gp:3,hype:1,bugs:2}}
-};
-
-function getGenreMixInfo(mainG,subG){
-  if(!subG||subG==='none'||subG===mainG||!GENRES[subG])return null;
-  const key=[mainG,subG].sort().join('+');
-  if(GENRE_MIX_PAIRS[key])return GENRE_MIX_PAIRS[key];
-  return {
-    tier:'solid',
-    cls:'p',
-    label:`✨ Genre-Mix: ${GENRES[mainG].n} × ${GENRES[subG].n}`,
-    d:'Frische Kombination zweier Spielmechaniken: Kombiniert eure Studiowerte und hebt euch vom Einheitsbrei ab.',
-    eff:{gp:3,gfx:1}
-  };
-}
-
 // Nur Legenden mit Porträt im Ordner raw-assets/chars sind spielbar (Begegnungen, Director-Wahl, Album)
 const LEGEND_KEYS=Object.keys(DIRS).filter(k=>(DIRS[k].img||'').includes('/chars/'));

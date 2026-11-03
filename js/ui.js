@@ -669,7 +669,7 @@ function renderEngineLab(m){
 /* ===================== Liga, Rivalen & Branchen-Charts ===================== */
 function renderLeagueView(m){
   const rivals=getAllRivals();
-  const tr=C.trend||{hot:'rpg',cold:'sport',note:''};
+  const tr=C.trend||{hot:'rpg',cold:'sports',note:''};
   const lastAwards=C.lastAwards||[];
 
   m.innerHTML=`<span class="stamp">🏆 Branchen-Liga, Trends & Ruhmeshalle</span>
@@ -720,7 +720,7 @@ function previewSafe(eff){
 function optHint(o){
   const hints=[];
   if(o.set&&o.set.world){
-    const g=GENRES[S.genre];
+    const g=worldFit();
     if(g.w.includes(o.set.world))hints.push('<span class="chip p">Welt passt zum Genre (+3 GP, +2 GFX)</span>');
     else if(g.bad.includes(o.set.world))hints.push('<span class="chip n">Welt passt nicht zum Genre (−4 GP, −2 GFX, +2 Bugs)</span>');
   }
@@ -1268,7 +1268,7 @@ function renderEnd(m){
     $('towelP').onclick=()=>{S=null;setupDraft=null;ensureSetupDraft();setupDraft.mode='towel';wsTab='board';render();save()};
   }
   $('expChron').onclick=()=>openProfileModal('chronicle');
-  $('quit').onclick=()=>{C=null;S=null;setupDraft=null;setupStep=1;wsTab='board';render();save()};
+  const q=$('quit');if(q)q.onclick=()=>{C=null;S=null;setupDraft=null;setupStep=1;wsTab='board';render();save()};
 }
 
 /* ===================== 4-Schritte-Assistent: Gründung & Projektplanung ===================== */
@@ -1291,7 +1291,8 @@ function ensureSetupDraft(){
     ip:'neu',
     model:'kauf',
     genre:'rpg',
-    subGenre:'none',
+    subGenre:defaultSub('rpg'),
+    gmod:'none',
     extras:[],
     mode:'game',
     engGoal:'gen',
@@ -1330,7 +1331,8 @@ function launchSetupProject(){
   const cfg={
     title:(setupDraft.title||'').trim()||randTitle(),
     genre:setupDraft.genre,
-    subGenre:setupDraft.subGenre!=='none'?setupDraft.subGenre:null,
+    subGenre:subGenreOf(setupDraft.genre,setupDraft.subGenre)?setupDraft.subGenre:defaultSub(setupDraft.genre),
+    gmod:GENRE_MODS[setupDraft.gmod]?setupDraft.gmod:null,
     tier:(first&&setupDraft.tier!=='indie')||(!first&&C.studio.kasse<TIERS[setupDraft.tier].min)?'indie':setupDraft.tier,
     model:setupDraft.model,
     ip:setupDraft.ip,
@@ -1470,7 +1472,7 @@ function renderSetup(m){
   const stepLabels=[
     [1,'1. Studio & Director'],
     [2,'2. Klasse & Modell'],
-    [3,'3. Genre & Mix'],
+    [3,'3. Genre & Sub-Genre'],
     [4,'4. Extras & Start']
   ];
 
@@ -1586,57 +1588,53 @@ function renderSetup(m){
       </div>
       <div class="wiz-nav">
         <button type="button" class="btn ghost" id="wizPrev">← Zurück: Studio & Director</button>
-        <button type="button" class="btn" id="wizNext">Weiter: Genre & Mix →</button>
+        <button type="button" class="btn" id="wizNext">Weiter: Genre & Sub-Genre →</button>
       </div>`;
   }else if(setupStep===3){
     const mainG=GENRES[setupDraft.genre]||GENRES.rpg;
-    const subKey=(setupDraft.subGenre&&setupDraft.subGenre!=='none'&&setupDraft.subGenre!==setupDraft.genre)?setupDraft.subGenre:null;
-    const subG=subKey?GENRES[subKey]:null;
-    const mixInfo=subKey?getGenreMixInfo(setupDraft.genre,subKey):null;
-    const blendGfxW=subG?(mainG.gfxW*0.7+subG.gfxW*0.3):mainG.gfxW;
-    const combinedStats=Object.keys(STATS).map(sk=>{
-      const v=(mainG.s[sk]||0)*4+(subG?(subG.s[sk]||0)*2:0);
-      return `${STATS[sk]} +${v}`;
-    }).join(' · ');
+    const subKey=subGenreOf(setupDraft.genre,setupDraft.subGenre)?setupDraft.subGenre:defaultSub(setupDraft.genre);
+    const subG=subGenreOf(setupDraft.genre,subKey);
+    const blendGfxW=subG?.gfxW!=null?(mainG.gfxW*0.5+subG.gfxW*0.5):mainG.gfxW;
+    const combinedStats=Object.keys(STATS).map(sk=>`${STATS[sk]} +${(mainG.s[sk]||0)*4+(subG?.s?.[sk]||0)*2}`).join(' · ');
+    const bonus=Object.entries(subG?.b||{}).map(([k,v])=>chip([k,Math.round(v*0.5)])).join('');
+    const fit=subG?.fit||mainG.fit;
+    const gm=GENRE_MODS[setupDraft.gmod]?setupDraft.gmod:null;
+    const gmFit=gm?modFit(setupDraft.genre,subKey,gm):null;
+    const fitTag=k=>{const f=modFit(setupDraft.genre,subKey,k);return f==='syn'?' <span class="pos">✓ Synergie</span>':f==='clash'?' <span class="neg">✗ beißt sich</span>':''};
+    const modEff=gm?Object.entries({...GENRE_MODS[gm].b}).map(e=>chip(e)).join(''):'';
 
     bodyHTML=`
-      <h3>Schritt 3: Genre & optionaler Genre-Mix</h3>
+      <h3>Schritt 3: Genre & Sub-Genre</h3>
       ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+15% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−10% Verkäufe)</span></div>`:''}
       <div class="field">
-        <span class="label">1. Hauptgenre wählen</span>
+        <span class="label">1. Hauptgenre</span>
         <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
           const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
           const isHot=tr&&tr.hot===k;
           const isCold=tr&&tr.cold===k;
-          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([s,v])=>STATS[s]+' +'+(v*4)).join(' · ')}</code><span class="more">${g.d} (GP ${Math.round((1-g.gfxW)*100)}% / GFX ${Math.round(g.gfxW*100)}%)${g.fit!=='kauf'?' · Passt zu '+MODELS[g.fit].n:''}</span></label>`;
+          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*4)).join(' · ')}</code><span class="more">${esc(g.d)}</span></label>`;
         }).join('')}</div>
       </div>
-      <details class="fold" ${subKey?'open':''}>
-        <summary>➕ Optional: Zweites Genre für Genre-Mix kombinieren (${subG?`Aktiv: + ${subG.n}`:'Kein Mix — hier aufklappen'})</summary>
-        <div class="fold-body">
-          <div class="subgenre-pills">
-            <label class="subgenre-pill">
-              <div><input type="radio" name="subg" value="none" ${!subKey?'checked':''}><b>Kein Mix (Klassisch)</b></div>
-              <span class="note">100 % Fokus auf ${esc(mainG.n)}.</span>
-            </label>
-            ${Object.entries(GENRES).filter(([k])=>k!==setupDraft.genre).map(([k,g])=>{
-              const info=getGenreMixInfo(setupDraft.genre,k);
-              const badge=info?.tier==='dream'?'🌟 Traum-Kombi':info?.tier==='wild'?'⚡ Experiment':'✨ Mix';
-              return `<label class="subgenre-pill">
-                <div><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>+ ${esc(g.n)}</b></div>
-                <span class="note">${badge} · ${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(', ')}</span>
-              </label>`;
-            }).join('')}
-          </div>
+      <div class="field">
+        <span class="label">2. Sub-Genre von ${esc(mainG.n)}</span>
+        <div class="choices compact">${Object.entries(mainG.subs).map(([k,sg])=>`<label class="choice"><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>${esc(sg.n)}</b><code>${Object.entries(sg.s||{}).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(' · ')}${sg.fit&&sg.fit!=='kauf'?' · passt zu '+MODELS[sg.fit].n:''}</code><span class="more">${esc(sg.d)}</span></label>`).join('')}</div>
+      </div>
+      <div class="field">
+        <span class="label">3. Optionaler Modifikator</span>
+        <div class="choices compact">
+          <label class="choice"><input type="radio" name="gmod" value="none" ${!gm?'checked':''}><b>Keiner</b><span class="more">Klassisch, ohne genreübergreifende Zutat.</span></label>
+          ${Object.entries(GENRE_MODS).map(([k,md])=>`<label class="choice"><input type="radio" name="gmod" value="${k}" ${gm===k?'checked':''}><b>${esc(md.n)}${fitTag(k)}</b><code>${typeof md.sales==='object'?'Verkäufe ×'+nf(md.sales.kauf,2)+' bis ×'+nf(md.sales.f2p,2):md.sales!==1?'Verkäufe ×'+nf(md.sales,2):'Verkäufe ±0'}${md.monthly?' · Serverkosten ab Beta':''}</code><span class="more">${esc(md.d)}</span></label>`).join('')}
         </div>
-      </details>
-      <div class="synergy-box ${mixInfo?mixInfo.tier:''}">
-        <b>${mixInfo?mixInfo.label:`🎯 Klassischer Fokus: ${mainG.n}`}</b>
-        <span class="note">${mixInfo?mixInfo.d:mainG.d}</span>
+      </div>
+      <div class="synergy-box ${gmFit==='syn'?'dream':gmFit==='clash'?'wild':''}">
+        <b>🎯 ${esc(mainG.n)} · ${esc(subG?.n||'')}${gm?' + '+esc(GENRE_MODS[gm].n):''}</b>
+        <span class="note">${esc(subG?.d||mainG.d)}</span>
         <div class="chips">
           <span class="chip">${combinedStats}</span>
           <span class="chip">🎮 Gameplay ${Math.round((1-blendGfxW)*100)} % · 🎨 Grafik ${Math.round(blendGfxW*100)} %</span>
-          ${mixInfo&&mixInfo.eff?Object.entries(mixInfo.eff).map(([ek,ev])=>chip([ek,ek==='wl'?ev*1000:ev])).join(''):''}
+          ${fit!=='kauf'?`<span class="chip">Passt zu ${MODELS[fit].n} (+1 Hype)</span>`:''}
+          ${bonus}${modEff}
+          ${gmFit==='syn'?`<span class="chip p">Synergie: +${MOD_SYN.gp} Gameplay, +${MOD_SYN.hype} Hype</span>`:gmFit==='clash'?`<span class="chip n">Reibung: ${MOD_CLASH.gp} Gameplay, +${MOD_CLASH.bugs} Bugs</span>`:''}
         </div>
       </div>
       <div class="wiz-nav">
@@ -1653,9 +1651,7 @@ function renderSetup(m){
     const extraUpfront=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.upfront||0)*sc),0);
     const extraMonthly=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.monthly||0)*sc),0);
     const netStartBudget=startBudget-ipFee-extraUpfront;
-    const subKey=(setupDraft.subGenre&&setupDraft.subGenre!=='none'&&setupDraft.subGenre!==setupDraft.genre)?setupDraft.subGenre:null;
-    const mixInfo=subKey?getGenreMixInfo(setupDraft.genre,subKey):null;
-    const isSportGenre=['sport','racing'].includes(setupDraft.genre)||['sport','racing'].includes(subKey);
+    const isSportGenre=setupDraft.genre==='sports';
 
     bodyHTML=`
       <h3>Schritt 4: Extras, Lizenzen & Projektstart</h3>
@@ -1682,7 +1678,7 @@ function renderSetup(m){
         <div class="mini">
           <div><span>Studio & Director</span><span><b>${esc(setupDraft.studioName)}</b> · ${esc(selDir.n)}</span></div>
           <div><span>Spiel & Rahmen</span><span><b>„${esc(setupDraft.title)}“</b> · ${t.n} · ${IPS[ipKey]?.n||'Fortsetzung'} · ${MODELS[setupDraft.model]?.n}</span></div>
-          <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subKey?' × '+GENRES[subKey]?.n:''}</b> ${mixInfo?`(${mixInfo.label})`:''}</span></div>
+          <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subGenreOf(setupDraft.genre,setupDraft.subGenre)?' · '+subGenreOf(setupDraft.genre,setupDraft.subGenre).n:''}${GENRE_MODS[setupDraft.gmod]?' + '+GENRE_MODS[setupDraft.gmod].n:''}</b></span></div>
           <div><span>Startkapital / Kasse</span><span>${money(startBudget)}</span></div>
           ${(ipFee+extraUpfront)>0?`<div><span>Abzgl. Vorabkosten (Lizenz & Extras)</span><span class="neg">−${money(ipFee+extraUpfront)}</span></div>`:''}
           <div><span><b>Verfügbares Budget in Monat 1</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(extraMonthly)}/M für Extras)`:''}</span></div>
@@ -1746,10 +1742,11 @@ function renderSetup(m){
   m.querySelectorAll('input[name=g]').forEach(r=>r.onchange=()=>{
     if(r.checked){
       setupDraft.genre=r.value;
-      if(setupDraft.subGenre===r.value)setupDraft.subGenre='none';
+      setupDraft.subGenre=defaultSub(r.value);
       renderMain();
     }
   });
+  m.querySelectorAll('input[name=gmod]').forEach(r=>r.onchange=()=>{if(r.checked){setupDraft.gmod=r.value;renderMain()}});
   m.querySelectorAll('input[name=subg]').forEach(r=>r.onchange=()=>{
     if(r.checked){
       setupDraft.subGenre=r.value;

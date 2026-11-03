@@ -40,15 +40,22 @@ function winChance(dc,mod,adv=false){
 function genreName(sObj=S){
   if(!sObj)return '';
   const main=GENRES[sObj.genre]?.n||sObj.genre;
-  const sub=sObj.subGenre&&GENRES[sObj.subGenre]?GENRES[sObj.subGenre].n:null;
-  return sub?`${main} × ${sub}`:main;
+  const sub=subGenreOf(sObj.genre,sObj.subGenre)?.n;
+  const mod=GENRE_MODS[sObj.gmod]?' + '+GENRE_MODS[sObj.gmod].n:'';
+  return (sub?`${main} · ${sub}`:main)+mod;
+}
+
+// Welt-Vorlieben: Sub-Genre überschreibt das Hauptgenre
+function worldFit(){
+  const g=GENRES[S.genre],sub=subGenreOf(S.genre,S.subGenre);
+  return {w:sub?.w||g.w,bad:sub?.bad||g.bad};
 }
 
 function gfxWeight(){
   if(!S)return 0.45;
   const mainW=GENRES[S.genre]?.gfxW??0.45;
-  const subW=S.subGenre&&GENRES[S.subGenre]?GENRES[S.subGenre].gfxW:null;
-  const base=subW!=null?(mainW*0.7+subW*0.3):mainW;
+  const subW=subGenreOf(S.genre,S.subGenre)?.gfxW;
+  const base=subW!=null?(mainW*0.5+subW*0.5):mainW;
   const tierAdj=S.tier==='aaa'?0.08:S.tier==='indie'?-0.05:0;
   return clamp(base+tierAdj,0.25,0.65);
 }
@@ -80,7 +87,7 @@ function getAllRivals(){
         id:'ex_'+idx,
         name:`${last} Interactive`,
         founder:`${ex.personName} (Ex-${STAFF[ex.id]?.n||'Lead'})`,
-        fav:ex.id==='art'?'adventure':ex.id==='senior'?'koop':'rpg',
+        fav:ex.id==='art'?'adventure':ex.id==='senior'?'action':'rpg',
         skill:64+(ex.level||1)*4,
         tag:`Gegründet von eurem abgewanderten Lead ${ex.personName}. Hochmotiviert, es euch zu beweisen!`,
         exLead:true
@@ -338,7 +345,7 @@ function resolveContract(id,ok,crit){
 
 const fameBonus=()=>C?Math.floor(((C.studio.fame||0)+(C.dir.fame||0))/15):0;
 const fits=c=>(!c.tiers||c.tiers.includes(S.tier))&&(!c.models||c.models.includes(S.model))&&(!c.ip||c.ip.includes(S.ip))&&(!c.mods||S.mods)&&(!c.noEA||!S.ea)&&(!c.ea||S.ea)&&(!c.cond||c.cond(S))&&(!c.flaw||hasF(c.flaw));
-const optOk=o=>(!o.g||o.g.includes(S.genre)||(S.subGenre&&o.g.includes(S.subGenre)))&&(!o.ng||!o.ng.includes(S.genre))&&(!o.cond||o.cond(S));
+const optOk=o=>(!o.g||o.g.includes(S.genre)||o.g.includes(S.genre+'.'+S.subGenre))&&(!o.ng||!o.ng.includes(S.genre))&&(!o.cond||o.cond(S));
 function addLog(t){if(!S)return;S.log.unshift(t);if(S.log.length>90)S.log.pop()}
 function mandFor(r){return (MAND_AT[r]||[]).filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
 
@@ -346,9 +353,9 @@ function mandFor(r){return (MAND_AT[r]||[]).filter(id=>!S.mdone.includes(id)&&(i
 function startGame(o){
   if(!C.trend)rollMarketTrend();
   const g=GENRES[o.genre],t=TIERS[o.tier],dir=D();
-  const subKey=(o.subGenre&&o.subGenre!=='none'&&o.subGenre!==o.genre&&GENRES[o.subGenre])?o.subGenre:null;
-  const subG=subKey?GENRES[subKey]:null;
-  const mixInfo=subKey?getGenreMixInfo(o.genre,subKey):null;
+  const subKey=subGenreOf(o.genre,o.subGenre)?o.subGenre:defaultSub(o.genre);
+  const subG=subGenreOf(o.genre,subKey);
+  const gmod=GENRE_MODS[o.gmod]?o.gmod:null;
 
   // Extras normalisieren (unterstützt Array o.extras sowie Legacy-Flags o.mods / o.ea)
   const extrasSet=new Set(Array.isArray(o.extras)?o.extras:[]);
@@ -382,20 +389,22 @@ function startGame(o){
       else res[k]=(res[k]||0)+half;
     }
   }
-  if(mixInfo&&mixInfo.eff){
-    for(const [k,v] of Object.entries(mixInfo.eff)){
-      if(k==='wl')res.wl+=Math.round(v*1000*t.sales);
-      else res[k]=(res[k]||0)+v;
-    }
+
+  // Genre-Modifikator: eigene Effekte plus Synergie oder Reibung mit Genre/Sub-Genre
+  if(gmod){
+    const mb={...GENRE_MODS[gmod].b},fitM=modFit(o.genre,subKey,gmod);
+    if(fitM==='syn')for(const k in MOD_SYN)mb[k]=(mb[k]||0)+MOD_SYN[k];
+    if(fitM==='clash')for(const k in MOD_CLASH)mb[k]=(mb[k]||0)+MOD_CLASH[k];
+    for(const k in mb)res[k]=(res[k]||0)+mb[k];
   }
 
   if((g.fit===o.model||(subG&&subG.fit===o.model))&&o.model!=='kauf')res.hype+=1;
-  const isHot=C.trend&&(C.trend.hot===o.genre||C.trend.hot===subKey);
-  const isCold=C.trend&&C.trend.cold===o.genre&&C.trend.hot!==subKey;
+  const isHot=C.trend&&C.trend.hot===o.genre;
+  const isCold=C.trend&&C.trend.cold===o.genre;
   if(isHot)res.hype+=1;
   res.hype+=IPS[ip].hype;
 
-  const aff=(dir.aff[o.genre]||0)+(subKey?Math.round((dir.aff[subKey]||0)*0.5):0)+(dir.perks.includes('spezial')?1:0);
+  const aff=(dir.aff[o.genre]||0)+(dir.perks.includes('spezial')?1:0);
   res.gp+=aff*5+(dir.perks.includes('spezial')?4:0);
   res.gfx+=aff*3;
   res.moral+=dir.s.fuehrung-1;
@@ -433,7 +442,7 @@ function startGame(o){
   res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,10);res.bugs=Math.max(0,res.bugs);
   const plan={};for(const k in PLAN)plan[k]=PLAN[k].def;
 
-  S={screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
+  S={screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,gmod,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
      mods:extras.includes('mods'),ea:extras.includes('ea'),
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
@@ -481,7 +490,7 @@ function modFor(st){
 
   const eng=C&&C.studio.engine;
   if(st==='technik'&&S.engine==='eigen'&&eng){
-    if(eng.modules.includes('netcode')&&['koop','mmorpg','br'].includes(S.genre))m+=5;
+    if(eng.modules.includes('netcode')&&['action','survival','sports'].includes(S.genre))m+=5;
     if(eng.licenseMode==='seat'&&!hasStaff('senior'))m-=4;
   }
   if(st==='team'&&S.layoff)m-=6;
@@ -566,7 +575,7 @@ function applySet(sp,ok){
 
 function onSet(st,out,ok){
   if(st.world){
-    const g=GENRES[S.genre];
+    const g=worldFit();
     if(g.w.includes(st.world)){out.push(...apply({gp:3,gfx:2}),['note','Weltstruktur passt zum Genre'])}
     else if(g.bad.includes(st.world)){out.push(...apply({gp:-4,gfx:-2,bugs:2}),['note','Weltstruktur passt nicht zum Genre'])}
   }
@@ -669,6 +678,8 @@ function monthLines(){
       if(mCost)add('mods',mCost*sc);
     });
   }
+  // Live Service: Server und Saison-Team ab der Beta-Phase
+  if(GENRE_MODS[S.gmod]?.monthly&&S.round>=8)add('server',GENRE_MODS[S.gmod].monthly*sc);
 
   if(C&&C.studio.engine){
     const eng=C.studio.engine;
@@ -997,7 +1008,7 @@ function vx(c){
 }
 function fillTxt(s){
   return String(s||'').replace(/\{title\}/g,S?.title||'euer Spiel').replace(/\{studio\}/g,C?.studio?.name||'euer Studio')
-    .replace(/\{dir\}/g,C?.dir?.n||'der Director').replace(/\{genre\}/g,S?genreName(S):'Spiel');
+    .replace(/\{dir\}/g,C?.dir?.n||'der Director').replace(/\{genre\}/g,S?(subGenreOf(S.genre,S.subGenre)?.n||GENRES[S.genre]?.n):'Spiel');
 }
 
 /* ===================== Interviews ===================== */
@@ -1282,7 +1293,7 @@ function marketFactor(sel,assumeChina){
   return sum/.68;
 }
 function langCost(sel){let c=0;for(const k in sel){if(k==='en'||!sel[k])continue;c+=sel[k]===2?8:3;if(k==='zh')c+=5}return c*T().scale}
-function platFactor(){const mob=S.genre==='mobile';return {pc:mob?.6:1,konsole:mob?1.3:1.7,exklusiv:1.05,alle:mob?2.6:1.9}[S.plat]||1}
+function platFactor(){const mob=!!subGenreOf(S.genre,S.subGenre)?.mobile;return {pc:mob?.6:1,konsole:mob?1.3:1.7,exklusiv:1.05,alle:mob?2.6:1.9}[S.plat]||1}
 function ageFactor(){return ({0:1.1,6:1.1,12:1.05,16:1,18:.85}[S.age]??1)*(S.lootbox?.92:1)}
 function licFactor(){return {auto:1.25,liga:1.4,ttrpg:1.2,musik:1.05}[S.lic]||1}
 function ipSales(){return S.seq?1.3+(S.seq.meta-70)/100:IPS[S.ip].sales}
@@ -1345,8 +1356,8 @@ function sales(){
     const trendMult=S.trendHot?1.15:S.trendCold?0.90:1;
     const awardMult=1+wonAwardNames(e).length*0.08;
     const exList=S.extras||[];
-    const sportFit=['sport','racing'].includes(S.genre)||['sport','racing'].includes(S.subGenre);
-    const extraSalesMult=(exList.includes('sportLic')?(sportFit?1.25:1.10):1)
+    const sportFit=S.genre==='sports';
+    const extraSalesMult=modSales(S.gmod,S.model)*(exList.includes('sportLic')?(sportFit?1.25:1.10):1)
       *(exList.includes('coopMode')?1.15:1)
       *(exList.includes('crossplay')?1.10:1)
       *(exList.includes('collectors')?(S.model!=='f2p'?1.15:1.05):1)
@@ -1374,6 +1385,7 @@ function sales(){
     if(extraSalesMult>1.001)mods.push('Projekt-Extras ×'+nf(extraSalesMult,2));
     if(S.age!=null)mods.push('USK '+S.age+' ×'+nf(ageFactor(),2));
     if(S.trendHot)mods.push('Boom-Genre ×1,15');
+    if(modSales(S.gmod,S.model)!==1)mods.push(GENRE_MODS[S.gmod].n+' ×'+nf(modSales(S.gmod,S.model),2));
     if(S.trendCold)mods.push('Übersättigt ×0,90');
     if(wonAwardNames(e).length)mods.push(`Awards ×${nf(awardMult,2)}`);
     if(mods.length)detail.push(['Marktfaktoren',mods.join(' · ')]);
@@ -1453,7 +1465,6 @@ function finishGame(){
     if(S.engine==='eigen'){
       eng.runs=(eng.runs||1)+1;
       if(!eng.genres.includes(S.genre))eng.genres.push(S.genre);
-      if(S.subGenre&&!eng.genres.includes(S.subGenre))eng.genres.push(S.subGenre);
       if(S.engAction==='new'){
         eng.age=1;
         if(e.meta>=70)eng.techPts=(eng.techPts||0)+1;

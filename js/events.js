@@ -3,7 +3,7 @@ const MAND_AT={0:['engine','world'],4:['cast','license'],6:['platform'],8:['lang
 
 function getMand(id){
   const p=T()?T().prices.map(x=>nf(x,2)+' €'):['','',''];
-  const gKey=S?S.genre:'metroidvania';
+  const gKey=S?S.genre:'rpg';
   const gName=GENRES[gKey]?GENRES[gKey].n:'dieses Genre';
   const eng=C&&C.studio&&C.studio.engine?C.studio.engine:null;
 
@@ -28,7 +28,7 @@ function getMand(id){
     const debt=eng.techDebt||0;
 
     // Routine-Bonus (wird mit Anzahl Läufe besser) vs. Alterungs-Effekt (schadet Grafik & Gameplay wenn nicht modernisiert!)
-    const routineBugs=-Math.min(5,runs)-(eng.modules.includes('netcode')&&['koop','mmorpg','br'].includes(gKey)?3:0)+debt*2;
+    const routineBugs=-Math.min(5,runs)-(eng.modules.includes('netcode')&&['action','survival','sports'].includes(gKey)?3:0)+debt*2;
     const modGfx=(eng.modules.includes('render3d')?6:0)+(eng.modules.includes('raytracing')?8:0)+(eng.modules.includes('editor')?2:0);
     const modGp=(eng.modules.includes('gameplay_kit')?6:0)+(eng.modules.includes('ai_sandbox')?7:0)+(eng.modules.includes('editor')?3:0)+Math.min(4,runs);
     // Genre-Spezialisierung aus einem Engine-Projekt
@@ -83,8 +83,8 @@ function getMand(id){
       {l:'Streamer als Gastrolle',st:'business',dc:11,set:{cast:'streamer'},sd:'Bringt junge Spieler und Wishlists, wenn es klappt.',s:{hype:2,wl:3},sx:'Sein Clip aus dem Tonstudio geht viral.',f:{hype:-1},fx:'Er liest den Text ab, als wäre es ein Werbespot.'},
       {l:'Das Team spricht selbst',st:'team',dc:10,set:{cast:'team'},sd:'Kostet nichts. Kann charmant oder peinlich werden.',s:{moral:1,gp:3},sx:'Der Buchhalter ist ein verborgenes Talent.',f:{hype:-1},fx:'Ein Streamer schneidet die schlimmsten Zeilen zusammen.'}]},
     license:{t:'Offizielle Lizenzen',x:'Echte Marken machen ein Spiel glaubwürdiger. Und teurer.',o:[
-      {l:'Echte Automarken',g:['racing'],safe:{budget:-25,hype:2,gfx:3},set:{lic:'auto'},sd:'Originalgetreue Autos von zwölf Herstellern. Verkäufe +25 %, aber die Hersteller reden mit.',sx:'Die Fahrzeugliste liest sich wie ein Autosalon.'},
-      {l:'Offizielle Liga mit echten Vereinen',g:['sport'],safe:{budget:-35,hype:3,gp:2},set:{lic:'liga'},sd:'Echte Vereine, Trikots und Spielernamen. Verkäufe +40 %, aber 10 % Umsatzabgabe.',sx:'Der Lieblingsverein jedes Spielers ist dabei.'},
+      {l:'Echte Automarken',g:['sports.arcaderacer','sports.simracer'],safe:{budget:-25,hype:2,gfx:3},set:{lic:'auto'},sd:'Originalgetreue Autos von zwölf Herstellern. Verkäufe +25 %, aber die Hersteller reden mit.',sx:'Die Fahrzeugliste liest sich wie ein Autosalon.'},
+      {l:'Offizielle Liga mit echten Vereinen',g:['sports.sim','sports.manager'],safe:{budget:-35,hype:3,gp:2},set:{lic:'liga'},sd:'Echte Vereine, Trikots und Spielernamen. Verkäufe +40 %, aber 10 % Umsatzabgabe.',sx:'Der Lieblingsverein jedes Spielers ist dabei.'},
       {l:'Bekannte Pen-&-Paper-Regelwerk-Lizenz',g:['rpg','adventure'],safe:{budget:-20,hype:2,gp:5},set:{lic:'ttrpg'},sd:'Kult-Universum mit tiefem Regelwerk. Verkäufe +20 %, aber 8 % Lizenzabgabe.',sx:'Die Rollenspiel-Community feiert euch ab Tag eins.'},
       {l:'Charthits im Soundtrack',safe:{budget:-15,hype:1,gfx:2,gp:2},set:{lic:'musik'},sd:'Zehn bekannte Songs. Fühlt sich groß an, Streamer müssen aber stumm schalten.',sx:'Der Trailer mit dem Sommerhit läuft überall.'},
       {l:'Keine Lizenzen',safe:{},set:{lic:'none'},sd:'Erfundene Marken, erfundene Songs. Spart Geld.',sx:'Der „Volksflitzer GT“ sieht verdächtig bekannt aus.'}]},

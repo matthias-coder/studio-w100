@@ -114,13 +114,27 @@ function normalizeCareer(c){
     const keys=Object.keys(GENRES);
     c.trend={hot:keys[0],cold:keys[1],note:'Branchen-Beobachtung aktiv'};
   }
+  dropUnknownGenres(c);
   return c;
+}
+
+// Spielstände mit alten Genre-Schlüsseln werden nicht übernommen: Unbekanntes fliegt raus
+function dropUnknownGenres(c){
+  const eng=c.studio?.engine;
+  if(eng){
+    eng.genres=(eng.genres||[]).filter(k=>GENRES[k]);
+    if(eng.spec&&!GENRES[eng.spec])eng.spec=null;
+  }
+  if(c.trend&&(!GENRES[c.trend.hot]||!GENRES[c.trend.cold]))c.trend=null;
+  if(c.dir?.aff)c.dir.aff=Object.fromEntries(Object.entries(c.dir.aff).filter(([k])=>GENRES[k]));
 }
 
 function normalizeProject(s){
   if(!s||!s.res)return s;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
+  // Laufendes Projekt mit altem Genre verwerfen
+  if(!subGenreOf(s.genre,s.subGenre))return null;
   return s;
 }
 
