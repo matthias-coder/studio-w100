@@ -318,7 +318,7 @@ function renderSheet(){
       <p class="note" style="margin:0">Gründet euer Studio, wählt einen Game Director und führt euer Projekt durch 12 Monate mit <b>W100-Proben</b> (Krit ab 96, Patzer 1–5).</p>
       <details class="fold" open>
         <summary>🌟 ${totCount} Branchen-Legenden (${unlCount}/${totCount})</summary>
-        <div class="fold-body"><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen ${totCount-6} Ikonen tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet!</p></div>
+        <div class="fold-body"><p class="note" style="margin:0">Zu Beginn ist keine Legende freigeschaltet. Die erste gibt es beim ersten <b>Top-Erfolg</b> (Wertung ab 80 oder Hit), eine weitere beim ersten <b>Double-A- oder Triple-A-Release</b>. Danach tauchen Legenden als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet.</p></div>
       </details>
       <details class="fold">
         <summary>⚙️ Engine-Labor, Rivalen & GOTY</summary>
@@ -542,12 +542,13 @@ function renderLegendsView(m){
       <span class="stamp">🌟 Halle der Branchen-Legenden (${unl.length} / ${allEntries.length})</span>
       <button class="btn small ghost" id="backBoard">← Zurück zum Spieltisch</button>
     </div>
-    <p class="note" style="margin:0">6 Legenden sind ab Start verfügbar, 20 weitere schaltest du durch Zufallsbegegnungen im Spiel frei. <i>(Klick auf ein Porträt vergrößert die Sammelkarte.)</i></p>
+    <p class="note" style="margin:0">Zu Beginn sind alle ${allEntries.length} Legenden gesperrt. Die erste gibt es beim ersten Top-Erfolg (Wertung ab 80 oder Hit), eine weitere beim ersten Double-A- oder Triple-A-Release, danach über Zufallsbegegnungen. <i>(Klick auf ein Porträt vergrößert die Sammelkarte.)</i></p>
     <div class="sub-tabs" role="tablist">
       <button type="button" class="sub-tab ${legendFilter==='unlocked'?'active':''}" data-lfilt="unlocked">⭐ Freigeschaltet (${unl.length})</button>
       <button type="button" class="sub-tab ${legendFilter==='locked'?'active':''}" data-lfilt="locked">🔒 Unentdeckt (${allEntries.length-unl.length})</button>
       <button type="button" class="sub-tab ${legendFilter==='all'?'active':''}" data-lfilt="all">Alle (${allEntries.length})</button>
     </div>
+    ${filtered.length?'':`<p class="note">${legendFilter==='unlocked'?'Noch keine Legende freigeschaltet.':'Alle Legenden sind freigeschaltet.'}</p>`}
     <div class="legend-grid">
       ${filtered.map(([k,o])=>{
         const ok=isCharUnlocked(k);
@@ -566,7 +567,7 @@ function renderLegendsView(m){
           <div class="dir-info">
             <div class="staff-top">
               <b>${esc(o.n)}</b>
-              <span class="chip p">${o.starter?'Starter ✓':'Freigeschaltet ✓'}</span>
+              <span class="chip p">Freigeschaltet ✓</span>
             </div>
             <div class="note"><b>${esc(o.tag)}</b> · Lead-Rolle: ${roleName}</div>
             <code style="font:500 11px var(--f-mono)">${dirStatLine(o.s)}</code>
@@ -1228,6 +1229,7 @@ function renderEnd(m){
    </div>
    <p>${e.v[1]}</p>
    ${wonAwards.length?`<div class="award-box"><b>🏆 Gewonnene Auszeichnungen (${wonAwards.length}×)</b><div class="chips">${wonAwards.map(a=>`<span class="chip p">🏆 ${esc(a.cat)}</span>`).join('')}</div><span class="note">Prestige: Verkäufe ×${nf(1+wonAwards.length*0.08,2)} & +${wonAwards.length*3} Fame!</span></div>`:''}
+   ${e.legNotes&&e.legNotes.length?`<div class="alert good"><b>🔓 Neue Legende</b><span>${e.legNotes.map(esc).join('<br>')}</span></div>`:''}
    ${e.engNote?`<div class="alert mid"><b>Engine-Entwicklung & Alterung</b><span>${esc(e.engNote)}</span></div>`:''}
    ${e.staffNotes&&e.staffNotes.length?`<div class="alert good"><b>Lead-Personal</b><span>${e.staffNotes.map(esc).join(' · ')}</span></div>`:''}
    <div class="mini">
@@ -1281,7 +1283,7 @@ function ensureSetupDraft(){
   const tag=first?'new':('g'+C.gameNo);
   if(setupDraft&&setupDraft._tag===tag)return;
   const unl=getUnlockedChars();
-  const defDir=first?(unl[0]||LEGEND_KEYS[0]):(C.dir.id||'keep');
+  const defDir=first?(unl[0]||'custom'):(C.dir.id||'keep');
   setupDraft={
     _tag:tag,
     studioName:first?'Pixelpott Studios':C.studio.name,
@@ -1508,7 +1510,7 @@ function renderSetup(m){
   }else if(setupStep===1){
     bodyHTML=`
       <h3>Schritt 1: ${first?'Gründet euer Studio':'Studio & Game Director'}</h3>
-      <p class="note" style="margin:0">${first?'Gebt eurem neuen Entwicklerstudio einen Namen und wählt euren Game Director. Weitere legendäre Persönlichkeiten schaltet ihr später durch Zufallsbegegnungen frei!':`Euer Studio <b>${esc(C.studio.name)}</b> plant das nächste Projekt. Ihr könnt euren bisherigen Director behalten oder zu einer freigeschalteten Legende wechseln.`}</p>
+      <p class="note" style="margin:0">${first?'Gebt eurem neuen Entwicklerstudio einen Namen und wählt euren Game Director. Branchen-Legenden sind noch gesperrt: Die erste gibt es beim ersten Top-Erfolg, eine weitere beim ersten Double-A- oder Triple-A-Release.':`Euer Studio <b>${esc(C.studio.name)}</b> plant das nächste Projekt. Ihr könnt euren bisherigen Director behalten oder zu einer freigeschalteten Legende wechseln.`}</p>
       <div class="field">
         <label class="label" for="nm">Studioname</label>
         <input id="nm" type="text" value="${esc(setupDraft.studioName)}" maxlength="40">
@@ -1535,7 +1537,7 @@ function renderSetup(m){
               ${charPortraitHTML(o.img,o.isScene,'sm',!ok,o.n)}
               <div class="dir-body">
                 <b>${ok?esc(o.n):'🔒 '+esc(o.tag)}</b>
-                <span>${ok?esc(o.tag):'Durch Zufallsbegegnung im Spiel freischaltbar'}</span>
+                <span>${ok?esc(o.tag):'Freischaltbar durch Top-Erfolg, AA/AAA-Release oder Begegnung'}</span>
                 ${ok?`
                   <code>${dirStatLine(o.s)}</code>
                   <span class="more">${esc(o.d)}<br><b>Fähigkeit:</b> ${ABIL[o.ab]?.n||o.ab}${o.perks.length?' · <b>Vorteil:</b> '+o.perks.map(p=>PERKS[p].n).join(', '):''}${o.flaws.length?' · <b>Macke:</b> '+o.flaws.map(f=>FLAWS[f].n).join(', '):''}${Object.keys(o.aff).length?'<br><b>Genres:</b> '+Object.entries(o.aff).map(([g,v])=>GENRES[g].n+' '+fmt(v*4)).join(', '):''}</span>

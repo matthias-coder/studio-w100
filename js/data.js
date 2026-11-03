@@ -499,18 +499,17 @@ const FLAWS={
 };
 
 /*
-  26 Branchen-Legenden:
-  - 6 Starter (starter: true) sind von Beginn an als Game Director wählbar.
-  - 20 Legenden (starter: false) tauchen während der Entwicklung als Zufallsbegegnung auf!
-    Werden sie dort fürs Team angeworben (oder in einer Gast-Session überzeugt), sind sie
-    dauerhaft freigeschaltet und stehen bei künftigen Spielen auch beim Start als Game Director bereit!
+  Branchen-Legenden (spielbar sind nur die mit Porträt in raw-assets/chars, siehe LEGEND_KEYS):
+  - Zu Beginn ist keine Legende freigeschaltet, der erste Director ist immer ein eigener.
+  - Freischaltung: eine zufällige Legende beim ersten Top-Erfolg, eine beim ersten AA/AAA-Release.
+  - Danach tauchen Legenden als Zufallsbegegnung auf. Angeworben (oder in einer Gast-Session
+    überzeugt) sind sie dauerhaft freigeschaltet und in neuen Karrieren als Game Director wählbar.
 */
 const DIRS={
-  // === 6 START-CHARAKTERE (sofort freigeschaltet) ===
+  // === Die ersten 6 Legenden ===
   sid:{
-    n:'Sidney Hexer',
+    n:'Sid Onemoreturn',
     tag:'Der Hexagon-Professor',
-    starter:true,
     img:'raw-assets/chars/24002de1-051f-4de4-9feb-47c48c842065.jpg',
     leadRole:'producer',
     d:'Meister der Rundenstrategie mit Taschenuhr und leuchtenden Hexfeld-Kacheln. Wenn er am Spieltisch sitzt, sagt das ganze Büro um drei Uhr nachts: „Nur noch eine Runde …“',
@@ -520,9 +519,8 @@ const DIRS={
     aff:{sim:2,rpg:1},perks:['spezial'],flaws:['perfekt'],ab:'reroll'
   },
   trainmag:{
-    n:'Jon Trainmag',
+    n:'Jon Framerack',
     tag:'Der Engine-Hexenmeister',
-    starter:true,
     img:'raw-assets/chars/8f1d7feb-17d6-4ddd-92db-cbe95f5f638c.jpg',
     leadRole:'senior',
     d:'Optimierungs-Gott mit VR-Brille und Raketendüse unterm Arm. Schreibt 3D-Renderer in reinem Assembler und hält Handlung in Spielen für völlig überflüssig.',
@@ -532,9 +530,8 @@ const DIRS={
     aff:{action:2,actadv:1,sports:1},perks:['engine'],flaws:[],ab:'rewrite'
   },
   kojimba:{
-    n:'Hideo Kojimba',
+    n:'Hideo Cutscenima',
     tag:'Der Kino-Autorenfilmer',
-    starter:true,
     img:'raw-assets/chars/ad8fa7ee-22a4-42ac-a12e-831bfacb9811.jpg',
     leadRole:'art',
     d:'Trägt Filmklappe und leuchtende Inkubator-Kapsel mit sich herum. Jede Zwischensequenz dauert 45 Minuten, und im Vorspann steht siebenmal sein eigener Name.',
@@ -544,21 +541,19 @@ const DIRS={
     aff:{adventure:1,actadv:1,rpg:1},perks:['netz'],flaws:['kosten','diva'],ab:'promi'
   },
   molynox:{
-    n:'Piet Moulin',
+    n:'Peter Promiseux',
     tag:'Der Hype-Beschwörer',
-    starter:true,
     img:'raw-assets/chars/7b6e442d-884b-40c0-9506-59c1c6c66639.jpg',
     leadRole:'community',
     d:'Beschwört auf Pressekonferenzen goldene Eicheln, aus denen in Echtzeit ganze Königreiche wachsen sollen — während hinter ihm heimlich die Feature-Liste geschreddert wird.',
-    encStory:'Mit wehendem Schal und leuchtender goldener Eichel in der Hand stürmt Piet Moulin in euer Büro: „Freunde! Wenn der Spieler diesen Samen pflanzt, spürt er den Wind der Ewigkeit! Lasst mich mit der Presse reden — sie werden weinen vor Glück!“',
+    encStory:'Mit wehendem Schal und leuchtender goldener Eichel in der Hand stürmt Peter Promiseux in euer Büro: „Freunde! Wenn der Spieler diesen Samen pflanzt, spürt er den Wind der Ewigkeit! Lasst mich mit der Presse reden — sie werden weinen vor Glück!“',
     encEff:{hype:4,wl:4,gp:2},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:4,polish:0},
     aff:{sim:1,rpg:1},perks:[],flaws:['verspricht'],ab:'ankuend'
   },
   williams:{
-    n:'Roberta Waldfee',
+    n:'Roberta Willowisp',
     tag:'Die Märchen-Chronistin',
-    starter:true,
     img:'raw-assets/chars/5dd8f2d7-6800-425f-81ea-66a5d401dd73.jpg',
     leadRole:'art',
     d:'Schreibt mit goldener Feder viktorianische Märchen-Adventures voller Zauberwälder — in denen unvorsichtige Spieler alle drei Meter an einer giftigen Beere sterben.',
@@ -568,9 +563,8 @@ const DIRS={
     aff:{adventure:2,rpg:1,sim:1},perks:['kritik'],flaws:['perfekt'],ab:'fairytale'
   },
   persson:{
-    n:'Magnus Klötzchen',
+    n:'Markus Blocksson',
     tag:'Der Voxel-Eremit',
-    starter:true,
     img:'raw-assets/chars/e02d6364-762a-496d-8bf0-0492236029e0.jpg',
     leadRole:'senior',
     d:'Das schüchterne Indie-Genie mit Filzhut und Pixel-Spitzhacke, das aus simplen Erd- und Grasblöcken im Alleingang ein Weltimperium zimmerte.',
@@ -580,11 +574,10 @@ const DIRS={
     aff:{sim:2,actadv:1},perks:['ea'],flaws:[],ab:'community'
   },
 
-  // === 20 FREISCHALTBARE LEGENDEN (tauchen als Zufallsbegegnung auf & lassen sich einstellen!) ===
+  // === Weitere Legenden ===
   robert:{
-    n:'Christian Robert',
+    n:'Chris Roadmap',
     tag:'Der Crowdfund-Admiral',
-    starter:false,
     img:'raw-assets/chars/adb53794-5f8c-482c-881c-146a3ca82a56.jpg',
     leadRole:'bizdev',
     d:'Trägt Raumanzug im Büro und verkauft virtuelle Raumschiff-JPEGs für Tausende Euro, während der Release-Termin gemütlich Richtung Jahr 2999 wandert.',
@@ -594,9 +587,8 @@ const DIRS={
     aff:{action:1,rpg:2,sports:1},perks:['netz'],flaws:['creep','kosten'],ab:'cash'
   },
   romero:{
-    n:'Johnny Ramires',
+    n:'Johnny Doomero',
     tag:'Der Hair-Metal-Slayer',
-    starter:false,
     img:'raw-assets/chars/6f231d56-fbc1-45c3-bb5f-4abd7e8ea487.jpg',
     leadRole:'art',
     d:'90er-Rockstar mit wallender schwarzer Mähne, Sonnenbrille und Nietenweste. Baut pfeilschnelle Action-Level und zertrümmert beim Deathmatch die Büro-Tastaturen.',
@@ -606,9 +598,8 @@ const DIRS={
     aff:{action:2,actadv:1},perks:['spezial'],flaws:['diva','social'],ab:'shred'
   },
   mizaki:{
-    n:'Hidetaka Mizaki',
+    n:'Hidetaka Gitguda',
     tag:'Der Giftsumpf-Architekt',
-    starter:false,
     img:'raw-assets/chars/1493afdb-5aa5-4764-b0e6-ba244a78194b.jpg',
     leadRole:'art',
     d:'Lächelt höflich im dunklen Anzug, während er knöcheltief im grünen Giftsumpf steht und den Spielern einen leuchtenden „DU BIST GESTORBEN“-Grabstein überreicht.',
@@ -618,9 +609,8 @@ const DIRS={
     aff:{actadv:2,rpg:2,sim:-1,puzzle:-1},perks:['kritik'],flaws:['perfekt'],ab:'tiefe'
   },
   wright:{
-    n:'Willi Werkel',
+    n:'Will Antwright',
     tag:'Der Ameisenfarm-Bürgermeister',
-    starter:false,
     img:'raw-assets/chars/80db9d46-86d3-4f02-9789-6abc3c3f129b.jpg',
     leadRole:'senior',
     d:'Trägt Hawaiihemd unterm grünen Kristall-Diamanten, hält eine Ameisenfarm in der Hand und entfernt zu Testzwecken gerne mal die Leiter aus dem Swimmingpool.',
@@ -630,9 +620,8 @@ const DIRS={
     aff:{sim:2,puzzle:1},perks:['spezial'],flaws:['creep'],ab:'sim'
   },
   newell:{
-    n:'Gabor Neumann',
+    n:'Gabe Neverthree',
     tag:'Der Store-Patriarch',
-    starter:false,
     img:'raw-assets/chars/bab929b3-c14f-4ed6-8d57-111e06d86c5d.jpg',
     leadRole:'bizdev',
     d:'Der weißbärtige Gott der Sommer-Sales mit roter Brechstange und „−90 %“-Preisschild. Beherrscht den digitalen Weltmarkt, kann aber partout nicht bis Drei zählen.',
@@ -642,9 +631,8 @@ const DIRS={
     aff:{action:2,rpg:1},perks:['netz','ea'],flaws:['perfekt'],ab:'sale'
   },
   miyamotto:{
-    n:'Shigeru Miyamotto',
+    n:'Shigeru Mushroomoto',
     tag:'Der Spielzeug-Sensei',
-    starter:false,
     img:'raw-assets/chars/c63e15b1-bbb0-44fe-a5c6-cda34c5f1c0b.jpg',
     leadRole:'producer',
     d:'Der weißhaarige Altmeister in bunter Bastelschürze mit Aufzieh-Roboter und Riesen-Bleistift. Ein verschobenes Spiel wird irgendwann gut, ein schlechtes bleibt für immer schlecht.',
@@ -656,7 +644,6 @@ const DIRS={
   gates:{
     n:'Billi Torweg',
     tag:'Der OS-Baron',
-    starter:false,
     isScene:true,
     img:'raw-assets/encounter/aef913b5-0ca2-4505-b3fb-285070a3599e.jpg',
     leadRole:'bizdev',
@@ -672,7 +659,6 @@ const DIRS={
   jobs:{
     n:'Stefan Obst',
     tag:'Der Rollkragen-Prophet',
-    starter:false,
     isScene:true,
     img:'raw-assets/encounter/71c5fb25-a250-434f-abff-601b6712e1bb.jpg',
     leadRole:'art',
@@ -688,7 +674,6 @@ const DIRS={
   torvalds:{
     n:'Linus Tundravalds',
     tag:'Der Kernel-Pinguin',
-    starter:false,
     isScene:true,
     img:'raw-assets/encounter/dc3ba1df-f5ec-4149-9121-7299c4a258c5.jpg',
     leadRole:'senior',
@@ -704,7 +689,6 @@ const DIRS={
   zuckerberg:{
     n:'Markus Zuckerborg',
     tag:'Der Social-Android',
-    starter:false,
     isScene:true,
     img:'raw-assets/encounter/8217b3a2-e17c-4185-a44f-466a37d82a75.jpg',
     leadRole:'bizdev',
@@ -720,7 +704,6 @@ const DIRS={
   pagebrin:{
     n:'Lars Seite & Sergej Brille',
     tag:'Das Algorithmus-Duo',
-    starter:false,
     isScene:true,
     img:'raw-assets/encounter/60ff21e1-1fa0-4a4b-8576-cf20e63c9dee.jpg',
     leadRole:'community',
@@ -736,7 +719,6 @@ const DIRS={
   koehler:{
     n:'Gerd Tabellenkalk',
     tag:'Der Excel-Taktiker',
-    starter:false,
     img:'raw-assets/chars/096fa61d-5554-4120-8dc5-9e7b5c45a924.jpg',
     leadRole:'qalead',
     d:'Der deutsche Fußballmanager-Pionier mit Aktenordner, Kaffeebecher und Stadion-Bratwurst im Brötchen. Berechnet Spielspaß auf drei Nachkommastellen in gigantischen Tabellen.',
@@ -746,9 +728,8 @@ const DIRS={
     aff:{sports:2,sim:2},perks:['spar','spezial'],flaws:[],ab:'excel'
   },
   spector:{
-    n:'Werner Spektral',
+    n:'Warren Inspector',
     tag:'Der Entscheidungs-Architekt',
-    starter:false,
     img:'raw-assets/chars/eaf1662f-4c9e-4cdb-aa26-8a0b413219cc.jpg',
     leadRole:'senior',
     d:'Vater der Immersive Sims mit runder Brille, Trenchcoat, Schraubenschlüssel und Keycard. Jede verschlossene Tür im Spiel hat garantiert einen Lüftungsschacht daneben.',
@@ -758,21 +739,19 @@ const DIRS={
     aff:{rpg:2,actadv:2,adventure:1},perks:['spezial'],flaws:['creep'],ab:'vent'
   },
   hauard:{
-    n:'Taddäus Hauward',
+    n:'Todd Justworks',
     tag:'Der Lederjacken-Portierer',
-    starter:false,
     img:'raw-assets/chars/98e03cec-e4d8-479e-9037-621e47b9a050.jpg',
     leadRole:'bizdev',
     d:'Trägt eine ikonische braune Lederjacke, deutet auf schneebedeckte Berge („Ihr könnt dort hinaufklettern!“) und bringt euer Spiel notfalls sogar auf einem Toaster zum Laufen.',
-    encStory:'In einer schicken braunen Lederjacke stellt Taddäus Hauward einen leuchtenden „Fantasy“-Spielekarton und einen umgebauten Küchen-Toaster auf den Tisch: „Seht ihr diesen Berg im Hintergrund? Man kann hinaufgehen. Und ich habe euer Spiel gerade auf diesen Toaster portiert!“',
+    encStory:'In einer schicken braunen Lederjacke stellt Todd Justworks einen leuchtenden „Fantasy“-Spielekarton und einen umgebauten Küchen-Toaster auf den Tisch: „Seht ihr diesen Berg im Hintergrund? Man kann hinaufgehen. Und ich habe euer Spiel gerade auf diesen Toaster portiert!“',
     encEff:{hype:3,wl:4,gp:4,bugs:2},
     s:{vision:2,technik:2,fuehrung:2,business:3,hype:4,polish:0},
     aff:{rpg:2,sim:1},perks:['netz'],flaws:['buggy','verspricht'],ab:'works'
   },
   lake:{
-    n:'Sami See',
+    n:'Sam Darklake',
     tag:'Der Kaffee-Noir-Poet',
-    starter:false,
     img:'raw-assets/chars/08cefc3e-6ccd-451c-b6c8-8e837cb6fb69.jpg',
     leadRole:'art',
     d:'Finnischer Story-Meister im Nadelstreifenanzug mit dampfender Kaffeetasse im nächtlichen Regen. Berühmt für verkniffene Detektiv-Gesichter, Zeitlupe und irre Musical-Einlagen.',
@@ -782,21 +761,19 @@ const DIRS={
     aff:{actadv:2,adventure:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'noir'
   },
   gilbert:{
-    n:'Ronny Goldbart',
+    n:'Ron Grogbert',
     tag:'Der Beleidigungs-Freibeuter',
-    starter:false,
     img:'raw-assets/chars/634b0100-8b2a-4023-a4db-99649dde0047.jpg',
     leadRole:'qalead',
     d:'Piratenkapitän mit Brille, Degen und einem Gummihuhn mit Karabinerhaken in der Mitte. Gewinnt jedes Entwickler-Meeting durch pointiertes Beleidigungs-Fechten.',
-    encStory:'Mit gezücktem Piratensäbel und einem Gummihuhn mit Seilrolle springt Ronny Goldbart auf euren Schreibtisch: „Eure Dialoge kämpfen wie ein dummer Bauer! Lasst mich eure Rätsel-Ketten und den Humor auf Vordermann bringen, ihr Landratten!“',
+    encStory:'Mit gezücktem Piratensäbel und einem Gummihuhn mit Seilrolle springt Ron Grogbert auf euren Schreibtisch: „Eure Dialoge kämpfen wie ein dummer Bauer! Lasst mich eure Rätsel-Ketten und den Humor auf Vordermann bringen, ihr Landratten!“',
     encEff:{gp:8,moral:2},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:2,polish:3},
     aff:{adventure:2,actadv:1,sim:1},perks:['spezial','crunch'],flaws:[],ab:'insult'
   },
   schafer:{
-    n:'Timmy Schäfer',
+    n:'Tim Shearer',
     tag:'Der Cartoon-Zeitbieger',
-    starter:false,
     img:'raw-assets/chars/bd627e57-cb0b-4dcf-b8af-aeaabac7af79.jpg',
     leadRole:'community',
     d:'Lockenkopf im schrillen 90er-Hemd, der mit einer Zeitreise-Campingtoilette und einem lila Tentakel um den Arm die absurdesten Kult-Adventures der Welt entwirft.',
@@ -806,21 +783,19 @@ const DIRS={
     aff:{adventure:2,sim:1,actadv:1},perks:['crunch'],flaws:['kosten'],ab:'fans'
   },
   jensen:{
-    n:'Jana Jenseits',
+    n:'Jane Jinxen',
     tag:'Die Okkult-Detektivin',
-    starter:false,
     img:'raw-assets/chars/a6101eb3-3f6c-4e52-9fbc-90b4d860809d.jpg',
     leadRole:'art',
     d:'Schattenjägerin im schwarzen Ledermantel mit roten Handschuhen und Diktiergerät. Verwebt Voodoo-Mysterien in New Orleans und bayerische Schlösser zu packenden Thrillern.',
-    encStory:'Im Schein einer Straßenlaterne lehnt Jana Jenseits mit roten Lederhandschuhen, Kassettenrekorder und einem in Leder gebundenen Okkultismus-Folianten: „Eurer Geschichte fehlt das echte historische Fundament und ein Hauch Gänsehaut. Sollen wir in den Archiven graben?“',
+    encStory:'Im Schein einer Straßenlaterne lehnt Jane Jinxen mit roten Lederhandschuhen, Kassettenrekorder und einem in Leder gebundenen Okkultismus-Folianten: „Eurer Geschichte fehlt das echte historische Fundament und ein Hauch Gänsehaut. Sollen wir in den Archiven graben?“',
     encEff:{gp:8,gfx:4},
     s:{vision:4,technik:1,fuehrung:2,business:1,hype:2,polish:3},
     aff:{adventure:2,actadv:2,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'occult'
   },
   purcell:{
-    n:'Stefan Purzel',
+    n:'Steve Scribble',
     tag:'Der Chaos-Vollstrecker',
-    starter:false,
     img:'raw-assets/chars/2627886b-daed-4505-8b90-b71350e97fa1.jpg',
     leadRole:'art',
     d:'Comic-Zeichner im Trenchcoat mit überdimensionalem Revolver, Zeichenfeder und einem völlig durchgeknallten weißen Hasen auf der Schulter. Meister des anarchischen Slapsticks.',
@@ -832,7 +807,6 @@ const DIRS={
   pankratz:{
     n:'Björn Erzbaron',
     tag:'Der Kolonie-Veteran',
-    starter:false,
     img:'raw-assets/chars/5b2f8867-6436-4961-a32d-353fb304fb29.jpg',
     leadRole:'producer',
     d:'Trägt abgewetzte Lederweste, Spitzhacke und eine saftige Scavenger-Keule unterm Arm. Niemand baut dichtere Lagerfeuer-Atmosphäre und rauere Ruhrpott-Dialoge („Steck die Waffe weg!“).',

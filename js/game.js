@@ -970,8 +970,9 @@ function afterMonth(){
   const lockedCandidates=legCandidates.filter(k=>!isCharUnlocked(k));
   const poolToUse=lockedCandidates.length?lockedCandidates:legCandidates;
   // Seltene Begegnung: nur zu Beginn einer Phase (alle 2 Monate), 15 % Chance, höchstens eine pro Projekt
+  // Begegnungen erst, wenn mindestens eine Legende über einen Meilenstein freigeschaltet ist
   const phaseStart=S.round%2===0;
-  if(poolToUse.length&&phaseStart&&S.seenLegends.length===0&&Math.random()<0.15){
+  if(poolToUse.length&&phaseStart&&getUnlockedChars().length&&S.seenLegends.length===0&&Math.random()<0.15){
     const legKey=poolToUse[Math.floor(Math.random()*poolToUse.length)];
     S.seenLegends.push(legKey);
     S.curLegend=legKey;
@@ -1422,6 +1423,32 @@ function sales(){
   },true);
 }
 
+/* ===================== Legenden-Meilensteine ===================== */
+// Erste Legende beim ersten Top-Erfolg, eine weitere beim ersten AA/AAA-Release
+function unlockRandomLegend(){
+  const pool=LEGEND_KEYS.filter(k=>!isCharUnlocked(k)&&C.dir.id!==k);
+  if(!pool.length)return null;
+  const k=pool[Math.floor(Math.random()*pool.length)];
+  unlockChar(k);
+  return k;
+}
+
+function legendMilestones(e){
+  if(!C.legendMs)C.legendMs={};
+  const notes=[];
+  const grant=(key,why)=>{
+    if(C.legendMs[key])return;
+    C.legendMs[key]=true;
+    const k=unlockRandomLegend();
+    if(!k)return;
+    notes.push(`${why}: ${DIRS[k].n} (${DIRS[k].tag}) ist freigeschaltet und ab sofort im Legenden-Album. In einer neuen Karriere könnt ihr sie als Game Director wählen.`);
+    addLog(`🔓 Legende freigeschaltet: ${DIRS[k].n}`);
+  };
+  if(e.meta>=80||e.ratio>=1)grant('top','Top-Erfolg');
+  if(S.tier!=='indie')grant('aa',`Erstes ${TIERS[S.tier].n}-Projekt veröffentlicht`);
+  return notes;
+}
+
 function finishGame(){
   const e=S.end,t=T();
   e.live=S.model!=='kauf'?36*t.scale:0;
@@ -1435,6 +1462,7 @@ function finishGame(){
      :e.ratio>=0?['Schwarze Null','Reicht für Miete, Pizza und ein zweites Spiel. Knapp.']
      :e.ratio>=-.5?['Flop','Immerhin habt ihr viel gelernt. Sagt man so.']
      :['Desaster','Die Kaffeemaschine wird versteigert.'];
+  e.legNotes=legendMilestones(e);
 
   if(e.erg>0){
     const inv=e.erg*S.equity,rest=e.erg-inv;

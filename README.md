@@ -19,14 +19,16 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 ## ✨ Highlights & Features
 
 ### 1. 🧭 4-Schritte-Projektassistent, Genres & Lizenzen
-- **Schritt 1 — Studio & Game Director:** Gründet euer Studio und wählt euren Game Director (oder baut euch im Charakter-Editor mit Vor- und Nachteilen euren eigenen Kopf). Name und Director stehen ab der Gründung fest.
+- **Schritt 1 — Studio & Game Director:** Gründet euer Studio und baut euch im Charakter-Editor mit Vor- und Nachteilen euren eigenen Game Director — oder wählt eine bereits freigeschaltete Legende. Name und Director stehen ab der Gründung fest.
 - **Schritt 2 — Rahmen & Geschäftsmodell:** Wählt Produktionsklasse (*Indie*, *Double-A*, *Triple-A*), Marke (*Neue IP*, *Fortsetzung*, *Bekannte Reihe*, *Große Lizenz*) und Geschäftsmodell (*Kaufspiel*, *Abo-Modell*, *Free-to-Play*). Jedes neue Studio startet als **Indie** — Double-A und Triple-A schaltet ihr erst mit genug Studiokapital frei.
 - **Schritt 3 — Genre, Sub-Genre & Modifikator:** Wählt eines von **10 Hauptgenres** (*Action & Shooter*, *Action-Adventure*, *Adventure*, *Rollenspiel*, *Strategie*, *Simulation*, *Sport & Rennen*, *Survival & Sandbox*, *Puzzle & Denkspiele*, *Plattformer*) und eines von **45 Sub-Genres** — vom *Soulslike* über *Factory & Colony Sim* bis zum *Sportmanager*. Optional kommt ein **genreübergreifender Modifikator** dazu (*Roguelike*, *Horror-Stimmung*, *Live Service*, *Party & Couch-Koop*, *VR*), der mit manchen Genres eine **Synergie** bildet und sich mit anderen beißt.
 - **Schritt 4 — Extras & Offizielle Lizenzen:** Erweitert euer Projekt um **⚽ Offizielle Sport- & Verbandslizenzen**, **🤝 Koop-/Multiplayer-Modus**, **☁️ Crossplay & Cloud-Saves**, **🎻 Orchester-Soundtrack & Stargast-Synchro**, **📦 Physische Collector’s Edition**, **🛡️ Kernel-Anti-Cheat**, **🛠️ Mod-Support** oder eine **🧪 Early-Access-Phase**.
 
 ### 2. 🌟 21 Branchen-Legenden & seltene Begegnungen
-- **6 Start-Directors + 15 freischaltbare Ikonen:** Nur ein Teil der Legenden ist zu Beginn verfügbar. Die übrigen Persönlichkeiten tauchen während eurer Projekte als **seltene Zufallsbegegnung** auf — nur zu Beginn einer Phase, mit 15 % Chance und höchstens einmal pro Projekt.
-- **Rekrutieren & Dauerhaft Freischalten:** Wer eine Legende als **Star-Lead (Stufe 2)** anwirbt (teuer!) oder sie im schweren W100-Fachgespräch überzeugt, schaltet sie im **🌟 Legenden-Album** dauerhaft als Start-Director für künftige Karrieren frei.
+- **Alle Legenden starten gesperrt:** Eure erste Karriere beginnt immer mit einem eigenen Director aus dem Charakter-Editor.
+- **Meilensteine:** Beim ersten **Top-Erfolg** (Wertung ab 80 oder ein Hit) und beim ersten **Double-A- oder Triple-A-Release** wird je eine zufällige Legende freigeschaltet.
+- **Seltene Begegnungen:** Sobald die erste Legende freigeschaltet ist, tauchen weitere während eurer Projekte als **Zufallsbegegnung** auf — nur zu Beginn einer Phase, mit 15 % Chance und höchstens einmal pro Projekt.
+- **Rekrutieren & Dauerhaft Freischalten:** Wer eine Legende als **Star-Lead (Stufe 2)** anwirbt (teuer!) oder sie im schweren W100-Fachgespräch überzeugt, schaltet sie im **🌟 Legenden-Album** dauerhaft als Director für künftige Karrieren frei.
 
 ### 3. 🎯 W100-Würfelsystem (1–100) & Gameplay/Grafik-Split
 - **Prozentgenaue W100-Proben:** Jede riskante Entscheidung zeigt vor dem Klick den Schwierigkeitsgrad (**SG**) und die exakte prozentuale Erfolgschance (`z. B. SG 60 · 72 %`).

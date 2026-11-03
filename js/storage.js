@@ -2,27 +2,22 @@
 const STORAGE_PROFILES_KEY='w20_profiles_v6';
 const STORAGE_ACTIVE_KEY='w20_active_slot_v6';
 const STORAGE_MANUAL_KEY='w20m';
-const STORAGE_UNLOCKED_KEY='w100_unlocked_chars_v1';
+const STORAGE_UNLOCKED_KEY='w100_unlocked_chars_v2';
 
 let profiles=[];
 let activeSlotId='slot_1';
 let unlockedChars=[];
 
-function getStarterChars(){
-  return LEGEND_KEYS.filter(k=>DIRS[k].starter);
-}
-
+// Alle Legenden starten gesperrt: Freischaltung über Meilensteine und Begegnungen
 function getUnlockedChars(){
-  const starters=getStarterChars();
   const fromC=(C&&Array.isArray(C.unlockedChars))?C.unlockedChars:[];
-  const merged=Array.from(new Set([...starters,...unlockedChars,...fromC])).filter(k=>LEGEND_KEYS.includes(k));
+  const merged=Array.from(new Set([...unlockedChars,...fromC])).filter(k=>LEGEND_KEYS.includes(k));
   unlockedChars=merged;
   return merged;
 }
 
 function isCharUnlocked(id){
   if(!DIRS[id])return false;
-  if(DIRS[id].starter)return true;
   return getUnlockedChars().includes(id);
 }
 
