@@ -165,6 +165,18 @@ const BASE_RIVALS=[
   {id:'alpenhorn',name:'Alpenhorn Games',fav:'aufbau',skill:65,tag:'Meister komplexer Wirtschaftskreisläufe und gemütlicher Welten'}
 ];
 
+/* ===================== Interviews (Fragenpool INTERVIEW_QS in content-extra.js) ===================== */
+// bias: Bonus/Malus auf die Erfolgschance je Antwort-Ton, passend zum Format
+const INTERVIEW_OUTLETS=[
+  {n:'PIXEL WORLD Magazin',k:'Print-Interview',bias:{honest:10,bold:-5}},
+  {n:'Couchkoop-Podcast',k:'Podcast',bias:{joke:10,honest:5}},
+  {n:'Livestream bei „xKaiserLP“',k:'Livestream',bias:{bold:10,joke:5,safe:-10}},
+  {n:'Kulturzeit am Abend',k:'TV-Beitrag',bias:{safe:10,bold:-10}},
+  {n:'GameTech Daily',k:'Online-Portal',bias:{honest:5,joke:-5}},
+  {n:'Hauptbühne der Spielemesse',k:'Live auf der Bühne',bias:{bold:5,joke:5,safe:-5}}
+];
+const IV_TONES={safe:'🛡️ Sicher',honest:'🤝 Ehrlich',bold:'🔥 Mutig',joke:'😄 Witzig'};
+
 /* ===================== Engine-Projekte (zwischen zwei Spielen) ===================== */
 // Das ganze Team arbeitet 6–12 Monate nur an der Engine: kostet laufende Gehälter, bringt kein Spiel
 const ENG_PROJECT_GOALS={
@@ -842,3 +854,6 @@ function getGenreMixInfo(mainG,subG){
     eff:{gp:3,gfx:1}
   };
 }
+
+// Nur Legenden mit Porträt im Ordner raw-assets/chars sind spielbar (Begegnungen, Director-Wahl, Album)
+const LEGEND_KEYS=Object.keys(DIRS).filter(k=>(DIRS[k].img||'').includes('/chars/'));

@@ -9,13 +9,13 @@ let activeSlotId='slot_1';
 let unlockedChars=[];
 
 function getStarterChars(){
-  return Object.keys(DIRS).filter(k=>DIRS[k].starter);
+  return LEGEND_KEYS.filter(k=>DIRS[k].starter);
 }
 
 function getUnlockedChars(){
   const starters=getStarterChars();
   const fromC=(C&&Array.isArray(C.unlockedChars))?C.unlockedChars:[];
-  const merged=Array.from(new Set([...starters,...unlockedChars,...fromC])).filter(k=>DIRS[k]);
+  const merged=Array.from(new Set([...starters,...unlockedChars,...fromC])).filter(k=>LEGEND_KEYS.includes(k));
   unlockedChars=merged;
   return merged;
 }

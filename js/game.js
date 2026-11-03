@@ -439,7 +439,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],milestone:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:isHot,trendCold:isCold};
+     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9)};
 
   recalcQual();
   const fee=(IPS[ip].fee*t.scale)+upfrontExtraCost;
@@ -950,7 +950,7 @@ function afterMonth(){
 
   // Chance auf eine Legendäre Zufallsbegegnung (Priorität auf noch nicht freigeschaltete Legenden!)
   if(!S.seenLegends)S.seenLegends=[];
-  const legCandidates=Object.keys(DIRS).filter(k=>{
+  const legCandidates=LEGEND_KEYS.filter(k=>{
     if(C&&C.dir&&C.dir.id===k)return false;
     if(S.seenLegends.includes(k))return false;
     if(C&&C.studio.staff.some(st=>st.legendId===k))return false;
@@ -969,6 +969,9 @@ function afterMonth(){
     render();save();return;
   }
 
+  // Interview: ab Monat 3, 20 % pro Monat, höchstens zwei pro Projekt
+  if(ivAvail()&&S.round>=2&&(S.ivCount||0)<2&&Math.random()<0.2&&startInterview())return;
+
   const ph=Math.floor(S.round/2);
   const fpool=R.map((r,i)=>i).filter(i=>R[i].flaw&&i!==S.rnd&&fits(R[i]));
   const pool=R.map((r,i)=>i).filter(i=>!R[i].flaw&&!S.usedR.includes(i)&&(R[i].min||0)<=ph&&fits(R[i]));
@@ -981,6 +984,57 @@ function afterMonth(){
     S.screen='random';render();save();return;
   }
   goMonth();
+}
+
+/* ===================== Textvarianten ===================== */
+// Pro Durchlauf stabile Auswahl einer Textvariante (TEXT_VARIANTS aus content-extra.js)
+function vx(c){
+  const vars=typeof TEXT_VARIANTS!=='undefined'&&TEXT_VARIANTS[c.t];
+  if(!vars||!vars.length||!S)return c.x;
+  let h=S.seed||0;for(const ch of c.t)h=(h*31+ch.charCodeAt(0))|0;
+  const i=Math.abs(h)%(vars.length+1);
+  return i?vars[i-1]:c.x;
+}
+function fillTxt(s){
+  return String(s||'').replace(/\{title\}/g,S?.title||'euer Spiel').replace(/\{studio\}/g,C?.studio?.name||'euer Studio')
+    .replace(/\{dir\}/g,C?.dir?.n||'der Director').replace(/\{genre\}/g,S?genreName(S):'Spiel');
+}
+
+/* ===================== Interviews ===================== */
+const ivAvail=()=>typeof INTERVIEW_QS!=='undefined'&&INTERVIEW_QS.length>0;
+function ivChance(a){
+  const o=INTERVIEW_OUTLETS[S.iv.o];
+  return clamp(a.p+(D().s.hype-1)*6+(o.bias[a.tone]||0)+(S.res.hype>=6?5:0)-(S.res.bugs>=20?5:0),5,95);
+}
+function startInterview(){
+  S.ivUsed=S.ivUsed||[];
+  const pool=INTERVIEW_QS.map((q,i)=>i).filter(i=>!S.ivUsed.includes(i)&&(!INTERVIEW_QS[i].cond||INTERVIEW_QS[i].cond(S)));
+  if(pool.length<3)return false;
+  pool.sort(()=>Math.random()-.5);
+  const qs=pool.slice(0,3);
+  S.ivUsed.push(...qs);
+  S.ivCount=(S.ivCount||0)+1;
+  S.iv={o:Math.floor(Math.random()*INTERVIEW_OUTLETS.length),qs,i:0,res:[]};
+  S.screen='interview';
+  addLog(`<span>M${S.round}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
+  render();save();
+  return true;
+}
+function answerInterview(ai){
+  if(!S||!S.iv||S.iv.i>=S.iv.qs.length)return;
+  const qi=S.iv.qs[S.iv.i],q=INTERVIEW_QS[qi],a=q.a[ai];
+  if(!a)return;
+  const pct=ivChance(a),r=d100(),ok=r<=pct;
+  const ch=apply(ok?a.s:a.f);
+  S.iv.res.push({qi,ai,ok,r,pct,ch});
+  S.iv.i++;
+  addLog(`<span>M${S.round}</span> Interview-Antwort „${esc(fillTxt(a.l))}“ (${IV_TONES[a.tone]||a.tone}, ${pct} %) · W100 ${r} → ${ok?'kommt gut an':'geht nach hinten los'}`);
+  render();save();
+}
+function finishInterview(){
+  if(!S)return;
+  S.iv=null;
+  afterRandom();
 }
 
 function chooseLegendAction(mode){

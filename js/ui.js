@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','shop','crisis','roll','manual'];
+const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -309,14 +309,14 @@ function renderSheet(){
   if(!S){
     if(!C){
       const unlCount=getUnlockedChars().length;
-      const totCount=Object.keys(DIRS).length;
+      const totCount=LEGEND_KEYS.length;
       sh.innerHTML=`
       ${studioBannerHTML()}
       <h2>So läuft Studio W100</h2>
       <p class="note" style="margin:0">Gründet euer Studio, wählt einen Game Director und führt euer Projekt durch 12 Monate mit <b>W100-Proben</b> (Krit ab 96, Patzer 1–5).</p>
       <details class="fold" open>
-        <summary>🌟 26 Branchen-Legenden (${unlCount}/${totCount})</summary>
-        <div class="fold-body"><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen 20 Ikonen tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet!</p></div>
+        <summary>🌟 ${totCount} Branchen-Legenden (${unlCount}/${totCount})</summary>
+        <div class="fold-body"><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen ${totCount-6} Ikonen tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet!</p></div>
       </details>
       <details class="fold">
         <summary>⚙️ Engine-Labor, Rivalen & GOTY</summary>
@@ -386,7 +386,7 @@ function renderDock(){
 
   if(!C){
     const unl=getUnlockedChars().length;
-    const tot=Object.keys(DIRS).length;
+    const tot=LEGEND_KEYS.length;
     dk.innerHTML=`<div>
       <span class="label">W100-Kurzreferenz</span>
       <div class="mini" style="margin-top:6px">
@@ -483,7 +483,7 @@ function renderWsNav(){
   const staffBadge=C?`<span class="dot">${C.studio.staff.length}/6</span>`:'';
   const rivalsCount=C?getAllRivals().length:BASE_RIVALS.length;
   const unlCount=getUnlockedChars().length;
-  const totCount=Object.keys(DIRS).length;
+  const totCount=LEGEND_KEYS.length;
 
   nav.innerHTML=`
     <button type="button" class="ws-tab ${activeTab==='board'?'active':''}" data-wstab="board">
@@ -531,7 +531,7 @@ function renderWsNav(){
 /* ===================== Legenden-Album (Mit Filter-Tabs gegen langes Scrollen) ===================== */
 function renderLegendsView(m){
   const unl=getUnlockedChars();
-  const allEntries=Object.entries(DIRS);
+  const allEntries=Object.entries(DIRS).filter(([k])=>LEGEND_KEYS.includes(k));
   const filtered=legendFilter==='unlocked'?allEntries.filter(([k])=>isCharUnlocked(k))
     :legendFilter==='locked'?allEntries.filter(([k])=>!isCharUnlocked(k))
     :allEntries;
@@ -768,9 +768,9 @@ function monthNote(){
 
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
-  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p>${c.x}</p>`}
+  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p>${vx(c)}</p>`}
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p>${c.x}</p>`}
-  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p>${rv.x}</p>`}
+  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p>${vx(rv)}</p>`}
   if(kind==='legend'){
     const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',encStory:''};
     return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende Monat ${S.round}</span>
@@ -787,6 +787,42 @@ function headFor(kind,ev){
   if(kind==='contract'){const ct=CONTRACTS.find(x=>x.id===ev)||{n:'Auftragsarbeit',d:''};return `<span class="stamp">Auftragsarbeit</span><h3>${ct.n}</h3><p>${ct.d}</p>`}
   if(kind==='dlc'){const d=DLC_OPTS.find(x=>x.id===ev);return `<span class="stamp">Post-Release</span><h3>${d.n}</h3><p>${d.d}</p>`}
   const r=RESC.find(x=>x.id===ev);return banner+`<span class="stamp">Notlage</span><h3>${r.n}</h3><p>${r.d}</p>`;
+}
+
+function renderInterview(m){
+  const iv=S.iv;
+  if(!iv){goMonth();return}
+  const o=INTERVIEW_OUTLETS[iv.o];
+  const past=iv.res.map((x,n)=>{
+    const q=INTERVIEW_QS[x.qi],a=q.a[x.ai];
+    return `<div class="iv-past ${x.ok?'ok':'bad'}">
+      <span class="note">Frage ${n+1}: ${esc(fillTxt(q.q))}</span>
+      <b>„${esc(fillTxt(a.l))}“</b>
+      <span>${x.ok?'✅':'❌'} W100 ${x.r} (brauchte ≤ ${x.pct}) · ${esc(fillTxt(x.ok?a.sx:a.fx))}</span>
+      ${chips(x.ch)}
+    </div>`;
+  }).join('');
+  const done=iv.i>=iv.qs.length;
+  let body='';
+  if(done){
+    const good=iv.res.filter(x=>x.ok).length;
+    body=`<div class="alert ${good>=2?'good':'mid'}"><b>Interview beendet: ${good} von ${iv.res.length} Antworten kamen gut an</b><span>${good===3?'Das Interview wird überall geteilt.':good===0?'Der Clip mit euren Antworten macht als Meme die Runde.':'Ein solider Auftritt mit ein paar Wacklern.'}</span></div>
+      <button class="btn" id="ivDone">Weiter zu Monat ${S.round+1}</button>`;
+  }else{
+    const q=INTERVIEW_QS[iv.qs[iv.i]];
+    body=`<span class="label">Frage ${iv.i+1} von ${iv.qs.length}</span><h3>„${esc(fillTxt(q.q))}“</h3>
+      <div class="opts">${q.a.map((a,ai)=>`<button class="opt" data-iva="${ai}">
+        <span class="t">„${esc(fillTxt(a.l))}“</span>
+        <span class="check ${a.tone==='safe'?'safe':''}">${IV_TONES[a.tone]||a.tone} · ${ivChance(a)} %</span>
+        <span class="d">Bei Erfolg: ${chips(previewSafe(a.s||{}))||'kaum Wirkung'} Bei Misserfolg: ${chips(previewSafe(a.f||{}))||'kaum Wirkung'}</span>
+      </button>`).join('')}</div>`;
+  }
+  m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende Monat ${S.round}</span>
+    <h3>${esc(o.n)} will mit ${esc(C.dir.n)} über „${esc(S.title)}“ sprechen</h3>
+    <p class="note" style="margin:0">Drei Fragen, jede Antwort ist ein W100-Wurf. Der Hype-Wert des Directors, der aktuelle Hype und das Format beeinflussen die Chancen.</p>
+    ${past}${body}`;
+  m.querySelectorAll('[data-iva]').forEach(b=>b.onclick=()=>answerInterview(+b.dataset.iva));
+  const d=$('ivDone');if(d)d.onclick=finishInterview;
 }
 
 function renderLegendEncounter(m){
@@ -870,7 +906,7 @@ function renderMain(){
       <button class="btn small" id="shopBtn" data-opensub="invest">🛒 Investieren & Equipment</button>
       <button class="btn small" data-opensub="hire">👥 Personal einstellen (${C.studio.staff.length}/6)</button>
       <button class="btn small" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
-    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev);
+    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
@@ -881,6 +917,7 @@ function renderMain(){
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
+  if(sc==='interview'){renderInterview(m);return}
   if(sc==='roll'){
     const p=S.pending;
     m.className='card'+(['rand','rescue','legend'].includes(p.kind)?' rnd':'');
@@ -1196,7 +1233,7 @@ function ensureSetupDraft(){
   const tag=first?'new':('g'+C.gameNo);
   if(setupDraft&&setupDraft._tag===tag)return;
   const unl=getUnlockedChars();
-  const defDir=first?(unl[0]||Object.keys(DIRS)[0]):(C.dir.id||'keep');
+  const defDir=first?(unl[0]||LEGEND_KEYS[0]):(C.dir.id||'keep');
   setupDraft={
     _tag:tag,
     studioName:first?'Pixelpott Studios':C.studio.name,
@@ -1232,7 +1269,7 @@ function launchSetupProject(){
       }
       dir={id:'custom',n:B.n.trim()||'Namenloser Director',tag:'Eigener Director',d:'',s:{...B.s},aff:{},perks:[...B.perks],flaws:[...B.flaws],ab:null};
     }else{
-      const dKey=DIRS[k]?k:Object.keys(DIRS)[0];
+      const dKey=LEGEND_KEYS.includes(k)?k:LEGEND_KEYS[0];
       dir={id:dKey,...DIRS[dKey],s:{...DIRS[dKey].s},perks:[...DIRS[dKey].perks],flaws:[...DIRS[dKey].flaws],aff:{...DIRS[dKey].aff}};
     }
     C={
@@ -1336,7 +1373,7 @@ function renderSetup(m){
   const seqs=first?[]:C.hall.map((h,i)=>[h,i]).filter(([h])=>h.meta!=null&&h.meta>=70&&!h.ipLost);
   const tr=C?.trend;
   const unlList=getUnlockedChars();
-  const allDirs=Object.entries(DIRS).sort((a,b)=>(isCharUnlocked(b[0])?1:0)-(isCharUnlocked(a[0])?1:0));
+  const allDirs=Object.entries(DIRS).filter(([k])=>LEGEND_KEYS.includes(k)).sort((a,b)=>(isCharUnlocked(b[0])?1:0)-(isCharUnlocked(a[0])?1:0));
   const shownDirs=showLockedSetupDirs?allDirs:allDirs.filter(([k])=>isCharUnlocked(k));
 
   const stepLabels=[
