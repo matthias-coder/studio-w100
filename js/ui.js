@@ -163,36 +163,43 @@ function hallHTML(){
   return `<div class="ledger"><table>${C.hall.map(h=>`<tr><td>${h.nr}. <b>${esc(h.title)}</b>${h.awards&&h.awards.length?` <span class="chip p">🏆 ${h.awards.length}× Award</span>`:''}<br><span class="note">${h.genre} · ${h.tier}${h.engine?' · '+esc(h.engine):''} · ${h.v}${h.dlc?' ('+esc(h.dlc)+')':''}</span></td><td>${h.meta!=null?`<b>${h.meta}</b> Pkt.${h.gp!=null?` <small class="note">(GP ${h.gp}/GFX ${h.gfx})</small>`:''}`:'–'}<br><span class="${h.erg>=0?'pos':'neg'}">${h.erg!=null?money(h.erg,true):''}</span></td></tr>`).join('')}</table></div>`;
 }
 
+let shopSubTab='invest'; // 'invest' | 'hire' | 'earn'
+let shopCatFilter='all'; // 'all' | 'Marketing' | 'Qualität' | 'Studio' | 'Spekulativ'
+let legendFilter='unlocked'; // 'unlocked' | 'locked' | 'all'
+
 function engineBlock(){
-  if(!C||!C.studio.engine)return `<div class="blk"><span class="label">Eigene Studio-Engine</span><p class="note" style="margin:0">Noch keine eigene Engine gebaut. In Monat 2 eines Projekts könnt ihr eine eigene Studio-Engine entwickeln.</p></div>`;
+  if(!C||!C.studio.engine)return `<div class="blk"><span class="label">Eigene Studio-Engine</span><p class="note" style="margin:0">Noch keine eigene Engine (in Monat 2 baubar).</p></div>`;
   const eng=C.studio.engine;
   const ageInfo=getEngineAgeInfo(eng.age||0);
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
   return `<div class="blk">
-    <span class="label">Eigene Studio-Engine</span>
     <div class="eng-box">
       <div class="eng-head">
-        <b>${esc(eng.name)}</b>
+        <b>⚙️ ${esc(eng.name)}</b>
         <span class="eng-ver">v${eng.version}.0</span>
       </div>
       <div class="chips">
         <span class="chip ${ageInfo.cls}">${ageInfo.label}</span>
-        <span class="chip ${(eng.techPts||0)>0?'p':''}">🔬 ${eng.techPts||0} Forschungspkt.</span>
-        ${eng.techDebt?`<span class="chip n">Tech-Schulden: ${eng.techDebt}</span>`:'<span class="chip p">Code sauber</span>'}
+        <span class="chip ${(eng.techPts||0)>0?'p':''}">🔬 ${eng.techPts||0} Pkt.</span>
+        <span class="chip">${eng.modules.length}/8 Module</span>
+        ${eng.techDebt?`<span class="chip n">Schulden: ${eng.techDebt}</span>`:''}
       </div>
-      <div class="note">${ageInfo.desc} (Start-Effekt: ${fmt(ageInfo.gfx)} Grafik, ${fmt(ageInfo.gp)} Gameplay${ageInfo.rev?`, ${fmt(ageInfo.rev)} Kritiker`:''})</div>
-      <div class="mini">
-        <div><span>Gemeisterte Genres</span><span>${eng.genres.length?eng.genres.map(g=>GENRES[g]?.n||g).join(', '):'–'}</span></div>
-        <div><span>Aktive Module</span><span>${eng.modules.length}/8 freigeschaltet</span></div>
-      </div>
-      <div class="field" style="margin-top:4px">
-        <label class="label" for="engLicSel">Externe Lizenzierung</label>
-        <select id="engLicSel">
-          ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10)}/M)`:''}</option>`).join('')}
-        </select>
-        <span class="note">${ENGINE_LIC_MODES[eng.licenseMode]?.d||''}</span>
-      </div>
-      <button type="button" class="btn tiny ghost" data-goto-ws="engine">⚙️ Zum Engine-Tech-Tree (${eng.modules.length}/8)</button>
+      <button type="button" class="btn tiny ghost" data-goto-ws="engine">⚙️ Engine-Labor & Lizenzierung öffnen</button>
+      <details class="fold">
+        <summary>Engine-Details & Schnell-Lizenzierung</summary>
+        <div class="fold-body">
+          <div class="note">${ageInfo.desc} (${fmt(ageInfo.gfx)} GFX, ${fmt(ageInfo.gp)} GP${ageInfo.rev?`, ${fmt(ageInfo.rev)} Kritiker`:''})</div>
+          <div class="mini">
+            <div><span>Genres</span><span>${eng.genres.length?eng.genres.map(g=>GENRES[g]?.n||g).join(', '):'–'}</span></div>
+          </div>
+          <div class="field">
+            <label class="label" for="engLicSel">Externe Lizenzierung</label>
+            <select id="engLicSel">
+              ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10)}/M)`:''}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </details>
     </div>
   </div>`;
 }
@@ -200,7 +207,7 @@ function engineBlock(){
 function staffBlock(){
   if(!C)return '';
   const list=C.studio.staff||[];
-  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/6)</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Im Reiter „🛒 Shop & Aufträge“ oder über 🌟 Legendäre Zufallsbegegnungen kannst du Spezialisten anwerben.</p></div>`;
+  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/6)</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Über „👥 Personal“ oder 🌟 Zufallsbegegnungen rekrutierbar.</p></div>`;
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
   const canAct=S&&['event','shop'].includes(S.screen);
   return `<div class="blk">
@@ -220,20 +227,15 @@ function staffBlock(){
             <div class="dir-info">
               <div class="staff-top">
                 <b>${st.isLegend?'🌟 ':''}${esc(st.personName)}</b>
-                <span class="staff-lvl">St. ${lv} · ${STAFF_TITLES[lv-1]}</span>
+                <span class="staff-lvl">St.${lv}</span>
               </div>
-              <div class="note">${def.n} · ${def.effDesc(lv)}</div>
+              <div class="note">${def.n} · ${def.effDesc(lv)} · ${money(st.sal*sc)}/M</div>
             </div>
           </div>
-          <div class="mini">
-            <div><span>Erfahrung</span><span>${st.xp||0}${nextXp?' / '+nextXp+' XP':' XP (Max)'}</span></div>
-            <div><span>Gehalt</span><span>${money(st.sal*sc)}/Monat</span></div>
-            <div><span>Loyalität</span><span class="${loy<=3?'neg':loy>=7?'pos':''}">${loy}/10 ${loy<=3?'(Abwanderungsgefahr!)':''}</span></div>
-          </div>
-          <div class="loy-bar"><i style="width:${loy*10}%;background:${loyColor}"></i></div>
-          ${canAct&&loy<10?`<div class="row" style="margin-top:4px">
-            <button type="button" class="btn tiny alt" data-dock-bonus="${st.id}" ${S.res.budget<bonusCost?'disabled':''}>Bonus ${money(bonusCost)} (+2 Loy.)</button>
-            <button type="button" class="btn tiny ghost" data-dock-raise="${st.id}">Gehalt +20% (+3 Loy.)</button>
+          <div class="loy-bar" title="Loyalität ${loy}/10 · XP ${st.xp||0}/${nextXp||'Max'}"><i style="width:${loy*10}%;background:${loyColor}"></i></div>
+          ${canAct&&loy<10?`<div class="row" style="margin-top:2px">
+            <button type="button" class="btn tiny alt" data-dock-bonus="${st.id}" ${S.res.budget<bonusCost?'disabled':''}>Bonus ${money(bonusCost)}</button>
+            <button type="button" class="btn tiny ghost" data-dock-raise="${st.id}">Gehalt +20%</button>
           </div>`:''}
         </div>`;
       }).join('')}
@@ -246,18 +248,23 @@ function dirBlock(){
   const img=d.img||(DIRS[d.id]?.img)||null;
   const isScene=!!(d.isScene||DIRS[d.id]?.isScene);
   return `<div class="blk">
-    <span class="label">Game Director (Charakterbogen)</span>
+    <span class="label">Game Director</span>
     <div class="dir-row">
-      ${img?charPortraitHTML(img,isScene,'md',false,d.n):''}
+      ${img?charPortraitHTML(img,isScene,'sm',false,d.n):''}
       <div class="dir-info">
         <div><b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span></div>
         <div class="note">${dirStatLine(d.s)}</div>
       </div>
     </div>
-    <div class="mini"><div><span>Fame</span><span>${C.dir.fame}/100</span></div><div><span>Privatkonto</span><span>${money(C.dir.wealth)}</span></div><div><span>Fertige Spiele</span><span>${C.dir.games}</span></div></div>
-    <div class="traits">${d.perks.map(p=>`<div><b class="p">+ ${PERKS[p].n}</b><span>${PERKS[p].d}</span></div>`).join('')}${d.flaws.map(f=>`<div><b class="n">− ${FLAWS[f].n}</b><span>${FLAWS[f].d}</span></div>`).join('')}${S&&S.aff?`<div><b class="${S.aff>0?'p':'n'}">${S.aff>0?'+':'−'} Genre</b><span>${S.aff>0?'Liegt ihm':'Liegt ihm nicht'}: ${fmt(Math.sign(S.aff)*4+(hasP('spezial')&&S.aff>0?3:0))} auf alle Würfe</span></div>`:''}${S&&S.promises?`<div><b class="n">− Versprechen</b><span>${S.promises} offen, kostet ${2*S.promises} Wertungspunkte</span></div>`:''}</div>
-    ${S&&d.ab&&ABIL[d.ab]?`<div class="row"><button class="btn small ${S.abUsed?'ghost':'alt'}" id="abBtn" ${abilityReady()?'':'disabled'}>${S.abUsed?'Eingesetzt: ':''}${ABIL[d.ab].n}</button></div><span class="note">${ABIL[d.ab].d}${S.abUsed?'':d.ab==='reroll'?' Verfügbar nach einem Fehlschlag.':' Einmal pro Spiel.'}</span>`:''}
-    ${S&&C.dir.wealth>0&&ACTIVE.includes(S.screen)&&!['roll','manual'].includes(S.screen)?`<div class="row"><button class="btn small ghost" id="privBtn">Privatgeld zuschießen</button></div>`:''}
+    ${S&&d.ab&&ABIL[d.ab]?`<div class="row"><button class="btn small ${S.abUsed?'ghost':'alt'}" id="abBtn" title="${esc(ABIL[d.ab].d)}" ${abilityReady()?'':'disabled'}>⚡ ${S.abUsed?'Eingesetzt: ':''}${ABIL[d.ab].n}</button>${S&&C.dir.wealth>0&&ACTIVE.includes(S.screen)&&!['roll','manual'].includes(S.screen)?`<button class="btn small ghost" id="privBtn">Privatgeld (${money(C.dir.wealth)})</button>`:''}</div>`:S&&C.dir.wealth>0&&ACTIVE.includes(S.screen)&&!['roll','manual'].includes(S.screen)?`<div class="row"><button class="btn small ghost" id="privBtn">Privatgeld zuschießen (${money(C.dir.wealth)})</button></div>`:''}
+    <details class="fold">
+      <summary>📋 Director-Details (Fame ${C.dir.fame} · ${d.perks.length} Vorteile · ${d.flaws.length} Macken)</summary>
+      <div class="fold-body">
+        ${S&&d.ab&&ABIL[d.ab]?`<div class="note"><b>${ABIL[d.ab].n}:</b> ${ABIL[d.ab].d}</div>`:''}
+        <div class="mini"><div><span>Fame</span><span>${C.dir.fame}/100</span></div><div><span>Privatkonto</span><span>${money(C.dir.wealth)}</span></div><div><span>Fertige Spiele</span><span>${C.dir.games}</span></div></div>
+        <div class="traits">${d.perks.map(p=>`<div><b class="p">+ ${PERKS[p].n}</b><span>${PERKS[p].d}</span></div>`).join('')}${d.flaws.map(f=>`<div><b class="n">− ${FLAWS[f].n}</b><span>${FLAWS[f].d}</span></div>`).join('')}${S&&S.aff?`<div><b class="${S.aff>0?'p':'n'}">${S.aff>0?'+':'−'} Genre</b><span>${S.aff>0?'Liegt ihm':'Liegt ihm nicht'}: ${fmt(Math.sign(S.aff)*4+(hasP('spezial')&&S.aff>0?3:0))} auf alle Würfe</span></div>`:''}${S&&S.promises?`<div><b class="n">− Versprechen</b><span>${S.promises} offen (−${2*S.promises} Wertung)</span></div>`:''}</div>
+      </div>
+    </details>
   </div>`;
 }
 
@@ -266,19 +273,13 @@ function milestoneBlock(){
   ensureMilestone();
   const ms=S.milestone;
   if(!ms)return '';
-  return `<div class="blk">
-    <span class="label">Publisher- & Projekt-Meilenstein</span>
-    <div class="ms-box">
-      <div class="ms-top">
-        <b>${esc(ms.label)}</b>
-        <span class="chip ${ms.done?'p':''}">${ms.done?'Erreicht ✓':'Monat '+ms.month}</span>
-      </div>
+  return `<details class="fold">
+    <summary>🎯 Meilenstein M${ms.month}: ${esc(ms.label)} ${ms.done?'(✓)':''}</summary>
+    <div class="fold-body">
       <div class="note">Ziel bis Ende Monat ${ms.month}: <b>${esc(ms.desc)}</b></div>
-      <div class="mini">
-        <div><span>Prämie bei Erfolg</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div>
-      </div>
+      <div class="mini"><div><span>Prämie</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div></div>
     </div>
-  </div>`;
+  </details>`;
 }
 
 function trendBlock(){
@@ -286,13 +287,9 @@ function trendBlock(){
   const tr=C.trend;
   const hotG=GENRES[tr.hot]?.n||tr.hot;
   const coldG=GENRES[tr.cold]?.n||tr.cold;
-  return `<div class="blk">
-    <span class="label">Aktueller Markt-Trend</span>
-    <div class="chips">
-      <span class="chip p">🔥 Boom: ${hotG} (+25 % Verkäufe)</span>
-      <span class="chip n">❄️ Übersättigt: ${coldG} (−15 % Verkäufe)</span>
-    </div>
-    <span class="note">${esc(tr.note||'Die Vorlieben der Spieler wandeln sich mit jedem Projekt.')}</span>
+  return `<div class="chips" title="${esc(tr.note||'Markttrend der aktuellen Saison')}">
+    <span class="chip p">🔥 Boom: ${hotG} (+25%)</span>
+    <span class="chip n">❄️ Kalt: ${coldG} (−15%)</span>
   </div>`;
 }
 
@@ -316,10 +313,15 @@ function renderSheet(){
       sh.innerHTML=`
       ${studioBannerHTML()}
       <h2>So läuft Studio W100</h2>
-      <p class="note" style="margin:0">Ihr gründet ein Spielestudio und wählt einen Game Director. Jedes Spiel dauert zwölf Monate in sechs Phasen. Entscheidungen werden mit einem <b>W100</b> (1–100) plus Studiowert gegen einen Schwierigkeitsgrad (SG) gewürfelt. 96–100 ist ein kritischer Erfolg, 1–5 ein Patzer.</p>
-      <div class="blk"><span class="label">🌟 26 Branchen-Legenden (${unlCount}/${totCount} entdeckt)</span><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen 20 Ikonen der Spielegeschichte tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf: Werbt ihr sie fürs Team an, sind sie dauerhaft auch als Start-Director freigeschaltet!</p></div>
-      <div class="blk"><span class="label">Eigene Engine & Tech-Tree</span><p class="note" style="margin:0">Baut ihr eine eigene Engine, schaltet ihr im <b>Engine-Labor</b> bis zu 8 Spezial-Module frei und lizenziert sie an andere Studios. Doch Vorsicht: Ohne Generations-Upgrades veraltet sie nach einigen Spielen!</p></div>
-      <div class="blk"><span class="label">Rivalen, Trends & GOTY-Awards</span><p class="note" style="margin:0">Beobachtet den Markt-Trend, messt euch bei den jährlichen <b>Game of the Year Awards</b> mit 5 KI-Rivalen — und haltet euer Lead-Personal bei Laune!</p></div>`;
+      <p class="note" style="margin:0">Gründet euer Studio, wählt einen Game Director und führt euer Projekt durch 12 Monate mit <b>W100-Proben</b> (Krit ab 96, Patzer 1–5).</p>
+      <details class="fold" open>
+        <summary>🌟 26 Branchen-Legenden (${unlCount}/${totCount})</summary>
+        <div class="fold-body"><p class="note" style="margin:0">6 Legenden sind sofort wählbar. Die übrigen 20 Ikonen tauchen während eurer Projekte als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet!</p></div>
+      </details>
+      <details class="fold">
+        <summary>⚙️ Engine-Labor, Rivalen & GOTY</summary>
+        <div class="fold-body"><p class="note" style="margin:0">Baut ab Monat 2 eine eigene Engine mit 8 Modulen im Tech-Tree, lizenziert sie extern (Vorsicht vor Alterung!) und tretet bei den jährlichen <b>GOTY-Awards</b> gegen 5 KI-Rivalen an.</p></div>
+      </details>`;
       return;
     }
     const d=D();
@@ -330,13 +332,13 @@ function renderSheet(){
         <div><span>Studio-Fame</span><span>${C.studio.fame}/100</span></div>
         <div><span>Studiokasse</span><span class="${C.studio.kasse<0?'neg':''}">${money(C.studio.kasse)}</span></div>
         <div><span>Gehaltsspirale</span><span class="${(C.studio.salaryDrift||0)>0.2?'wrn':''}">+${Math.round((C.studio.salaryDrift||0)*100)} %</span></div>
-        <div><span>Infrastruktur-Overhead</span><span>+${nf(C.studio.overheadDrift||0,1)}× Basis/M</span></div>
+        <div><span>Infrastruktur</span><span>+${nf(C.studio.overheadDrift||0,1)}× Basis/M</span></div>
       </div>
       ${trendBlock()}
       ${dirBlock()}
       ${C.dir.xp>0?`<div class="blk"><span class="label">Erfahrung: ${C.dir.xp} Punkt${C.dir.xp>1?'e':''} verteilen</span>${Object.entries(DSTAT).map(([k,[n]])=>`<div class="bstat"><b>${n}</b><div class="step"><span>${d.s[k]}</span><button type="button" data-xp="${k}" aria-label="${n} erhöhen" ${d.s[k]>=4?'disabled':''}>+</button></div></div>`).join('')}</div>`:''}
-      ${C.dir.games>=3&&!C.dir.perkUnlocked?`<div class="blk"><span class="label">Neuer Vorteil freischaltbar</span>${Object.entries(PERKS).filter(([k])=>!d.perks.includes(k)).map(([k,p])=>`<button class="opt" data-perk="${k}"><span class="t">${p.n}</span><span class="d">${p.d}</span></button>`).join('')}</div>`:''}
-      <div class="blk"><span class="label">Ruhmeshalle (${C.hall.length})</span>${hallHTML()}</div>`;
+      ${C.dir.games>=3&&!C.dir.perkUnlocked?`<details class="fold" open><summary>⭐ Neuer Vorteil freischaltbar!</summary><div class="fold-body">${Object.entries(PERKS).filter(([k])=>!d.perks.includes(k)).map(([k,p])=>`<button class="opt" data-perk="${k}"><span class="t">${p.n}</span><span class="d">${p.d}</span></button>`).join('')}</div></details>`:''}
+      <details class="fold"><summary>🏆 Ruhmeshalle (${C.hall.length} Spiele)</summary><div class="fold-body">${hallHTML()}</div></details>`;
     bindSheetEvents(sh);
     return;
   }
@@ -365,9 +367,9 @@ function renderSheet(){
       </div>
     </div>
     <div class="stats">${Object.keys(STATS).map(k=>`<div class="stat"><b>${fmt(modFor(k)).replace('±','+')}</b><span>${STATS[k]}</span></div>`).join('')}</div>
-    <div class="insp"><span class="label">Inspiration</span>${[0,1,2].map(i=>`<span class="pip ${i<S.insp?'on':''}"></span>`).join('')}<span class="note">Moral-Bonus ${fmt(moralMod())}</span></div>
-    ${milestoneBlock()}
+    <div class="insp"><span class="label">Inspiration</span>${[0,1,2].map(i=>`<span class="pip ${i<S.insp?'on':''}"></span>`).join('')}<span class="note">Moral ${fmt(moralMod())}</span></div>
     ${trendBlock()}
+    ${milestoneBlock()}
     ${dirBlock()}`;
   bindSheetEvents(sh);
 }
@@ -385,23 +387,23 @@ function renderDock(){
   if(!C){
     const unl=getUnlockedChars().length;
     const tot=Object.keys(DIRS).length;
-    dk.innerHTML=`<div class="blk">
-      <span class="label">W100-Würfelsystem</span>
-      <p class="note" style="margin:0">In <b>Studio W100: Goldstatus</b> wird jede riskante Entscheidung prozentgenau mit einem 100-seitigen Würfel (1–100) ausgewürfelt.</p>
-      <div class="mini">
-        <div><span>Kritischer Erfolg</span><span class="pos">96–100 (+1 Insp. & Lead-XP)</span></div>
+    dk.innerHTML=`<div>
+      <span class="label">W100-Kurzreferenz</span>
+      <div class="mini" style="margin-top:6px">
+        <div><span>Kritischer Erfolg</span><span class="pos">96–100 (+1 Insp.)</span></div>
         <div><span>Kritischer Patzer</span><span class="neg">1–5 (Zusatzschaden)</span></div>
-        <div><span>Inspiration</span><span>2× W100 (besseres Ergebnis)</span></div>
+        <div><span>Vorteil (Inspiration)</span><span>2× W100 (besserer zählt)</span></div>
         <div><span>Entdeckte Legenden</span><span class="pos">${unl} / ${tot}</span></div>
       </div>
     </div>
-    <div class="blk">
-      <span class="label">Branchen-Rivalen</span>
-      <div class="note">Ihr tretet gegen 5 namhafte Studios um die jährlichen <b>Game of the Year Awards</b> an:</div>
-      <div class="mini">
-        ${BASE_RIVALS.map(r=>`<div><span><b>${esc(r.name)}</b></span><span>${GENRES[r.fav]?.n||r.fav}</span></div>`).join('')}
+    <details class="fold">
+      <summary>🏆 5 KI-Rivalen (GOTY-Konkurrenz)</summary>
+      <div class="fold-body">
+        <div class="mini">
+          ${BASE_RIVALS.map(r=>`<div><span><b>${esc(r.name)}</b></span><span>${GENRES[r.fav]?.n||r.fav}</span></div>`).join('')}
+        </div>
       </div>
-    </div>`;
+    </details>`;
     return;
   }
 
@@ -417,14 +419,27 @@ function renderDock(){
     </div>
     ${dockTab==='plan'?`
       ${S?`
-        <div class="blk"><span class="label">Budgetplan pro Monat</span>
-          <div class="plan">${Object.entries(PLAN).map(([k,p])=>`<div class="prow"><span class="pn">${p.n}</span><div class="seg" role="group" aria-label="${p.n}">${p.lv.map((l,i)=>`<button type="button" data-pk="${k}" data-pl="${i}" aria-pressed="${S.plan[k]===i}" ${editable?'':'disabled'}>${l}</button>`).join('')}</div><span class="pd">${p.d} · ${money(p.cost[S.plan[k]]*t.scale,true)}</span></div>`).join('')}</div>
-          <div class="legend">${monthLines().map(([c,v])=>`<div><s style="background:var(${CAT[c][1]})"></s><span>${CAT[c][0]}</span><span>${money(v)}</span></div>`).join('')}</div>
-          <div class="burn"><span>Kosten pro Monat</span><span>${money(monthSum())}</span></div>
+        <div class="blk" style="padding-top:4px;border-top:0">
+          <div class="burn"><span>Monatliche Gesamtkosten</span><b>${money(monthSum())}/M</b></div>
+          <div class="plan">${Object.entries(PLAN).map(([k,p])=>`<div class="prow" title="${esc(p.d)}"><span class="pn">${p.n} <small class="note">(${money(p.cost[S.plan[k]]*t.scale,true)})</small></span><div class="seg" role="group" aria-label="${p.n}">${p.lv.map((l,i)=>`<button type="button" data-pk="${k}" data-pl="${i}" aria-pressed="${S.plan[k]===i}" ${editable?'':'disabled'}>${l}</button>`).join('')}</div></div>`).join('')}</div>
         </div>
-        <div class="blk"><span class="label">Bisher ausgegeben</span>${spendBlock()}${S.income?`<div class="burn"><span>Vorab- & Auftrags-Einnahmen</span><span class="pos">${money(S.income,true)}</span></div>`:''}${S.loan?`<div class="burn"><span>Kredit offen</span><span class="neg">${money(S.loan)}</span></div>`:''}${S.recoup?`<div class="burn"><span>Vorschüsse zu verrechnen</span><span>${money(S.recoup)}</span></div>`:''}</div>
+        <details class="fold">
+          <summary>📊 Kosten-Aufschlüsselung (${money(monthSum())}/M)</summary>
+          <div class="fold-body">
+            <div class="legend">${monthLines().map(([c,v])=>`<div><s style="background:var(${CAT[c][1]})"></s><span>${CAT[c][0]}</span><span>${money(v)}</span></div>`).join('')}</div>
+          </div>
+        </details>
+        <details class="fold">
+          <summary>🧾 Bisherige Ausgaben (${money(spendTotal())})</summary>
+          <div class="fold-body">
+            ${spendBlock()}
+            ${S.income?`<div class="burn"><span>Vorab-/Auftrags-Einnahmen</span><span class="pos">${money(S.income,true)}</span></div>`:''}
+            ${S.loan?`<div class="burn"><span>Kredit offen</span><span class="neg">${money(S.loan)}</span></div>`:''}
+            ${S.recoup?`<div class="burn"><span>Vorschüsse (Recoup)</span><span>${money(S.recoup)}</span></div>`:''}
+          </div>
+        </details>
       `:`
-        <div class="blk">
+        <div class="blk" style="padding-top:4px;border-top:0">
           <span class="label">Finanz-Status vor Projektstart</span>
           <div class="mini">
             <div><span>Verfügbare Studiokasse</span><b>${money(C.studio.kasse)}</b></div>
@@ -432,17 +447,16 @@ function renderDock(){
             <div><span>Infrastruktur-Stufe</span><span>+${nf(C.studio.overheadDrift||0,1)}× Basis</span></div>
             <div><span>Aktive Leads</span><span>${C.studio.staff.length} / 6</span></div>
           </div>
-          <p class="note" style="margin:0">Sobald das neue Projekt startet, steuerst du hier die monatlichen Ausgaben für Personal, Überstunden, Büro, Tools, QA, Marketing und Community.</p>
         </div>
         ${engineBlock()}
       `}
     `:dockTab==='team'?`
-      ${engineBlock()}
       ${staffBlock()}
+      ${engineBlock()}
     `:`
-      <div class="blk">
+      <div class="blk" style="padding-top:4px;border-top:0">
         <span class="label">Live-Würfelprotokoll (W100)</span>
-        <ol class="dock-log" id="log">${(S&&S.log.length?S.log:[]).map(l=>`<li>${l}</li>`).join('')||'<li class="note">Noch keine Würfe in diesem Projekt.</li>'}</ol>
+        <ol class="log-list" id="log">${(S&&S.log.length?S.log:[]).map(l=>`<li>${l}</li>`).join('')||'<li class="note">Noch keine Würfe in diesem Projekt.</li>'}</ol>
       </div>
     `}
   `;
@@ -465,36 +479,43 @@ function renderWsNav(){
   const inShop=S&&S.screen==='shop';
   const activeTab=inShop&&wsTab==='board'?'shop':wsTab;
   const eng=C?.studio?.engine;
-  const tpBadge=eng&&(eng.techPts||0)>0?`<span class="ws-badge">${eng.techPts}</span>`:'';
-  const staffBadge=C&&C.studio.staff.length?`<span class="ws-badge">${C.studio.staff.length}/6</span>`:'';
+  const tpBadge=eng&&(eng.techPts||0)>0?`<span class="dot">${eng.techPts}</span>`:'';
+  const staffBadge=C?`<span class="dot">${C.studio.staff.length}/6</span>`:'';
   const rivalsCount=C?getAllRivals().length:BASE_RIVALS.length;
   const unlCount=getUnlockedChars().length;
   const totCount=Object.keys(DIRS).length;
 
   nav.innerHTML=`
-    <button type="button" class="ws-btn ${activeTab==='board'?'active':''}" data-wstab="board">
+    <button type="button" class="ws-tab ${activeTab==='board'?'active':''}" data-wstab="board">
       🃏 ${S?`Spieltisch (M${Math.min(S.round+1,12)})`:C?'Neues Projekt':'Studio gründen'}
     </button>
     ${S&&['event','shop'].includes(S.screen)?`
-      <button type="button" class="ws-btn ${activeTab==='shop'?'active':''}" data-wstab="shop">
-        🛒 Shop, Leads & Aufträge ${staffBadge}
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='invest'?'active':''}" data-wstab="shop" data-sub="invest">
+        🛒 Investieren
+      </button>
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='hire'?'active':''}" data-wstab="shop" data-sub="hire">
+        👥 Personal ${staffBadge}
+      </button>
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='earn'?'active':''}" data-wstab="shop" data-sub="earn">
+        💼 Geld verdienen
       </button>
     `:''}
     ${C?`
-      <button type="button" class="ws-btn ${activeTab==='engine'?'active':''}" data-wstab="engine">
+      <button type="button" class="ws-tab ${activeTab==='engine'?'active':''}" data-wstab="engine">
         ⚙️ Engine-Labor ${tpBadge}
       </button>
-      <button type="button" class="ws-btn ${activeTab==='league'?'active':''}" data-wstab="league">
-        🏆 Liga & Rivalen <span class="ws-badge">${rivalsCount}</span>
+      <button type="button" class="ws-tab ${activeTab==='league'?'active':''}" data-wstab="league">
+        🏆 Liga (${rivalsCount})
       </button>
     `:''}
-    <button type="button" class="ws-btn ${activeTab==='legends'?'active':''}" data-wstab="legends">
-      🌟 Legenden <span class="ws-badge">${unlCount}/${totCount}</span>
+    <button type="button" class="ws-tab ${activeTab==='legends'?'active':''}" data-wstab="legends">
+      🌟 Legenden (${unlCount}/${totCount})
     </button>
   `;
 
   nav.querySelectorAll('[data-wstab]').forEach(b=>b.onclick=()=>{
     const target=b.dataset.wstab;
+    if(b.dataset.sub)shopSubTab=b.dataset.sub;
     wsTab=target;
     if(S){
       if(target==='shop'&&S.screen==='event'){S.shopMsg=null;S.screen='shop'}
@@ -504,36 +525,59 @@ function renderWsNav(){
   });
 }
 
-/* ===================== Legenden-Album (Alle 26 Ikonen & Freischalt-Status) ===================== */
+/* ===================== Legenden-Album (Mit Filter-Tabs gegen langes Scrollen) ===================== */
 function renderLegendsView(m){
   const unl=getUnlockedChars();
-  const entries=Object.entries(DIRS);
-  m.innerHTML=`<span class="stamp">🌟 Halle der Branchen-Legenden (${unl.length} / ${entries.length} freigeschaltet)</span>
-    <h3>Entdecke & Rekrutiere die Ikonen der Spielegeschichte</h3>
-    <p>6 Legenden stehen dir von Beginn an als <b>Game Director</b> zur Verfügung. Die übrigen 20 Persönlichkeiten triffst du während deiner Projekte als <b>Zufallsbegegnung</b>: Stellst du sie dort als Star-Lead ein (oder überzeugst sie in einer Gast-Session), sind sie <b>dauerhaft für alle künftigen Karrieren freigeschaltet</b>! <i>(Tipp: Klicke auf ein freigeschaltetes Porträt für die große Sammelkarte!)</i></p>
+  const allEntries=Object.entries(DIRS);
+  const filtered=legendFilter==='unlocked'?allEntries.filter(([k])=>isCharUnlocked(k))
+    :legendFilter==='locked'?allEntries.filter(([k])=>!isCharUnlocked(k))
+    :allEntries;
+
+  m.innerHTML=`<div class="staff-top">
+      <span class="stamp">🌟 Halle der Branchen-Legenden (${unl.length} / ${allEntries.length})</span>
+      <button class="btn small ghost" id="backBoard">← Zurück zum Spieltisch</button>
+    </div>
+    <p class="note" style="margin:0">6 Legenden sind ab Start verfügbar, 20 weitere schaltest du durch Zufallsbegegnungen im Spiel frei. <i>(Klick auf ein Porträt vergrößert die Sammelkarte.)</i></p>
+    <div class="sub-tabs" role="tablist">
+      <button type="button" class="sub-tab ${legendFilter==='unlocked'?'active':''}" data-lfilt="unlocked">⭐ Freigeschaltet (${unl.length})</button>
+      <button type="button" class="sub-tab ${legendFilter==='locked'?'active':''}" data-lfilt="locked">🔒 Unentdeckt (${allEntries.length-unl.length})</button>
+      <button type="button" class="sub-tab ${legendFilter==='all'?'active':''}" data-lfilt="all">Alle (${allEntries.length})</button>
+    </div>
     <div class="legend-grid">
-      ${entries.map(([k,o])=>{
+      ${filtered.map(([k,o])=>{
         const ok=isCharUnlocked(k);
         const roleName=STAFF[o.leadRole]?.n||'Spezialist';
-        return `<div class="legend-card ${ok?'':'locked'}">
-          ${charPortraitHTML(o.img,o.isScene,'md',!ok,o.n)}
+        if(!ok){
+          return `<div class="legend-card locked">
+            ${charPortraitHTML(o.img,o.isScene,'sm',true,o.n)}
+            <div class="dir-info">
+              <b>🔒 ${esc(o.tag)}</b>
+              <div class="note">Rolle: ${roleName} · Zufallsbegegnung im Spiel</div>
+            </div>
+          </div>`;
+        }
+        return `<div class="legend-card">
+          ${charPortraitHTML(o.img,o.isScene,'md',false,o.n)}
           <div class="dir-info">
             <div class="staff-top">
-              <b>${ok?esc(o.n):'??? · '+esc(o.tag)}</b>
-              <span class="chip ${ok?'p':''}">${ok?(o.starter?'Starter ✓':'Freigeschaltet ✓'):'🔒 Zufallsbegegnung'}</span>
+              <b>${esc(o.n)}</b>
+              <span class="chip p">${o.starter?'Starter ✓':'Freigeschaltet ✓'}</span>
             </div>
             <div class="note"><b>${esc(o.tag)}</b> · Lead-Rolle: ${roleName}</div>
-            <div class="note">${ok?esc(o.d):'Triff diese Legende während eines Projekts als Zufallsbegegnung und wirb sie für dein Team an, um sie dauerhaft freizuschalten.'}</div>
-            ${ok?`
-              <code style="font:500 11.5px var(--f-mono)">${dirStatLine(o.s)}</code>
-              <div class="note"><b>Fähigkeit:</b> ${ABIL[o.ab]?.n||o.ab} — ${ABIL[o.ab]?.d||''}</div>
-            `:''}
+            <code style="font:500 11px var(--f-mono)">${dirStatLine(o.s)}</code>
+            <details class="fold">
+              <summary>Biografie & Spezialfähigkeit (${ABIL[o.ab]?.n||o.ab})</summary>
+              <div class="fold-body">
+                <div class="note">${esc(o.d)}</div>
+                <div class="note"><b>${ABIL[o.ab]?.n||o.ab}:</b> ${ABIL[o.ab]?.d||''}</div>
+              </div>
+            </details>
           </div>
         </div>`;
       }).join('')}
-    </div>
-    <div class="row"><button class="btn" id="backBoard">Zurück zum Spieltisch</button></div>`;
+    </div>`;
   bindZoomTriggers(m);
+  m.querySelectorAll('[data-lfilt]').forEach(b=>b.onclick=()=>{legendFilter=b.dataset.lfilt;renderLegendsView(m)});
   $('backBoard').onclick=()=>{wsTab='board';render()};
 }
 
@@ -818,9 +862,16 @@ function renderMain(){
   if(sc==='event'){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
-    m.innerHTML=monthNote()+budgetAlert()+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev)+`<div class="row"><button class="btn small ghost" id="shopBtn">🛒 Shop, Leads & Auftragsarbeiten (${C.studio.staff.length}/6 Leads)</button></div>`;
+    m.innerHTML=monthNote()+budgetAlert()+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev)+`<div class="row">
+      <button class="btn small ghost" id="shopBtn" data-opensub="invest">🛒 Investieren</button>
+      <button class="btn small ghost" data-opensub="hire">👥 Personal (${C.studio.staff.length}/6)</button>
+      <button class="btn small ghost" data-opensub="earn">💼 Geld verdienen ${S.contractMonth===S.round?'(✓)':''}</button>
+    </div>`;
     bindOpts(m);bindFin();
-    $('shopBtn').onclick=()=>{S.shopMsg=null;S.screen='shop';wsTab='shop';render();save()};
+    m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
+      shopSubTab=b.dataset.opensub;
+      S.shopMsg=null;S.screen='shop';wsTab='shop';render();save();
+    });
     return;
   }
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
@@ -922,52 +973,91 @@ function renderShop(m){
   const cats=['Marketing','Qualität','Studio','Spekulativ'];
   const contractsDone=S.contractsDone||[];
   const contractThisMonth=S.contractMonth===S.round;
+  const shopItems=SHOP.filter(it=>(!it.tiers||it.tiers.includes(S.tier))&&(shopCatFilter==='all'||it.c===shopCatFilter));
 
-  m.innerHTML=`<span class="stamp">🛒 Studio-Shop, Personal & Auftragsarbeiten</span><h3>Investieren, Anwerben oder Geld verdienen</h3><p>Kauft Maßnahmen, werbt Lead-Spezialisten an oder übernehmt eine bezahlte Auftragsarbeit (max. 1 Auftrag pro Monat), um eure Kasse aufzubessern.</p>
-   ${S.shopMsg?`<div class="alert mid"><b>${esc(S.shopMsg.n)}</b><span>${esc(S.shopMsg.txt||'')}</span>${chips(S.shopMsg.ch)}</div>`:''}
+  m.innerHTML=`
+    <div class="staff-top">
+      <span class="stamp">${shopSubTab==='invest'?'🛒 Studio-Investitionen':shopSubTab==='hire'?'👥 Lead-Personal & Team':'💼 Auftragsarbeiten & Finanzierung'}</span>
+      <button class="btn small ghost" id="back">← Zurück zur Monatskarte</button>
+    </div>
+    <div class="sub-tabs" role="tablist" aria-label="Bereich wählen">
+      <button type="button" class="sub-tab ${shopSubTab==='invest'?'active':''}" data-stsub="invest">🛒 Investieren (${S.shop.length}/${SHOP.length})</button>
+      <button type="button" class="sub-tab ${shopSubTab==='hire'?'active':''}" data-stsub="hire">👥 Personal anwerben (${C.studio.staff.length}/6)</button>
+      <button type="button" class="sub-tab ${shopSubTab==='earn'?'active':''}" data-stsub="earn">💼 Geld verdienen ${contractThisMonth?'(✓)':''}</button>
+    </div>
+    ${S.shopMsg?`<div class="alert mid"><b>${esc(S.shopMsg.n)}</b><span>${esc(S.shopMsg.txt||'')}</span>${chips(S.shopMsg.ch)}</div>`:''}
 
-   <div class="shopcat"><span class="label">💼 Auftragsarbeiten für Fremdfirmen (${contractThisMonth?'Diesen Monat bereits erledigt':'Sofort-Einnahmen gegen W100-Wurf'})</span>
-   ${CONTRACTS.map(ct=>{
-     const done=contractsDone.includes(ct.id);
-     const dis=done||contractThisMonth;
-     const pay=Math.round(ct.pay*sc);
-     const mod=modFor(ct.st)+moralMod();
-     const pct=winChance(ct.dc,mod,false);
-     return `<button class="opt" data-contract="${ct.id}" ${dis?'disabled':''}>
-       <span class="t">${ct.n}</span>
-       <span class="check">${done?'Erledigt ✓':`+${money(pay)} · ${STATS[ct.st]} SG ${ct.dc} (${pct} %)`}</span>
-       <span class="d">${ct.d}</span>
-     </button>`;
-   }).join('')}</div>
+    <!-- TAB 1: INVESTIEREN (MAßNAHMEN) -->
+    <div id="shopPanel-invest" ${shopSubTab==='invest'?'':'hidden'}>
+      <div class="cat-pills" style="margin-bottom:8px">
+        <button type="button" class="cat-pill ${shopCatFilter==='all'?'active':''}" data-cfilt="all">Alle (${SHOP.filter(it=>!it.tiers||it.tiers.includes(S.tier)).length})</button>
+        ${cats.map(c=>`<button type="button" class="cat-pill ${shopCatFilter===c?'active':''}" data-cfilt="${c}">${c}</button>`).join('')}
+      </div>
+      <div class="opts-grid">
+        ${shopItems.map(it=>{
+          const cost=it.cost*sc,bought=S.shop.includes(it.id),early=it.min&&ph<it.min;
+          const noEng=it.id==='refactoring'&&(!C.studio.engine||S.engine!=='eigen');
+          const dis=bought||S.res.budget<cost||early||noEng;
+          const target=it.st?dc100(it.dc):0;
+          return `<button class="opt" data-buy="${it.id}" ${dis?'disabled':''}>
+            <span class="t">${it.n}</span>
+            <span class="check ${it.st?'':'safe'}">${bought?'Gekauft ✓':money(cost)}</span>
+            <span class="d"><small class="note">[${it.c}]</small> ${it.d}${it.st?` (${STATS[it.st]} SG ${target})`:''}${early?' · Ab Phase '+PHASES[it.min]:''}${noEng?' · Eigene Engine nötig':''}</span>
+            ${!it.st&&it.eff?chips(previewSafe(it.eff)):''}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
 
-   <div class="shopcat"><span class="label">👥 Lead-Personal (Agenturgebühr ${money(2*sc)}, danach Gehalt pro Monat)</span>
-   ${Object.entries(STAFF).map(([k,s])=>{
-     const st=getStaff(k);
-     const has=!!st;
-     const bonusCost=has?Math.round(st.sal*1.5*sc*10)/10:0;
-     return `<div class="opt" style="cursor:default">
-       <span class="t">${has?`${st.isLegend?'🌟 ':''}${esc(st.personName)} — ${s.n} (St. ${st.level})`:s.n}</span>
-       <span class="check ${has?'':'safe'}">${has?`Loyalität ${st.loyalty}/10 · ${money(st.sal*sc)}/M`:money(s.sal*sc)+'/Monat'}</span>
-       <span class="d">${s.d} <b>Effekt:</b> ${s.effDesc(has?st.level:1)}.</span>
-       <div class="row" style="grid-column:1/-1">
-         ${has?`
-           <button class="btn tiny alt" data-bonus="${k}" ${S.res.budget<bonusCost||st.loyalty>=10?'disabled':''}>Sonderbonus ${money(bonusCost)} (+2 Loyalität)</button>
-           <button class="btn tiny ghost" data-raise="${k}" ${st.loyalty>=10?'disabled':''}>Gehalt +20 % (+3 Loyalität)</button>
-           <button class="btn tiny ghost" data-fire="${k}">Entlassen (−1 Moral)</button>
-         `:`<button class="btn small alt" data-hire="${k}" ${S.res.budget<2*sc?'disabled':''}>Anwerben (Business-Wurf SG 50)</button>`}
-       </div>
-     </div>`;
-   }).join('')}</div>
+    <!-- TAB 2: PERSONAL ANWERBEN & PFLEGEN -->
+    <div id="shopPanel-hire" ${shopSubTab==='hire'?'':'hidden'}>
+      <p class="note" style="margin:0 0 8px">Agenturgebühr beim Anwerben: <b>${money(2*sc)}</b> (Business-Wurf gegen SG 50). Eingestellte Leads steigen durch Projekterfolge und kritische Würfe im Level auf.</p>
+      <div class="opts-grid">
+        ${Object.entries(STAFF).map(([k,s])=>{
+          const st=getStaff(k);
+          const has=!!st;
+          const bonusCost=has?Math.round(st.sal*1.5*sc*10)/10:0;
+          return `<div class="opt" style="cursor:default">
+            <span class="t">${has?`${st.isLegend?'🌟 ':''}${esc(st.personName)} (St.${st.level})`:s.n}</span>
+            <span class="check ${has?'':'safe'}">${has?`Loy. ${st.loyalty}/10 · ${money(st.sal*sc)}/M`:money(s.sal*sc)+'/M'}</span>
+            <span class="d"><b>${s.n}:</b> ${s.effDesc(has?st.level:1)}.</span>
+            <div class="row" style="grid-column:1/-1;margin-top:4px">
+              ${has?`
+                <button class="btn tiny alt" data-bonus="${k}" ${S.res.budget<bonusCost||st.loyalty>=10?'disabled':''}>Bonus ${money(bonusCost)} (+2 Loy.)</button>
+                <button class="btn tiny ghost" data-raise="${k}" ${st.loyalty>=10?'disabled':''}>Gehalt +20% (+3 Loy.)</button>
+                <button class="btn tiny ghost" data-fire="${k}">Entlassen</button>
+              `:`<button class="btn small alt" data-hire="${k}" ${S.res.budget<2*sc?'disabled':''}>Anwerben (SG 50)</button>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
 
-   ${cats.map(c=>`<div class="shopcat"><span class="label">${c}</span>${SHOP.filter(it=>it.c===c&&(!it.tiers||it.tiers.includes(S.tier))).map(it=>{
-     const cost=it.cost*sc,bought=S.shop.includes(it.id),early=it.min&&ph<it.min;
-     const noEng=it.id==='refactoring'&&(!C.studio.engine||S.engine!=='eigen');
-     const dis=bought||S.res.budget<cost||early||noEng;
-     const target=it.st?dc100(it.dc):0;
-     return `<button class="opt" data-buy="${it.id}" ${dis?'disabled':''}><span class="t">${it.n}</span><span class="check ${it.st?'':'safe'}">${bought?'gekauft':money(cost)}</span><span class="d">${it.d} ${it.st?`${STATS[it.st]}-Wurf gegen SG ${target}.`:''}${early?' Ab der Phase '+PHASES[it.min]+'.':''}${noEng?' (Nur mit eigener Engine im Einsatz)':''}</span>${!it.st&&it.eff?chips(previewSafe(it.eff)):''}</button>`;
-   }).join('')}</div>`).join('')}
-   <button class="btn" id="back">Zurück zur Monatskarte</button>`;
+    <!-- TAB 3: GELD VERDIENEN (AUFTRÄGE & FINANZIERUNG) -->
+    <div id="shopPanel-earn" ${shopSubTab==='earn'?'':'hidden'}>
+      <div class="staff-top" style="margin-bottom:8px">
+        <span class="note">${contractThisMonth?'✅ Ihr habt diesen Monat bereits eine Auftragsarbeit erledigt.':'Ihr könnt bis zu 1 Auftragsarbeit pro Monat erledigen, um sofort frisches Geld in die Kasse zu spülen.'}</span>
+        <button type="button" class="btn tiny ghost" id="openFinFromShop">🏦 Weitere Finanzierung / Kredit prüfen</button>
+      </div>
+      <div class="opts-grid">
+        ${CONTRACTS.map(ct=>{
+          const done=contractsDone.includes(ct.id);
+          const dis=done||contractThisMonth;
+          const pay=Math.round(ct.pay*sc);
+          const mod=modFor(ct.st)+moralMod();
+          const pct=winChance(ct.dc,mod,false);
+          return `<button class="opt" data-contract="${ct.id}" ${dis?'disabled':''}>
+            <span class="t">${ct.n}</span>
+            <span class="check">${done?'Erledigt ✓':`+${money(pay)} · ${STATS[ct.st]} SG ${ct.dc} (${pct}%)`}</span>
+            <span class="d">${ct.d}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
 
+  m.querySelectorAll('[data-stsub]').forEach(b=>b.onclick=()=>{shopSubTab=b.dataset.stsub;render()});
+  m.querySelectorAll('[data-cfilt]').forEach(b=>b.onclick=()=>{shopCatFilter=b.dataset.cfilt;renderShop(m)});
+  const finBtn=$('openFinFromShop');if(finBtn)finBtn.onclick=()=>openCrisis('event');
   m.querySelectorAll('[data-contract]').forEach(b=>b.onclick=()=>startContract(b.dataset.contract));
   m.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   m.querySelectorAll('[data-hire]').forEach(b=>b.onclick=()=>hire(b.dataset.hire));
@@ -1066,7 +1156,7 @@ function renderEnd(m){
    </div>
    ${dlcAvail?`<div class="blk">
      <span class="label">Optional: Post-Release-Phase (1 Aktion vor dem nächsten Projekt)</span>
-     <div class="opts">
+     <div class="opts-grid">
        ${DLC_OPTS.filter(d=>!d.cond||d.cond()).map(d=>{
          const cost=Math.round(mBurn*d.costMonths);
          const target=dc100(d.dc);
@@ -1081,7 +1171,12 @@ function renderEnd(m){
      </div>
    </div>`:''}
    ${broke?`<div class="alert"><b>Die Schulden sind zu hoch</b><span>Die Studiokasse steht bei ${money(e.kasseNew)}. Das Studio muss schließen.</span></div>`:''}
-   <div class="ledger">${ledger(e)}</div>
+   <details class="fold">
+     <summary>📊 Detaillierte Jahresbilanz & Gewinnverteilung aufklappen (Neue Kasse: ${money(e.kasseNew)})</summary>
+     <div class="fold-body">
+       <div class="ledger">${ledger(e)}</div>
+     </div>
+   </details>
    <div class="row">${broke?'<button class="btn" id="re">Neues Studio gründen</button>':'<button class="btn" id="nextP">Nächstes Projekt planen</button>'}<button class="btn small ghost" id="expChron">Chronik exportieren</button><button class="btn ghost" id="quit">Karriere beenden</button></div>`;
   m.querySelectorAll('[data-dlc]').forEach(b=>b.onclick=()=>startDlc(b.dataset.dlc));
   if(broke)$('re').onclick=refound;else $('nextP').onclick=()=>{S=null;setupDraft=null;setupStep=2;wsTab='board';render();save()};
@@ -1222,22 +1317,21 @@ function renderSetup(m){
               ${charPortraitHTML(o.img,o.isScene,'sm',!ok,o.n)}
               <div class="dir-body">
                 <b>${ok?esc(o.n):'🔒 '+esc(o.tag)}</b>
-                <span>${ok?`${esc(o.tag)}. ${esc(o.d)}`:'Triff diese Legende als Zufallsbegegnung während eines Projekts und wirb sie an, um sie dauerhaft freizuschalten!'}</span>
+                <span>${ok?esc(o.tag):'Durch Zufallsbegegnung im Spiel freischaltbar'}</span>
                 ${ok?`
                   <code>${dirStatLine(o.s)}</code>
-                  <span>Fähigkeit: ${ABIL[o.ab]?.n||o.ab}${o.perks.length?' · Vorteil: '+o.perks.map(p=>PERKS[p].n).join(', '):''} · Macke: ${o.flaws.map(f=>FLAWS[f].n).join(', ')||'keine'}</span>
-                  ${Object.keys(o.aff).length?`<span>Genres: ${Object.entries(o.aff).map(([g,v])=>GENRES[g].n+' '+fmt(v*4)).join(', ')}</span>`:''}
+                  <span class="more">${esc(o.d)}<br><b>Fähigkeit:</b> ${ABIL[o.ab]?.n||o.ab}${o.perks.length?' · <b>Vorteil:</b> '+o.perks.map(p=>PERKS[p].n).join(', '):''}${o.flaws.length?' · <b>Macke:</b> '+o.flaws.map(f=>FLAWS[f].n).join(', '):''}${Object.keys(o.aff).length?'<br><b>Genres:</b> '+Object.entries(o.aff).map(([g,v])=>GENRES[g].n+' '+fmt(v*4)).join(', '):''}</span>
                 `:''}
               </div>
             </label>`;
           }).join('')}
-          ${first?`<label class="choice"><input type="radio" name="dir" id="d-custom" value="custom" ${setupDraft.dir==='custom'?'checked':''}><b>🛠️ Eigener Director</b><span>Werte mit ${DPTS} Punkten kaufen, Vorteile wählen, Macken für Extrapunkte nehmen.</span></label>`:''}
+          ${first?`<label class="choice"><input type="radio" name="dir" id="d-custom" value="custom" ${setupDraft.dir==='custom'?'checked':''}><b>🛠️ Eigener Director</b><span>Werte mit ${DPTS} Punkten frei verteilen.</span></label>`:''}
         </div>
         <div id="builder" ${first&&setupDraft.dir==='custom'?'':'hidden'}></div>
       </div>
       <p class="err" id="setupErr" hidden></p>
       <div class="wiz-nav">
-        <span class="note">Schritt 1 von 4</span>
+        <span class="note">Schritt 1 von 4 · Tipp: Klick auf eine Karte zeigt alle Details</span>
         <div class="row">
           <button type="button" class="btn" id="wizNext">Weiter: Klasse & Modell →</button>
         </div>
@@ -1255,23 +1349,23 @@ function renderSetup(m){
       </div>
       <div class="field">
         <span class="label">Produktionsklasse</span>
-        <div class="choices">${Object.entries(TIERS).map(([k,t])=>{
+        <div class="choices compact">${Object.entries(TIERS).map(([k,t])=>{
           const ok=first||kasse>=t.min;
-          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${t.n}</b><span>${t.d}</span><code>${first?'Start '+money(220*t.scale)+' · ':'mind. '+money(t.min)+' · '}${t.team} Leute · ca. ${money(13*t.scale)}/Monat<br>Preise ${t.prices.map(p=>nf(p,2)).join(' / ')} €</code><span>${t.note}</span></label>`;
+          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${t.n}</b><code>${first?'Start '+money(220*t.scale)+' · ':'mind. '+money(t.min)+' · '}${t.team} Leute · ~${money(13*t.scale)}/M</code><span class="more">${t.d} · Preise: ${t.prices.map(p=>nf(p,2)).join(' / ')} € · ${t.note}</span></label>`;
         }).join('')}</div>
       </div>
       <div class="field">
         <span class="label">Marke (IP)</span>
-        <div class="choices">
-          <label class="choice"><input type="radio" name="ip" id="ip-neu" value="neu" ${setupDraft.ip==='neu'?'checked':''}><b>${IPS.neu.n}</b><span>${IPS.neu.d}</span><code>${IPS.neu.note}</code></label>
-          ${seqs.map(([h,i])=>`<label class="choice"><input type="radio" name="ip" id="ip-seq${i}" value="seq:${i}" data-st="${esc(h.title)}" ${setupDraft.ip===`seq:${i}`?'checked':''}><b>Fortsetzung von „${esc(h.title)}“</b><span>Wertung ${h.meta}. Fans und Kritiker erinnern sich.</span><code>+${clamp(Math.floor((h.meta-60)/8),0,4)} Hype zusätzlich, Verkäufe ×${nf(1.3+(h.meta-70)/100,2)}, Start-Wishlists</code></label>`).join('')}
-          ${first?`<label class="choice"><input type="radio" name="ip" id="ip-franchise" value="franchise" ${setupDraft.ip==='franchise'?'checked':''}><b>${IPS.franchise.n}</b><span>${IPS.franchise.d}</span><code>${IPS.franchise.note}</code></label>`:''}
-          <label class="choice"><input type="radio" name="ip" id="ip-lizenz" value="lizenz" ${setupDraft.ip==='lizenz'?'checked':''}><b>${IPS.lizenz.n}</b><span>${IPS.lizenz.d}</span><code>${IPS.lizenz.note}</code></label>
+        <div class="choices compact">
+          <label class="choice"><input type="radio" name="ip" id="ip-neu" value="neu" ${setupDraft.ip==='neu'?'checked':''}><b>${IPS.neu.n}</b><code>${IPS.neu.note}</code><span class="more">${IPS.neu.d}</span></label>
+          ${seqs.map(([h,i])=>`<label class="choice"><input type="radio" name="ip" id="ip-seq${i}" value="seq:${i}" data-st="${esc(h.title)}" ${setupDraft.ip===`seq:${i}`?'checked':''}><b>Fortsetzung: „${esc(h.title)}“</b><code>+${clamp(Math.floor((h.meta-60)/8),0,4)} Hype · ×${nf(1.3+(h.meta-70)/100,2)} Verkäufe</code><span class="more">Vorgänger-Wertung ${h.meta}. Fans und Kritiker erinnern sich.</span></label>`).join('')}
+          ${first?`<label class="choice"><input type="radio" name="ip" id="ip-franchise" value="franchise" ${setupDraft.ip==='franchise'?'checked':''}><b>${IPS.franchise.n}</b><code>${IPS.franchise.note}</code><span class="more">${IPS.franchise.d}</span></label>`:''}
+          <label class="choice"><input type="radio" name="ip" id="ip-lizenz" value="lizenz" ${setupDraft.ip==='lizenz'?'checked':''}><b>${IPS.lizenz.n}</b><code>${IPS.lizenz.note}</code><span class="more">${IPS.lizenz.d}</span></label>
         </div>
       </div>
       <div class="field">
         <span class="label">Geschäftsmodell</span>
-        <div class="choices">${Object.entries(MODELS).map(([k,o])=>`<label class="choice"><input type="radio" name="m" id="m-${k}" value="${k}" ${setupDraft.model===k?'checked':''}><b>${o.n}</b><span>${o.d}</span></label>`).join('')}</div>
+        <div class="choices compact">${Object.entries(MODELS).map(([k,o])=>`<label class="choice"><input type="radio" name="m" id="m-${k}" value="${k}" ${setupDraft.model===k?'checked':''}><b>${o.n}</b><span>${o.d}</span></label>`).join('')}</div>
       </div>
       <div class="wiz-nav">
         <button type="button" class="btn ghost" id="wizPrev">← Zurück: Studio & Director</button>
@@ -1290,33 +1384,35 @@ function renderSetup(m){
 
     bodyHTML=`
       <h3>Schritt 3: Genre & optionaler Genre-Mix</h3>
-      ${tr?`<div class="alert mid"><b>Aktueller Markt-Trend</b><span>🔥 <b>Boom-Genre: ${GENRES[tr.hot]?.n}</b> (+25 % Verkäufe, +1 Hype) · ❄️ <b>Übersättigt: ${GENRES[tr.cold]?.n}</b> (−15 % Verkäufe). ${esc(tr.note||'')}</span></div>`:''}
+      ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+25% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−15% Verkäufe)</span></div>`:''}
       <div class="field">
-        <span class="label">1. Hauptgenre wählen (bestimmt das Grundgerüst & 100 % der Haupt-Studiowerte)</span>
-        <div class="choices">${Object.entries(GENRES).map(([k,g])=>{
+        <span class="label">1. Hauptgenre wählen</span>
+        <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
           const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
           const isHot=tr&&tr.hot===k;
           const isCold=tr&&tr.cold===k;
-          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n}</b><span>${g.d}</span><code>${Object.keys(STATS).map(s=>STATS[s]+' +'+(g.s[s]*4)).join(' · ')}<br>Gameplay ${Math.round((1-g.gfxW)*100)} % · Grafik ${Math.round(g.gfxW*100)} %</code>${isHot?'<span class="pos">🔥 Boom-Genre (+25 % Verkäufe, +1 Hype)</span>':''}${isCold?'<span class="neg">❄️ Übersättigt (−15 % Verkäufe)</span>':''}${engKnows?'<span class="pos">★ Eigene Engine beherrscht dieses Genre</span>':''}${g.fit!=='kauf'?`<span>Passt zu ${MODELS[g.fit].n}: +1 Hype</span>`:''}</label>`;
+          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([s,v])=>STATS[s]+' +'+(v*4)).join(' · ')}</code><span class="more">${g.d} (GP ${Math.round((1-g.gfxW)*100)}% / GFX ${Math.round(g.gfxW*100)}%)${g.fit!=='kauf'?' · Passt zu '+MODELS[g.fit].n:''}</span></label>`;
         }).join('')}</div>
       </div>
-      <div class="field">
-        <span class="label">2. Optionales Sub-Genre / Genre-Mix (bringt +50 % der Zweitgenre-Werte & Synergie-Effekte!)</span>
-        <div class="subgenre-pills">
-          <label class="subgenre-pill">
-            <div><input type="radio" name="subg" value="none" ${!subKey?'checked':''}><b>Kein Mix (Klassisch)</b></div>
-            <span class="note">Voller Fokus auf ${esc(mainG.n)} ohne Nebenmechaniken.</span>
-          </label>
-          ${Object.entries(GENRES).filter(([k])=>k!==setupDraft.genre).map(([k,g])=>{
-            const info=getGenreMixInfo(setupDraft.genre,k);
-            const badge=info?.tier==='dream'?'🌟 Traum-Kombi':info?.tier==='wild'?'⚡ Experiment':'✨ Mix';
-            return `<label class="subgenre-pill">
-              <div><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>+ ${esc(g.n)}</b></div>
-              <span class="note">${badge} · ${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(', ')}</span>
-            </label>`;
-          }).join('')}
+      <details class="fold" ${subKey?'open':''}>
+        <summary>➕ Optional: Zweites Genre für Genre-Mix kombinieren (${subG?`Aktiv: + ${subG.n}`:'Kein Mix — hier aufklappen'})</summary>
+        <div class="fold-body">
+          <div class="subgenre-pills">
+            <label class="subgenre-pill">
+              <div><input type="radio" name="subg" value="none" ${!subKey?'checked':''}><b>Kein Mix (Klassisch)</b></div>
+              <span class="note">100 % Fokus auf ${esc(mainG.n)}.</span>
+            </label>
+            ${Object.entries(GENRES).filter(([k])=>k!==setupDraft.genre).map(([k,g])=>{
+              const info=getGenreMixInfo(setupDraft.genre,k);
+              const badge=info?.tier==='dream'?'🌟 Traum-Kombi':info?.tier==='wild'?'⚡ Experiment':'✨ Mix';
+              return `<label class="subgenre-pill">
+                <div><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>+ ${esc(g.n)}</b></div>
+                <span class="note">${badge} · ${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(', ')}</span>
+              </label>`;
+            }).join('')}
+          </div>
         </div>
-      </div>
+      </details>
       <div class="synergy-box ${mixInfo?mixInfo.tier:''}">
         <b>${mixInfo?mixInfo.label:`🎯 Klassischer Fokus: ${mainG.n}`}</b>
         <span class="note">${mixInfo?mixInfo.d:mainG.d}</span>
@@ -1346,20 +1442,19 @@ function renderSetup(m){
 
     bodyHTML=`
       <h3>Schritt 4: Extras, Lizenzen & Projektstart</h3>
-      <p class="note" style="margin:0">Wählt zusätzliche Features, Lizenzen und Editionen für <b>„${esc(setupDraft.title)}“</b>. Vorabkosten werden direkt beim Projektstart vom Budget abgezogen.</p>
       <div class="field">
-        <span class="label">Optionale Projekt-Extras & Lizenzen (${setupDraft.extras.length} gewählt)</span>
-        <div class="choices">
+        <span class="label">Optionale Projekt-Extras & Lizenzen (${setupDraft.extras.length} gewählt — Klick wählt an/ab)</span>
+        <div class="choices compact">
           ${Object.entries(PROJECT_EXTRAS).map(([ek,ex])=>{
             const checked=setupDraft.extras.includes(ek);
             const upCost=ex.upfront?Math.round(ex.upfront*sc):0;
             const mCost=ex.monthly?Math.round(ex.monthly*sc):0;
-            const sportHint=(ek==='sportLic'&&isSportGenre)?'<span class="pos">⚽ Perfekte Synergie mit eurem Sport-/Rennspiel (+25 % Verkäufe!)</span>':'';
+            const sportHint=(ek==='sportLic'&&isSportGenre)?'<span class="pos">⚽ +25 % Sport-Synergie!</span>':'';
             return `<label class="choice">
               <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}>
               <b>${ex.n}</b>
-              <span>${ex.d}</span>
-              <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`Monatlich −${money(mCost)}/M · `:''}${ex.code}</code>
+              <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`−${money(mCost)}/M · `:''}${ex.code}</code>
+              <span class="more">${ex.d}</span>
               ${sportHint}
             </label>`;
           }).join('')}
