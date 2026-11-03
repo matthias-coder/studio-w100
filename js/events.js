@@ -31,8 +31,10 @@ function getMand(id){
     const routineBugs=-Math.min(5,runs)-(eng.modules.includes('netcode')&&['koop','mmorpg','br'].includes(gKey)?3:0)+debt*2;
     const modGfx=(eng.modules.includes('render3d')?6:0)+(eng.modules.includes('raytracing')?8:0)+(eng.modules.includes('editor')?2:0);
     const modGp=(eng.modules.includes('gameplay_kit')?6:0)+(eng.modules.includes('ai_sandbox')?7:0)+(eng.modules.includes('editor')?3:0)+Math.min(4,runs);
-    const totalGfx=ageInfo.gfx+modGfx;
-    const totalGp=ageInfo.gp+modGp;
+    // Genre-Spezialisierung aus einem Engine-Projekt
+    const specBonus=eng.spec===gKey?4:0;
+    const totalGfx=ageInfo.gfx+modGfx+specBonus;
+    const totalGp=ageInfo.gp+modGp+specBonus;
     const zBonus=eng.modules.includes('editor')?1:0;
 
     if(knows){
@@ -43,7 +45,7 @@ function getMand(id){
         l:`${eng.name} v${ver}.0 unverändert einsetzen (${ageInfo.label})`,
         safe:safeEff,
         set:{engine:'eigen',engAction:'reuse'},
-        sd:`Routine-Vorteil für ${gName}! Zustand: ${ageInfo.label} — ${ageInfo.desc} ${age>=2?'Ohne Upgrade leidet eure Grafik- & Gameplay-Ausbeute und die Engine veraltet weiter!':''}`,
+        sd:`Routine-Vorteil für ${gName}! Zustand: ${ageInfo.label} — ${ageInfo.desc} ${specBonus?'Spezialisiert auf dieses Genre (+4 Gameplay, +4 Grafik). ':''}${age>=2?'Die Engine veraltet weiter. Ein Generations-Upgrade gibt es nur als eigenes Engine-Projekt zwischen zwei Spielen.':''}`,
         sx:age>=2
           ?`${eng.name} v${ver}.0 spart dank Routine viel Zeit, aber Grafik und Gameplay wirken mittlerweile merklich angestaubt.`
           :`${eng.name} v${ver}.0 schnurrt wie ein Kätzchen: Moderne Technik und eingespielte Workflows!`
@@ -61,20 +63,6 @@ function getMand(id){
         fx:`Die Anpassung an ${gName} war zäh und hat einen Monat gekostet, aber die Engine lernt dazu.`
       });
     }
-
-    // Generations-Upgrade Option: Setzt Alterung (age) wieder auf 0 (Next-Gen) und gibt +1 Forschungspunkt für den Tech-Tree!
-    const freshGfx=ENGINE_AGE_STATES[0].gfx+modGfx+2;
-    const freshGp=ENGINE_AGE_STATES[0].gp+modGp+2;
-    eigenOpts.push({
-      l:`Generations-Upgrade: ${eng.name} auf v${ver+1}.0 (Next-Gen) erneuern`,
-      st:'technik',dc:Math.max(11,14-Math.floor(ver/2)),
-      set:{engine:'eigen',engAction:'upgrade'},
-      sd:`Kostet ${money(10*(T()?T().scale:1))}. Erneuert Grafik-Renderer & Gameplay-Kern komplett (Alterung zurück auf Next-Gen!), baut Tech-Schulden ab und gibt +1 Engine-Forschungspunkt für den Tech-Tree.`,
-      s:{budget:-10,gfx:freshGfx,gp:freshGp,hype:1,bugs:-2},
-      sx:`Quantensprung! ${eng.name} v${ver+1}.0 erstrahlt in Next-Gen-Glanz, lernt ${gName} und erhält +1 Forschungspunkt für den Engine-Tech-Tree.`,
-      f:{budget:-10,gfx:freshGfx-4,gp:freshGp-3,bugs:3,zeit:-1},
-      fx:`Der große Engine-Umbau hat einen Monat länger gedauert und ein paar Kinderkrankheiten mitgebracht, aber die Technik ist wieder topaktuell (+1 Forschungspunkt)!`
-    });
   }
 
   const M={

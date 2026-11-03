@@ -149,11 +149,11 @@ const ENGINE_MODULES={
 
 /* ===================== Auftragsarbeiten (Contracts für Zusatzgeld) ===================== */
 const CONTRACTS=[
-  {id:'port_job',n:'Konsolen-Portierung für Partnerstudio',d:'Ein anderes Studio braucht dringend Hilfe beim Portieren. Bringt schnelles Geld.',st:'technik',dc:55,pay:18,f:{bugs:2,moral:-1},sx:'Sauber abgeliefert! Der Scheck ist sofort auf dem Konto.',fx:'Der Port war widerspenstig. Es gibt nur eine Teilzahlung und müde Gesichter.'},
-  {id:'ui_job',n:'UI- & Menü-Design für Großprojekt',d:'Eure Designer gestalten das Interface für eine fremde Produktion.',st:'design',dc:50,pay:14,f:{moral:-1},sx:'Schickes Layout, zufriedener Auftraggeber!',fx:'Drei Korrekturschleifen zu viel — kaum Gewinn, genervtes Team.'},
-  {id:'shader_job',n:'Grafik-Benchmark & Tech-Showcase',d:'Ein Grafikkarten-Hersteller bestellt eine schicke Tech-Szene.',st:'technik',dc:65,pay:26,sExtra:{gfx:2},f:{zeit:-1,bugs:2},sx:'Die Szene läuft auf jeder Messe! Dickes Honorar und +2 Grafik für euer Spiel.',fx:'Treiber-Absturz bei der Präsentation. Das hat Zeit gekostet.'},
-  {id:'pitch_consult',n:'Publisher-Beratung & Marktanalyse',d:'Ihr bewertet Prototypen für einen Investment-Fonds.',st:'business',dc:50,pay:15,f:{hype:-1},sx:'Schnell verdientes Beratungshonorar.',fx:'Ein Prototyp, den ihr abgelehnt habt, wird anderswo zum Hit.'},
-  {id:'qa_help',n:'Notfall-Bugfixing auf Abruf',d:'Zwei Wochen Feuerwehreinsatz in fremdem Code.',st:'technik',dc:60,pay:20,f:{moral:-1,bugs:2},sx:'Kritischer Fehler gefunden, satte Prämie kassiert!',fx:'Ihr habt den fremden Code repariert, aber euren eigenen vernachlässigt.'}
+  {id:'port_job',n:'Konsolen-Portierung für Partnerstudio',d:'Ein anderes Studio braucht dringend Hilfe beim Portieren. Bringt schnelles Geld.',st:'technik',dc:55,pay:12,f:{bugs:2,moral:-1},sx:'Sauber abgeliefert! Der Scheck ist sofort auf dem Konto.',fx:'Der Port war widerspenstig. Es gibt nur eine Teilzahlung und müde Gesichter.'},
+  {id:'ui_job',n:'UI- & Menü-Design für Großprojekt',d:'Eure Designer gestalten das Interface für eine fremde Produktion.',st:'design',dc:50,pay:9,f:{moral:-1},sx:'Schickes Layout, zufriedener Auftraggeber!',fx:'Drei Korrekturschleifen zu viel — kaum Gewinn, genervtes Team.'},
+  {id:'shader_job',n:'Grafik-Benchmark & Tech-Showcase',d:'Ein Grafikkarten-Hersteller bestellt eine schicke Tech-Szene.',st:'technik',dc:65,pay:17,sExtra:{gfx:2},f:{zeit:-1,bugs:2},sx:'Die Szene läuft auf jeder Messe! Dickes Honorar und +2 Grafik für euer Spiel.',fx:'Treiber-Absturz bei der Präsentation. Das hat Zeit gekostet.'},
+  {id:'pitch_consult',n:'Publisher-Beratung & Marktanalyse',d:'Ihr bewertet Prototypen für einen Investment-Fonds.',st:'business',dc:50,pay:10,f:{hype:-1},sx:'Schnell verdientes Beratungshonorar.',fx:'Ein Prototyp, den ihr abgelehnt habt, wird anderswo zum Hit.'},
+  {id:'qa_help',n:'Notfall-Bugfixing auf Abruf',d:'Zwei Wochen Feuerwehreinsatz in fremdem Code.',st:'technik',dc:60,pay:13,f:{moral:-1,bugs:2},sx:'Kritischer Fehler gefunden, satte Prämie kassiert!',fx:'Ihr habt den fremden Code repariert, aber euren eigenen vernachlässigt.'}
 ];
 
 /* ===================== Konkurrenz-Studios (Rivalen & GOTY-Rennen) ===================== */
@@ -164,6 +164,19 @@ const BASE_RIVALS=[
   {id:'redsun',name:'Red Sun Digital',fav:'racing',skill:70,tag:'Perfektionisten für Tempo, Physik und glänzende Karosserien'},
   {id:'alpenhorn',name:'Alpenhorn Games',fav:'aufbau',skill:65,tag:'Meister komplexer Wirtschaftskreisläufe und gemütlicher Welten'}
 ];
+
+/* ===================== Engine-Projekte (zwischen zwei Spielen) ===================== */
+// Das ganze Team arbeitet 6–12 Monate nur an der Engine: kostet laufende Gehälter, bringt kein Spiel
+const ENG_PROJECT_GOALS={
+  gen:{n:'🖥️ Generations-Upgrade',d:'Neuer Renderer, neue Beleuchtung, modernisierter Gameplay-Kern. Die Engine springt auf die nächste Version und ist wieder Next-Gen. Je höher die Version, desto schwerer.',fee:25},
+  spec:{n:'🎯 Genre-Spezialisierung',d:'Die Engine wird gezielt auf ein Genre zugeschnitten: Werkzeuge, Vorlagen, Animationssysteme. Spiele dieses Genres bekommen dauerhaft +4 Gameplay und +4 Grafik.',fee:12},
+  research:{n:'🔬 Forschungsoffensive',d:'Grundlagenforschung für neue Module im Tech-Tree. Bringt bei Erfolg 2 Forschungspunkte, sonst einen.',fee:8}
+};
+const ENG_PROJECT_DURS={
+  6:{n:'6 Monate · Crunch-Sprint',sg:70,pts:0,d:'Schnell fertig, aber riskant.'},
+  9:{n:'9 Monate · Solide Planung',sg:55,pts:1,d:'Ausgewogen: +1 Forschungspunkt obendrauf.'},
+  12:{n:'12 Monate · Gründlich',sg:40,pts:2,d:'Teuer, aber sicher: +2 Forschungspunkte und alle Tech-Schulden getilgt.'}
+};
 
 const ENGINE_LIC_MODES={
   none:{n:'Nur intern nutzen',d:'Kein Support-Aufwand für Fremdstudios. Voller Fokus auf eigene Spiele (−0,25 Bugs/Monat).',inc:0},
@@ -278,10 +291,10 @@ const SHOP=[
 /* ===================== Notlage / Finanzierung ===================== */
 const RESC=[
   {id:'privat',n:'Privatgeld des Directors',d:'Ohne Wurf, solange das Privatkonto reicht.',avail:()=>C.dir.wealth>0},
-  {id:'publisher',n:'Publisher um Nachschuss bitten',st:'business',dc:13,bonus:()=>(Math.floor(S.res.hype/3)+Math.floor(S.res.qual/30)-Math.floor(S.res.bugs/10))*4,d:'Hype und Qualität helfen, Bugs schaden. Kostet 10 % mehr Umsatzanteil, bei einer neuen IP gehen die Rechte an den Publisher.',sx:'Der Publisher glaubt an euch und überweist.',fx:'Der Publisher legt einfach auf.'},
-  {id:'kredit',n:'Bankkredit',st:'business',dc:12,bonus:()=>(Math.floor(S.res.qual/30)-(S.loan?3:0))*4,d:'Qualität zählt als Sicherheit, ein laufender Kredit erschwert es. 2 % Zinsen pro Monat, Rückzahlung bei der Abrechnung.',sx:'Die Bank gibt den Kredit frei.',fx:'Die Bank versteht nicht, was ein Indie-Spiel ist.'},
-  {id:'investor',n:'Investor suchen',st:'business',dc:13,bonus:()=>(Math.floor(S.res.hype/2)+Math.floor(S.res.wl/(8000*T().sales)))*4,d:'Hype und Wishlists zählen. Der Investor bekommt 20 % vom Gewinn.',sx:'Ein Fonds steigt ein.',fx:'Der Investor will lieber in Pflanzenmilch investieren.'},
-  {id:'crowd',n:'Notruf an die Community',st:'business',dc:14,tiers:['indie','aa'],bonus:()=>(S.res.hype-3)*4,d:'Hängt fast nur am Hype. Scheitert es, wirkt es verzweifelt: −2 Hype.',sx:'Die Fans retten euch in 72 Stunden.',fx:'Die Kampagne wird zum Mitleids-Meme.'},
+  {id:'publisher',n:'Publisher um Nachschuss bitten',st:'business',dc:15,bonus:()=>(Math.floor(S.res.hype/3)+Math.floor(S.res.qual/30)-Math.floor(S.res.bugs/10))*4,d:'Hype und Qualität helfen, Bugs schaden. Kostet 10 % mehr Umsatzanteil, bei einer neuen IP gehen die Rechte an den Publisher.',sx:'Der Publisher glaubt an euch und überweist.',fx:'Der Publisher legt einfach auf.'},
+  {id:'kredit',n:'Bankkredit',st:'business',dc:14,bonus:()=>(Math.floor(S.res.qual/30)-(S.loan?3:0))*4,d:'Qualität zählt als Sicherheit, ein laufender Kredit erschwert es. 2 % Zinsen pro Monat, Rückzahlung bei der Abrechnung.',sx:'Die Bank gibt den Kredit frei.',fx:'Die Bank versteht nicht, was ein Indie-Spiel ist.'},
+  {id:'investor',n:'Investor suchen',st:'business',dc:15,bonus:()=>(Math.floor(S.res.hype/2)+Math.floor(S.res.wl/(8000*T().sales)))*4,d:'Hype und Wishlists zählen. Der Investor bekommt 20 % vom Gewinn.',sx:'Ein Fonds steigt ein.',fx:'Der Investor will lieber in Pflanzenmilch investieren.'},
+  {id:'crowd',n:'Notruf an die Community',st:'business',dc:15,tiers:['indie','aa'],bonus:()=>(S.res.hype-3)*4,d:'Hängt fast nur am Hype. Scheitert es, wirkt es verzweifelt: −2 Hype.',sx:'Die Fans retten euch in 72 Stunden.',fx:'Die Kampagne wird zum Mitleids-Meme.'},
   {id:'ea',n:'Notfall-Early-Access',avail:()=>!S.ea&&S.model!=='f2p',d:'Sofort Geld aus Vorab-Verkäufen. Die Kritiker ziehen später 3 Punkte ab.'},
   {id:'downsize',n:'Büro & Verwaltung verschlanken',avail:()=>C.studio.overheadDrift>0||C.studio.salaryDrift>0,d:'Ohne Wurf. Baut angehäufte Gehalts- und Infrastruktur-Inflation um die Hälfte ab, kostet aber −2 Moral und −5 Studio-Fame.'},
   {id:'layoff',n:'Stellen abbauen',d:'Ohne Wurf. Gehälter dauerhaft −30 %, Moral −3, Loyalität aller Leads −2, Team-Würfe −6.'},

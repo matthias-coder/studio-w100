@@ -122,7 +122,7 @@ function renderHud(){
   const moralCol=r.moral>=7?'var(--good)':r.moral>=4?'var(--gold)':'var(--bad)';
   h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(monthSum())}/Monat · ${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
    +cell('Moral',r.moral+'/10',r.moral<=2,`${fmt(moralMod())} auf Würfe`,bar(r.moral*10,moralCol))
-   +cell('Hype',r.hype+'/10',false,C?.trend?.hot===S.genre?'🔥 Trend-Genre':'',bar(r.hype*10,'var(--accent)'))
+   +cell('Hype',r.hype+'/10',false,S.trendHot?'🔥 Trend-Genre':S.trendCold?'❄️ Übersättigt':'',bar(r.hype*10,'var(--accent)'))
    +cell('Qualität',r.qual,false,`GP ${r.gp} · GFX ${r.gfx}`,bar(r.qual,'var(--good)'))
    +cell('Bugs',r.bugs,r.bugs>=15,r.bugs>=15?'Kritisch hoch':'Bekannte Fehler',bar(Math.min(100,r.bugs*4),r.bugs>=15?'var(--bad)':'var(--warn)'))
    +cell('Wishlists',nf(r.wl,0),false,S.ea?'Early Access aktiv':'Vorbesteller-Interesse')
@@ -229,7 +229,7 @@ function staffBlock(){
                 <b>${st.isLegend?'🌟 ':''}${esc(st.personName)}</b>
                 <span class="staff-lvl">St.${lv}</span>
               </div>
-              <div class="note">${def.n} · ${def.effDesc(lv)} · ${money(st.sal*sc)}/M</div>
+              <div class="note">${def.n} · ${def.effDesc(lv)} · ${money(st.sal*sc*staffSalMult())}/M</div>
             </div>
           </div>
           <div class="loy-bar" title="Loyalität ${loy}/10 · XP ${st.xp||0}/${nextXp||'Max'}"><i style="width:${loy*10}%;background:${loyColor}"></i></div>
@@ -288,8 +288,8 @@ function trendBlock(){
   const hotG=GENRES[tr.hot]?.n||tr.hot;
   const coldG=GENRES[tr.cold]?.n||tr.cold;
   return `<div class="chips" title="${esc(tr.note||'Markttrend der aktuellen Saison')}">
-    <span class="chip p">🔥 Boom: ${hotG} (+25%)</span>
-    <span class="chip n">❄️ Kalt: ${coldG} (−15%)</span>
+    <span class="chip p">🔥 Boom: ${hotG} (+15%)</span>
+    <span class="chip n">❄️ Kalt: ${coldG} (−10%)</span>
   </div>`;
 }
 
@@ -489,17 +489,20 @@ function renderWsNav(){
     <button type="button" class="ws-tab ${activeTab==='board'?'active':''}" data-wstab="board">
       🃏 ${S?`Spieltisch (M${Math.min(S.round+1,12)})`:C?'Neues Projekt':'Studio gründen'}
     </button>
-    ${S&&['event','shop'].includes(S.screen)?`
-      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='invest'?'active':''}" data-wstab="shop" data-sub="invest">
+    ${S?(()=>{
+      const canShop=['event','shop'].includes(S.screen);
+      const lock=canShop?'':` disabled title="Nur zu Beginn eines Monats verfügbar (bei der Monatskarte)"`;
+      return `
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='invest'?'active':''}" data-wstab="shop" data-sub="invest"${lock}>
         🛒 Investieren
       </button>
-      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='hire'?'active':''}" data-wstab="shop" data-sub="hire">
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='hire'?'active':''}" data-wstab="shop" data-sub="hire"${lock}>
         👥 Personal ${staffBadge}
       </button>
-      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='earn'?'active':''}" data-wstab="shop" data-sub="earn">
+      <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='earn'?'active':''}" data-wstab="shop" data-sub="earn"${lock}>
         💼 Geld verdienen
-      </button>
-    `:''}
+      </button>`;
+    })():''}
     ${C?`
       <button type="button" class="ws-tab ${activeTab==='engine'?'active':''}" data-wstab="engine">
         ⚙️ Engine-Labor ${tpBadge}
@@ -599,13 +602,14 @@ function renderEngineLab(m){
 
   const ageInfo=getEngineAgeInfo(eng.age||0);
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
-  const ptCost=Math.round(14*sc);
+  const ptCost=S?researchCost():0;
+  const modCost=S?moduleCost():0;
   const cashAvail=S?S.res.budget:C.studio.kasse;
   const branches=['Grafik & Präsentation','Gameplay & Welt','Netzwerk & Pipeline'];
 
   m.innerHTML=`<span class="stamp">⚙️ Engine-Forschungslabor</span>
     <h3>${esc(eng.name)} <span class="eng-ver">v${eng.version}.0</span></h3>
-    <p>Hier erforscht ihr permanente Architektur-Module für eure hauseigene Engine und steuert deren Lizenzierung. Jedes Generations-Upgrade in Monat 2 sowie ein gekaufter F&E-Sprint gewährt <b>+1 Forschungspunkt (🔬)</b>.</p>
+    <p>Hier erforscht ihr permanente Architektur-Module für eure hauseigene Engine und steuert deren Lizenzierung. Forschungspunkte (🔬) gibt es durch einen F&E-Sprint während eines Spiels, Top-Wertungen und vor allem durch <b>Engine-Projekte</b> zwischen zwei Spielen. Dort findet auch das Generations-Upgrade statt.</p>
     <div class="score">
       <div><span class="label">Zustand</span><b>${ageInfo.label}</b></div>
       <div><span class="label">Forschungspunkte</span><b>🔬 ${eng.techPts||0}</b></div>
@@ -616,7 +620,7 @@ function renderEngineLab(m){
       <b>Alterung & Leistung (${ageInfo.label})</b>
       <span>${ageInfo.desc} Start-Auswirkung bei neuen Spielen: <b>${fmt(ageInfo.gfx)} Grafik, ${fmt(ageInfo.gp)} Gameplay${ageInfo.rev?`, ${fmt(ageInfo.rev)} Kritiker`:''}</b>. Gemeisterte Genres: <b>${eng.genres.length?eng.genres.map(g=>GENRES[g]?.n||g).join(', '):'Noch keine'}</b>.</span>
       <div class="row">
-        <button type="button" class="btn small alt" id="buyTechPtBtn" ${cashAvail<ptCost||eng.modules.length>=8?'disabled':''}>🔬 Forschungs-Sprint finanzieren (${money(ptCost)} → +1 Forschungspunkt)</button>
+        <button type="button" class="btn small alt" id="buyTechPtBtn" ${!S||S.researchSprint||cashAvail<ptCost||eng.modules.length>=8?'disabled':''}>🔬 Forschungs-Sprint finanzieren (${S?S.researchSprint?'in diesem Projekt schon genutzt':money(ptCost)+' · −1 Moral · +1 Bug → +1 Forschungspunkt':'nur während eines Projekts'})</button>
       </div>
     </div>
     ${branches.map(br=>`
@@ -626,7 +630,7 @@ function renderEngineLab(m){
           ${Object.entries(ENGINE_MODULES).filter(([,mod])=>mod.branch===br).map(([id,mod])=>{
             const unlocked=eng.modules.includes(id);
             const reqOk=!mod.req||eng.modules.includes(mod.req);
-            const canUnlock=!unlocked&&reqOk&&(eng.techPts||0)>=(mod.costPts||1);
+            const canUnlock=!!S&&!unlocked&&reqOk&&(eng.techPts||0)>=(mod.costPts||1)&&cashAvail>=modCost;
             return `<div class="tech-node ${unlocked?'unlocked':!reqOk?'locked':''}">
               <div class="tech-head">
                 <b>${esc(mod.n)}</b>
@@ -634,7 +638,7 @@ function renderEngineLab(m){
               </div>
               <span class="note">${esc(mod.d)}</span>
               ${!unlocked?`<div class="row" style="margin-top:4px">
-                <button type="button" class="btn tiny ${canUnlock?'alt':'ghost'}" data-unlock-mod="${id}" ${canUnlock?'':'disabled'}>${canUnlock?'Jetzt freischalten (1 🔬)':!reqOk?'Vorstufe fehlt':'Forschungspunkt nötig'}</button>
+                <button type="button" class="btn tiny ${canUnlock?'alt':'ghost'}" data-unlock-mod="${id}" ${canUnlock?'':'disabled'}>${canUnlock?`Freischalten (1 🔬 · ${money(modCost)} · −1 Moral)`:!reqOk?'Vorstufe fehlt':!S?'Nur während eines Projekts':(eng.techPts||0)<1?'Forschungspunkt nötig':'Budget reicht nicht'}</button>
               </div>`:''}
             </div>`;
           }).join('')}
@@ -672,7 +676,7 @@ function renderLeagueView(m){
 
     <div class="alert mid">
       <b>Aktueller Markt-Trend der Saison</b>
-      <span>🔥 <b>Boom-Genre: ${GENRES[tr.hot]?.n||tr.hot}</b> (+25 % Verkäufe & +1 Start-Hype) · ❄️ <b>Übersättigt: ${GENRES[tr.cold]?.n||tr.cold}</b> (−15 % Verkäufe).<br>${esc(tr.note||'')}</span>
+      <span>🔥 <b>Boom-Genre: ${GENRES[tr.hot]?.n||tr.hot}</b> (+15 % Verkäufe & +1 Start-Hype) · ❄️ <b>Übersättigt: ${GENRES[tr.cold]?.n||tr.cold}</b> (−10 % Verkäufe).<br>${esc(tr.note||'')}</span>
     </div>
 
     ${lastAwards.length?`
@@ -791,7 +795,7 @@ function renderLegendEncounter(m){
   const leg=DIRS[legKey];
   if(!leg){goMonth();return}
   const sc=T().scale;
-  const hireCost=Math.round(4*sc);
+  const hireCost=legendHireCost();
   const role=leg.leadRole||'senior';
   const roleDef=STAFF[role];
   const o=getOpt({kind:'legend',ev:legKey});
@@ -862,11 +866,11 @@ function renderMain(){
   if(sc==='event'){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
-    m.innerHTML=monthNote()+budgetAlert()+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev)+`<div class="row">
-      <button class="btn small ghost" id="shopBtn" data-opensub="invest">🛒 Investieren</button>
-      <button class="btn small ghost" data-opensub="hire">👥 Personal (${C.studio.staff.length}/6)</button>
-      <button class="btn small ghost" data-opensub="earn">💼 Geld verdienen ${S.contractMonth===S.round?'(✓)':''}</button>
-    </div>`;
+    m.innerHTML=monthNote()+budgetAlert()+`<div class="row">
+      <button class="btn small" id="shopBtn" data-opensub="invest">🛒 Investieren & Equipment</button>
+      <button class="btn small" data-opensub="hire">👥 Personal einstellen (${C.studio.staff.length}/6)</button>
+      <button class="btn small" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
+    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${ev.x}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
@@ -937,12 +941,12 @@ function renderMain(){
         <div><span class="label">Wishlists</span><b>${nf(S.res.wl,0)}</b></div>
       </div>
       <p>${e.late}${e.meta>=85?'Die Presse überschlägt sich vor Begeisterung — ihr landet auf dem Cover der PIXEL WORLD!':e.meta>=70?'Gute bis sehr gute Kritiken.':e.meta>=50?'Gemischte Kritiken. „Mit Patches könnte das noch was werden.“':'Verrisse. Ein YouTuber macht ein 40-minütiges Video über eure Technik.'}</p>
-      ${e.awards&&e.awards.length?`<div class="award-box">
+      ${(e.awards||[]).some(a=>typeof a==='object')?`<div class="award-box">
         <span class="label">🏆 Game of the Year (GOTY) Verleihung</span>
-        ${e.awards.map(a=>`<div class="mini"><div><span><b>${esc(a.cat)}</b></span><span class="${a.won?'pos':''}">${esc(a.winner)} (${a.score} Pkt.) ${a.won?'🏆 GEWONNEN!':''}</span></div></div>`).join('')}
+        ${e.awards.filter(a=>typeof a==='object').map(a=>`<div class="mini"><div><span><b>${esc(a.cat)}</b></span><span class="${a.won?'pos':''}">${esc(a.winner)} (${a.score} Pkt.) ${a.won?'🏆 GEWONNEN!':''}</span></div></div>`).join('')}
       </div>`:''}
       <div class="tray" id="dice">${dieSVG(e.r)}</div>
-      <p class="note">${MODELS[S.model].sales}: W100 + doppelter Hype (+${S.res.hype*2})${C.trend?.hot===S.genre?' · 🔥 Trend-Bonus (+25 %)':C.trend?.cold===S.genre?' · ❄️ Übersättigtes Genre (−15 %)':''}</p>
+      <p class="note">${MODELS[S.model].sales}: W100 + doppelter Hype (+${S.res.hype*2})${S.trendHot?' · 🔥 Trend-Bonus (+15 %)':S.trendCold?' · ❄️ Übersättigtes Genre (−10 %)':''}</p>
       <button class="btn" id="go">${MODELS[S.model].sales}</button>`;
     $('go').onclick=sales;
     return;
@@ -971,8 +975,7 @@ function renderLang(m){
 function renderShop(m){
   const sc=T().scale,ph=Math.floor(S.round/2);
   const cats=['Marketing','Qualität','Studio','Spekulativ'];
-  const contractsDone=S.contractsDone||[];
-  const contractThisMonth=S.contractMonth===S.round;
+  const contractThisPhase=(S.contractsPh||[]).includes(ph);
   const shopItems=SHOP.filter(it=>(!it.tiers||it.tiers.includes(S.tier))&&(shopCatFilter==='all'||it.c===shopCatFilter));
 
   m.innerHTML=`
@@ -983,7 +986,7 @@ function renderShop(m){
     <div class="sub-tabs" role="tablist" aria-label="Bereich wählen">
       <button type="button" class="sub-tab ${shopSubTab==='invest'?'active':''}" data-stsub="invest">🛒 Investieren (${S.shop.length}/${SHOP.length})</button>
       <button type="button" class="sub-tab ${shopSubTab==='hire'?'active':''}" data-stsub="hire">👥 Personal anwerben (${C.studio.staff.length}/6)</button>
-      <button type="button" class="sub-tab ${shopSubTab==='earn'?'active':''}" data-stsub="earn">💼 Geld verdienen ${contractThisMonth?'(✓)':''}</button>
+      <button type="button" class="sub-tab ${shopSubTab==='earn'?'active':''}" data-stsub="earn">💼 Geld verdienen ${contractThisPhase?'(✓)':''}</button>
     </div>
     ${S.shopMsg?`<div class="alert mid"><b>${esc(S.shopMsg.n)}</b><span>${esc(S.shopMsg.txt||'')}</span>${chips(S.shopMsg.ch)}</div>`:''}
 
@@ -995,7 +998,7 @@ function renderShop(m){
       </div>
       <div class="opts-grid">
         ${shopItems.map(it=>{
-          const cost=it.cost*sc,bought=S.shop.includes(it.id),early=it.min&&ph<it.min;
+          const cost=shopCost(it),bought=S.shop.includes(it.id),early=it.min&&ph<it.min;
           const noEng=it.id==='refactoring'&&(!C.studio.engine||S.engine!=='eigen');
           const dis=bought||S.res.budget<cost||early||noEng;
           const target=it.st?dc100(it.dc):0;
@@ -1011,7 +1014,7 @@ function renderShop(m){
 
     <!-- TAB 2: PERSONAL ANWERBEN & PFLEGEN -->
     <div id="shopPanel-hire" ${shopSubTab==='hire'?'':'hidden'}>
-      <p class="note" style="margin:0 0 8px">Agenturgebühr beim Anwerben: <b>${money(2*sc)}</b> (Business-Wurf gegen SG 50). Eingestellte Leads steigen durch Projekterfolge und kritische Würfe im Level auf.</p>
+      <p class="note" style="margin:0 0 8px">${S.round>0?'<b>🔒 Neue Leads könnt ihr nur im ersten Entwicklungsmonat anwerben.</b> Entlassen geht jederzeit. ':''}Agenturgebühr beim Anwerben: <b>${money(hireFee())}</b> (Business-Wurf gegen SG 50). Eingestellte Leads steigen durch Projekterfolge und kritische Würfe im Level auf.</p>
       <div class="opts-grid">
         ${Object.entries(STAFF).map(([k,s])=>{
           const st=getStaff(k);
@@ -1019,14 +1022,14 @@ function renderShop(m){
           const bonusCost=has?Math.round(st.sal*1.5*sc*10)/10:0;
           return `<div class="opt" style="cursor:default">
             <span class="t">${has?`${st.isLegend?'🌟 ':''}${esc(st.personName)} (St.${st.level})`:s.n}</span>
-            <span class="check ${has?'':'safe'}">${has?`Loy. ${st.loyalty}/10 · ${money(st.sal*sc)}/M`:money(s.sal*sc)+'/M'}</span>
+            <span class="check ${has?'':'safe'}">${has?`Loy. ${st.loyalty}/10 · ${money(st.sal*sc*staffSalMult())}/M`:money(s.sal*sc*staffSalMult())+'/M'}</span>
             <span class="d"><b>${s.n}:</b> ${s.effDesc(has?st.level:1)}.</span>
             <div class="row" style="grid-column:1/-1;margin-top:4px">
               ${has?`
                 <button class="btn tiny alt" data-bonus="${k}" ${S.res.budget<bonusCost||st.loyalty>=10?'disabled':''}>Bonus ${money(bonusCost)} (+2 Loy.)</button>
                 <button class="btn tiny ghost" data-raise="${k}" ${st.loyalty>=10?'disabled':''}>Gehalt +20% (+3 Loy.)</button>
                 <button class="btn tiny ghost" data-fire="${k}">Entlassen</button>
-              `:`<button class="btn small alt" data-hire="${k}" ${S.res.budget<2*sc?'disabled':''}>Anwerben (SG 50)</button>`}
+              `:`<button class="btn small alt" data-hire="${k}" ${S.round>0||S.res.budget<hireFee()?'disabled':''}>${S.round>0?'Nur in Monat 1':'Anwerben (SG 50)'}</button>`}
             </div>
           </div>`;
         }).join('')}
@@ -1036,19 +1039,18 @@ function renderShop(m){
     <!-- TAB 3: GELD VERDIENEN (AUFTRÄGE & FINANZIERUNG) -->
     <div id="shopPanel-earn" ${shopSubTab==='earn'?'':'hidden'}>
       <div class="staff-top" style="margin-bottom:8px">
-        <span class="note">${contractThisMonth?'✅ Ihr habt diesen Monat bereits eine Auftragsarbeit erledigt.':'Ihr könnt bis zu 1 Auftragsarbeit pro Monat erledigen, um sofort frisches Geld in die Kasse zu spülen.'}</span>
+        <span class="note">${contractThisPhase?'✅ Ihr habt in dieser Phase bereits eine Auftragsarbeit erledigt. Die nächste ist ab der nächsten Phase (alle 2 Monate) möglich.':'Ihr könnt 1 Auftragsarbeit pro Phase (alle 2 Monate) erledigen, um frisches Geld in die Kasse zu spülen.'}</span>
         <button type="button" class="btn tiny ghost" id="openFinFromShop">🏦 Weitere Finanzierung / Kredit prüfen</button>
       </div>
       <div class="opts-grid">
         ${CONTRACTS.map(ct=>{
-          const done=contractsDone.includes(ct.id);
-          const dis=done||contractThisMonth;
+          const dis=contractThisPhase;
           const pay=Math.round(ct.pay*sc);
           const mod=modFor(ct.st)+moralMod();
           const pct=winChance(ct.dc,mod,false);
           return `<button class="opt" data-contract="${ct.id}" ${dis?'disabled':''}>
             <span class="t">${ct.n}</span>
-            <span class="check">${done?'Erledigt ✓':`+${money(pay)} · ${STATS[ct.st]} SG ${ct.dc} (${pct}%)`}</span>
+            <span class="check">${dis?'Diese Phase erledigt ✓':`+${money(pay)} · ${STATS[ct.st]} SG ${ct.dc} (${pct}%)`}</span>
             <span class="d">${ct.d}</span>
           </button>`;
         }).join('')}
@@ -1144,7 +1146,7 @@ function renderEnd(m){
      <div><span class="label">Ergebnis</span><b class="${e.erg>=0?'pos':'neg'}">${money(e.erg,true)}</b></div>
    </div>
    <p>${e.v[1]}</p>
-   ${wonAwards.length?`<div class="award-box"><b>🏆 Gewonnene Auszeichnungen (${wonAwards.length}×)</b><div class="chips">${wonAwards.map(a=>`<span class="chip p">🏆 ${esc(a.cat)}</span>`).join('')}</div><span class="note">Preisgeld & Prestige: +${money(e.awardBonus||0)} Umsatz & +${wonAwards.length*2} Fame!</span></div>`:''}
+   ${wonAwards.length?`<div class="award-box"><b>🏆 Gewonnene Auszeichnungen (${wonAwards.length}×)</b><div class="chips">${wonAwards.map(a=>`<span class="chip p">🏆 ${esc(a.cat)}</span>`).join('')}</div><span class="note">Prestige: Verkäufe ×${nf(1+wonAwards.length*0.08,2)} & +${wonAwards.length*3} Fame!</span></div>`:''}
    ${e.engNote?`<div class="alert mid"><b>Engine-Entwicklung & Alterung</b><span>${esc(e.engNote)}</span></div>`:''}
    ${e.staffNotes&&e.staffNotes.length?`<div class="alert good"><b>Lead-Personal</b><span>${e.staffNotes.map(esc).join(' · ')}</span></div>`:''}
    <div class="mini">
@@ -1205,7 +1207,11 @@ function ensureSetupDraft(){
     model:'kauf',
     genre:'rpg',
     subGenre:'none',
-    extras:[]
+    extras:[],
+    mode:'game',
+    engGoal:'gen',
+    engMonths:9,
+    engSpec:C?.studio?.engine?.genres?.[0]||'rpg'
   };
   setupStep=first?1:2;
 }
@@ -1235,15 +1241,6 @@ function launchSetupProject(){
       hall:[],gameNo:0,unlockedChars:getUnlockedChars()
     };
     rollMarketTrend();
-  }else{
-    C.studio.name=(setupDraft.studioName||'').trim()||C.studio.name;
-    if(setupDraft.dir&&setupDraft.dir!=='keep'&&DIRS[setupDraft.dir]&&isCharUnlocked(setupDraft.dir)){
-      const nk=setupDraft.dir;
-      C.dir={
-        id:nk,...DIRS[nk],s:{...DIRS[nk].s},perks:[...DIRS[nk].perks],flaws:[...DIRS[nk].flaws],aff:{...DIRS[nk].aff},
-        fame:C.dir.fame,wealth:C.dir.wealth,games:C.dir.games,xp:C.dir.xp,perkUnlocked:C.dir.perkUnlocked
-      };
-    }
   }
   const cfg={
     title:(setupDraft.title||'').trim()||randTitle(),
@@ -1258,12 +1255,83 @@ function launchSetupProject(){
   };
   setupDraft=null;
   wsTab='board';
+  if(C)C.engProj=null;
   startGame(cfg);
+}
+
+/* ===================== Engine-Projekt zwischen zwei Spielen ===================== */
+function setupModeBar(){
+  if(!C||!C.studio.engine)return '';
+  const mode=setupDraft.mode;
+  return `<div class="sub-tabs" role="tablist" aria-label="Nächstes Projekt">
+    <button type="button" class="sub-tab ${mode==='game'?'active':''}" data-setmode="game">🎮 Neues Spiel entwickeln</button>
+    <button type="button" class="sub-tab ${mode==='engine'?'active':''}" data-setmode="engine">⚙️ Engine-Projekt (6–12 Monate)</button>
+  </div>`;
+}
+function bindSetupMode(m){
+  m.querySelectorAll('[data-setmode]').forEach(b=>b.onclick=()=>{setupDraft.mode=b.dataset.setmode;renderMain()});
+}
+function engProjResultHTML(){
+  const p=C?.engProj;
+  if(!p)return '';
+  const g=ENG_PROJECT_GOALS[p.goal];
+  return `<div class="alert ${p.ok?'good':'mid'}">
+    <b>${p.ok?'✅':'⚠️'} Engine-Projekt abgeschlossen: ${g.n} (${p.months} Monate)</b>
+    <span>W100 ${p.r} ${fmt(p.mod)} = ${p.r+p.mod} gegen SG ${p.target} → ${p.crit?'kritischer Erfolg':p.fumble?'Patzer':p.ok?'Erfolg':'Fehlschlag'} · Kosten ${money(p.cost)}${p.lic?` · Lizenzeinnahmen ${money(p.lic,true)}`:''}<br>${p.notes.map(esc).join(' · ')}</span>
+  </div>`;
+}
+function renderEngineProject(m){
+  const eng=C.studio.engine,d=setupDraft;
+  const goal=d.engGoal,months=+d.engMonths;
+  const cost=engProjCost(goal,months),lic=Math.round(engProjLicIncome()*months*10)/10;
+  const target=engProjTarget(goal,months),mod=engProjMod(),pct=winChance(target,mod,false);
+  const ageInfo=getEngineAgeInfo(eng.age||0);
+  const canPay=C.studio.kasse>=cost;
+  m.innerHTML=engProjResultHTML()+setupModeBar()+`
+    <span class="stamp">⚙️ Engine-Projekt</span>
+    <h3>${esc(eng.name)} v${eng.version}.0 weiterentwickeln</h3>
+    <p class="note" style="margin:0">Das ganze Team arbeitet nur an der Engine. In dieser Zeit entsteht kein Spiel und es fließt kein Umsatz. Die Gehälter laufen weiter und werden aus der Studiokasse bezahlt.</p>
+    <div class="mini">
+      <div><span>Zustand</span><span class="${ageInfo.cls==='p'?'pos':ageInfo.cls==='n'?'neg':'wrn'}">${ageInfo.label}</span></div>
+      <div><span>Tech-Schulden · Forschungspunkte</span><span>${eng.techDebt||0} · 🔬 ${eng.techPts||0}</span></div>
+      <div><span>Spezialisierung</span><span>${eng.spec?GENRES[eng.spec]?.n:'keine'}</span></div>
+      <div><span>Studiokasse</span><span>${money(C.studio.kasse)}</span></div>
+    </div>
+    <div class="field">
+      <span class="label">Ziel</span>
+      <div class="choices">
+        ${Object.entries(ENG_PROJECT_GOALS).map(([k,g])=>`<label class="choice"><input type="radio" name="eg" value="${k}" ${goal===k?'checked':''}><b>${g.n}</b><span>${g.d}</span></label>`).join('')}
+      </div>
+    </div>
+    ${goal==='spec'?`<div class="field">
+      <label class="label" for="egSpec">Genre für die Spezialisierung</label>
+      <select id="egSpec">${Object.entries(GENRES).map(([k,g])=>`<option value="${k}" ${d.engSpec===k?'selected':''}>${g.n}</option>`).join('')}</select>
+    </div>`:''}
+    <div class="field">
+      <span class="label">Dauer</span>
+      <div class="choices">
+        ${Object.entries(ENG_PROJECT_DURS).map(([k,v])=>`<label class="choice"><input type="radio" name="em" value="${k}" ${months===+k?'checked':''}><b>${v.n}</b><span>${v.d}</span><code>${money(engProjCost(goal,+k))} · SG ${engProjTarget(goal,+k)}</code></label>`).join('')}
+      </div>
+    </div>
+    <div class="alert ${canPay?'mid':'bad'}">
+      <b>Kosten ${money(cost)} · Technik-Wurf W100 ${fmt(mod)} gegen SG ${target} (${pct} %)</b>
+      <span>${money(engProjMonthCost())} laufende Kosten pro Monat plus Hardware & Lizenzen.${lic?` Engine-Lizenzen bringen in der Zeit ${money(lic,true)}.`:''} Auch ein Fehlschlag liefert ein Ergebnis, aber mit Tech-Schulden.${canPay?'':' <b>Die Studiokasse reicht nicht.</b>'}</span>
+    </div>
+    <div class="wiz-nav">
+      <span class="note">Leads sammeln in der Zeit Erfahrung, die Gehälter steigen leicht${months>=9?', der Markt-Trend dreht sich':''}.</span>
+      <button type="button" class="btn" id="engGo" ${canPay?'':'disabled'}>⚙️ Engine-Projekt starten</button>
+    </div>`;
+  bindSetupMode(m);
+  m.querySelectorAll('input[name=eg]').forEach(r=>r.onchange=()=>{if(r.checked){d.engGoal=r.value;renderMain()}});
+  m.querySelectorAll('input[name=em]').forEach(r=>r.onchange=()=>{if(r.checked){d.engMonths=+r.value;renderMain()}});
+  const sp=$('egSpec');if(sp)sp.onchange=()=>{d.engSpec=sp.value};
+  $('engGo').onclick=()=>{d.mode='game';runEngineProject(goal,months,d.engSpec)};
 }
 
 function renderSetup(m){
   ensureSetupDraft();
   const first=!C;
+  if(!first&&C.studio.engine&&setupDraft.mode==='engine'){renderEngineProject(m);return}
   const kasse=first?null:C.studio.kasse;
   const seqs=first?[]:C.hall.map((h,i)=>[h,i]).filter(([h])=>h.meta!=null&&h.meta>=70&&!h.ipLost);
   const tr=C?.trend;
@@ -1287,7 +1355,27 @@ function renderSetup(m){
 
   let bodyHTML='';
 
-  if(setupStep===1){
+  if(setupStep===1&&!first){
+    bodyHTML=`
+      <h3>Schritt 1: Studio & Game Director</h3>
+      <p class="note" style="margin:0">Studioname und Game Director stehen seit der Gründung fest. Freigeschaltete Legenden könnt ihr als Director wählen, wenn ihr eine neue Karriere mit einem neuen Studio startet.</p>
+      <div class="legend-grid">
+        <div class="choice dir-choice" style="cursor:default">
+          ${C.dir.img?charPortraitHTML(C.dir.img,C.dir.isScene,'sm',false,C.dir.n):''}
+          <div class="dir-body">
+            <b>🏢 ${esc(C.studio.name)} · ${esc(C.dir.n)}</b>
+            <span>${esc(C.dir.tag||'Euer erfahrener Director')} · ${C.dir.games} Spiele veröffentlicht · Fame ${C.dir.fame}/100</span>
+            <code>${dirStatLine(C.dir.s)}</code>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-nav">
+        <span class="note">Schritt 1 von 4</span>
+        <div class="row">
+          <button type="button" class="btn" id="wizNext">Weiter: Klasse & Modell →</button>
+        </div>
+      </div>`;
+  }else if(setupStep===1){
     bodyHTML=`
       <h3>Schritt 1: ${first?'Gründet euer Studio':'Studio & Game Director'}</h3>
       <p class="note" style="margin:0">${first?'Gebt eurem neuen Entwicklerstudio einen Namen und wählt euren Game Director. Weitere legendäre Persönlichkeiten schaltet ihr später durch Zufallsbegegnungen frei!':`Euer Studio <b>${esc(C.studio.name)}</b> plant das nächste Projekt. Ihr könnt euren bisherigen Director behalten oder zu einer freigeschalteten Legende wechseln.`}</p>
@@ -1384,7 +1472,7 @@ function renderSetup(m){
 
     bodyHTML=`
       <h3>Schritt 3: Genre & optionaler Genre-Mix</h3>
-      ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+25% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−15% Verkäufe)</span></div>`:''}
+      ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+15% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−10% Verkäufe)</span></div>`:''}
       <div class="field">
         <span class="label">1. Hauptgenre wählen</span>
         <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
@@ -1479,8 +1567,9 @@ function renderSetup(m){
       </div>`;
   }
 
-  m.innerHTML=stepsBar+bodyHTML;
+  m.innerHTML=engProjResultHTML()+setupModeBar()+stepsBar+bodyHTML;
   bindZoomTriggers(m);
+  bindSetupMode(m);
 
   // Step-Tabs Navigation
   m.querySelectorAll('[data-wstep]').forEach(b=>b.onclick=()=>{

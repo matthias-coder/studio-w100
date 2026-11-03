@@ -80,14 +80,15 @@ function getAllRivals(){
         id:'ex_'+idx,
         name:`${last} Interactive`,
         founder:`${ex.personName} (Ex-${STAFF[ex.id]?.n||'Lead'})`,
-        specialty:ex.id==='art'?'adventure':ex.id==='senior'?'koop':'rpg',
-        strength:64+(ex.level||1)*4,
-        desc:`Gegründet von eurem abgewanderten Lead ${ex.personName}. Hochmotiviert, es euch zu beweisen!`,
-        isEx:true
+        fav:ex.id==='art'?'adventure':ex.id==='senior'?'koop':'rpg',
+        skill:64+(ex.level||1)*4,
+        tag:`Gegründet von eurem abgewanderten Lead ${ex.personName}. Hochmotiviert, es euch zu beweisen!`,
+        exLead:true
       });
     });
   }
-  return list;
+  const last=C?.rivalLast||{};
+  return list.map(rv=>last[rv.name]?{...rv,lastTitle:last[rv.name].title,lastMeta:last[rv.name].meta}:rv);
 }
 
 function simulateRivalReleases(){
@@ -96,17 +97,40 @@ function simulateRivalReleases(){
   const pool=[...rivals].sort(()=>Math.random()-0.5).slice(0,3);
   return pool.map(rv=>{
     const swing=Math.floor(Math.random()*18)-7;
-    const meta=clamp(rv.strength+swing,52,94);
+    const meta=clamp(rv.skill+swing,52,94);
     const gp=clamp(meta+Math.floor(Math.random()*10)-4,48,96);
     const gfx=clamp(meta+Math.floor(Math.random()*10)-4,48,96);
+    const title=randTitle();
+    if(C){C.rivalLast=C.rivalLast||{};C.rivalLast[rv.name]={title,meta}}
     return {
       studio:rv.name,
-      isEx:!!rv.isEx,
-      title:randTitle(),
-      genre:GENRES[rv.specialty]?.n||'Action',
+      isEx:!!rv.exLead,
+      title,
+      genre:GENRES[rv.fav]?.n||'Action',
       meta,gp,gfx
     };
   });
+}
+
+/* ===================== Karriere-Kostenkurve & Schwierigkeit ===================== */
+// Alles wird mit jedem veröffentlichten Spiel, jedem Lead und wachsendem Ruhm teurer
+function careerCost(){
+  if(!C)return 1;
+  return Math.round((1+0.12*(C.dir.games||0)+0.06*C.studio.staff.length+(C.studio.fame||0)/250)*100)/100;
+}
+const costK=v=>Math.round(v*careerCost()*10)/10;
+const shopCost=it=>costK(it.cost*T().scale);
+const hireFee=()=>costK(4*T().scale);
+const researchCost=()=>costK(20*T().scale);
+const moduleCost=()=>costK(8*T().scale);
+const legendHireCost=()=>Math.round(40*T().scale*careerCost());
+const staffSalMult=()=>1+0.08*(C?.dir?.games||0);
+// Presse-Skepsis gegenüber Newcomern: erste Spiele kommen kaum über 50 Punkte
+const rookiePenalty=()=>Math.max(0,30-6*(C?.dir?.games||0));
+
+// Namen der gewonnenen Awards (alte Spielstände speichern Strings statt Objekten)
+function wonAwardNames(e){
+  return (e?.awards||[]).filter(a=>typeof a==='string'||a.won).map(a=>typeof a==='string'?a:a.cat);
 }
 
 /* ===================== Lead-Personal Helfer ===================== */
@@ -172,36 +196,102 @@ function unlockEngineModule(modId){
   if(!C||!C.studio.engine)return;
   const eng=C.studio.engine;
   const mod=ENGINE_MODULES[modId];
-  if(!mod||eng.modules.includes(modId)||(eng.techPts||0)<=0)return;
+  // Module werden nur während eines Projekts erforscht: kostet Geld und belastet das Team
+  if(!S||!mod||eng.modules.includes(modId)||(eng.techPts||0)<=0)return;
+  const cost=moduleCost();
+  if(S.res.budget<cost)return;
+  S.res.budget-=cost;
+  S.spend.eng=(S.spend.eng||0)+cost;
   eng.techPts--;
   eng.modules.push(modId);
-  if(S&&S.engine==='eigen'&&mod.eff){
+  const stress=apply({moral:-1});
+  if(S.engine==='eigen'&&mod.eff){
     const ch=apply(mod.eff);
-    S.engMsg={n:`Modul erforscht: ${mod.n}`,ch,txt:mod.d};
-    addLog(`<span>Engine</span> Modul „${esc(mod.n)}“ im Tech-Tree freigeschaltet!`);
-  }else if(S){
-    S.engMsg={n:`Modul erforscht: ${mod.n}`,ch:[['note','Aktiv beim nächsten Einsatz eurer Engine']],txt:mod.d};
+    S.engMsg={n:`Modul erforscht: ${mod.n}`,ch:[['budget',-cost],...stress,...ch],txt:mod.d};
+  }else{
+    S.engMsg={n:`Modul erforscht: ${mod.n}`,ch:[['budget',-cost],...stress,['note','Aktiv beim nächsten Einsatz eurer Engine']],txt:mod.d};
   }
+  addLog(`<span>Engine</span> Modul „${esc(mod.n)}“ für ${money(cost)} erforscht (−1 Moral)`);
   render();save();
 }
 
 function buyEngineResearchPoint(){
   if(!C||!C.studio.engine||!S)return;
   const eng=C.studio.engine;
-  const sc=T().scale;
-  const cost=12*sc;
-  if(S.res.budget<cost)return;
+  const cost=researchCost();
+  // Höchstens ein Forschungs-Sprint pro Projekt, und er geht an die Substanz
+  if(S.researchSprint||S.res.budget<cost)return;
+  S.researchSprint=true;
   S.res.budget-=cost;
   S.spend.eng=(S.spend.eng||0)+cost;
   eng.techPts=(eng.techPts||0)+1;
-  S.engMsg={n:'Engine-Forschungssprint finanziert',ch:[['budget',-cost],['note','+1 Engine-Forschungspunkt verfügbar']],txt:'Euer Tech-Team hat einen neuen Modul-Bauplan fertiggestellt.'};
-  addLog(`<span>Engine</span> Forschungspunkt für ${money(cost)} gekauft`);
+  const stress=apply({moral:-1,bugs:1});
+  S.engMsg={n:'Engine-Forschungssprint finanziert',ch:[['budget',-cost],...stress,['note','+1 Engine-Forschungspunkt verfügbar']],txt:'Euer Tech-Team hat in Nachtschichten einen neuen Modul-Bauplan fertiggestellt.'};
+  addLog(`<span>Engine</span> Forschungspunkt für ${money(cost)} gekauft (−1 Moral, +1 Bug)`);
   render();save();
 }
 
 function setEngineLicense(mode){
   if(!C||!C.studio.engine||!ENGINE_LIC_MODES[mode])return;
   C.studio.engine.licenseMode=mode;
+  render();save();
+}
+
+/* ===================== Engine-Projekt (eigenes Projekt zwischen zwei Spielen) ===================== */
+const engProjScale=()=>C?.studio?.tier?TIERS[C.studio.tier].scale:1;
+function engProjMonthCost(){
+  const eng=C.studio.engine;
+  const staffSal=C.studio.staff.reduce((a,st)=>a+(st.sal||STAFF[st.id].sal),0)*staffSalMult();
+  return Math.round((8*(1+(C.studio.salaryDrift||0))+staffSal+2+(C.studio.overheadDrift||0)+0.4*eng.version+(eng.techDebt||0)*0.6)*engProjScale()*10)/10;
+}
+function engProjLicIncome(){
+  const eng=C.studio.engine,lm=ENGINE_LIC_MODES[eng.licenseMode];
+  if(!lm||!lm.inc)return 0;
+  const bizMult=staffLevel('bizdev')>=5?1.3:staffLevel('bizdev')>=4?1.2:1;
+  return Math.round(lm.inc*eng.version*engProjScale()*getEngineAgeInfo(eng.age||0).licMult*bizMult*10)/10;
+}
+const engProjCost=(goal,months)=>Math.round((engProjMonthCost()*months+costK(ENG_PROJECT_GOALS[goal].fee*engProjScale()))*10)/10;
+const engProjTarget=(goal,months)=>Math.min(90,ENG_PROJECT_DURS[months].sg+(goal==='gen'?(C.studio.engine.version-1)*5:0));
+const engProjMod=()=>(C.dir.s.technik-1)*4+staffLevel('senior')*4+(C.studio.engine.modules.includes('editor')?4:0);
+
+function runEngineProject(goal,months,spec){
+  const eng=C?.studio?.engine;
+  if(S||!eng||!ENG_PROJECT_GOALS[goal]||!ENG_PROJECT_DURS[months])return;
+  if(goal==='spec'&&!GENRES[spec])return;
+  const cost=engProjCost(goal,months);
+  if(C.studio.kasse<cost)return;
+  const lic=Math.round(engProjLicIncome()*months*10)/10;
+  C.studio.kasse=Math.round((C.studio.kasse-cost+lic)*10)/10;
+
+  const r=d100(),mod=engProjMod(),target=engProjTarget(goal,months);
+  const crit=r>=critMin(),fumble=r<=fumbleMax,ok=crit||(!fumble&&r+mod>=target);
+  const dur=ENG_PROJECT_DURS[months],notes=[];
+  const pts=n=>{eng.techPts=(eng.techPts||0)+n;if(n)notes.push(`+${n} Forschungspunkt${n>1?'e':''}`)};
+
+  if(goal==='gen'){
+    eng.version=(eng.version||1)+1;
+    if(ok){eng.age=0;eng.techDebt=0;pts(1);notes.push(`${eng.name} v${eng.version}.0 ist Next-Gen`)}
+    else{eng.age=1;eng.techDebt=(eng.techDebt||0)+2;notes.push(`v${eng.version}.0 läuft, aber mit Kinderkrankheiten (+2 Tech-Schulden)`)}
+  }else if(goal==='spec'){
+    eng.spec=spec;
+    if(!eng.genres.includes(spec))eng.genres.push(spec);
+    notes.push(`Spezialisiert auf ${GENRES[spec].n} (+4 Gameplay, +4 Grafik)`);
+    if(!ok){eng.techDebt=(eng.techDebt||0)+1;notes.push('Unsauber umgesetzt: +1 Tech-Schulden')}
+  }else{
+    pts(ok?2:1);
+  }
+  if(ok){
+    pts(dur.pts);
+    if(months===12&&eng.techDebt){eng.techDebt=0;notes.push('Alle Tech-Schulden getilgt')}
+  }
+  if(fumble){eng.techDebt=(eng.techDebt||0)+1;notes.push('Patzer: ein Daten-Crash kostet Code (+1 Tech-Schulden)')}
+
+  // Die Zeit vergeht: Leads sammeln Erfahrung, Gehälter steigen, der Markt dreht sich
+  C.studio.staff.forEach(st=>{st.xp=(st.xp||0)+Math.floor(months/6);st.tenure=(st.tenure||0)+1;checkStaffLevelUp(st)});
+  C.studio.salaryDrift=Math.round(((C.studio.salaryDrift||0)+0.03*months/6)*100)/100;
+  if(months>=9)rollMarketTrend();
+  C.engProjects=(C.engProjects||0)+1;
+  C.engProj={goal,months,spec,r,mod,target,ok,crit,fumble,cost,lic,notes};
   render();save();
 }
 
@@ -215,7 +305,7 @@ function ensureMilestone(){
     month:targetMonth,
     gp:baseTarget,
     gfx:baseTarget-2,
-    reward:25*t.scale,
+    reward:15*t.scale,
     done:false
   };
 }
@@ -345,10 +435,10 @@ function startGame(o){
 
   S={screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
      mods:extras.includes('mods'),ea:extras.includes('ea'),
-     stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:[],insp:2,log:[],adv:false,last:null,
+     stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],milestone:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
-     engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:extras.includes('sportLic')?'liga':null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
+     engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:isHot,trendCold:isCold};
 
   recalcQual();
@@ -372,8 +462,7 @@ function moralMod(){
 function modFor(st){
   const dm={design:'vision',technik:'technik',team:'fuehrung',business:'business'}[st];
   const d=D();
-  const baseStat=S.stats[st]<=3&&S.round===0?S.stats[st]*4:S.stats[st];
-  let m=baseStat
+  let m=S.stats[st]
     +(st==='team'?T().teamMod:0)
     +(st==='design'?IPS[S.ip].design:0)
     +(d.s[dm]-1)*4
@@ -562,7 +651,7 @@ function monthLines(){
   add('personal',(8*drift+PLAN.gehalt.cost[S.plan.gehalt])*sc*(S.layoff?.7:1));
 
   if(C&&C.studio.staff.length){
-    add('staff',C.studio.staff.reduce((a,st)=>a+(st.sal||STAFF[st.id].sal),0)*sc);
+    add('staff',C.studio.staff.reduce((a,st)=>a+(st.sal||STAFF[st.id].sal),0)*sc*staffSalMult());
   }
 
   const fameOver=C?Math.floor((C.studio.fame||0)/25)*0.6:0;
@@ -644,9 +733,9 @@ function getOpt(p){
     return {
       l:leg?.encCollabLabel||`Gast-Session mit ${leg?.n||'Legende'}`,
       st,
-      dc:55,
+      dc:78,
       s:leg?.encEff||{gp:5},
-      f:{moral:-1},
+      f:{moral:-2},
       sx:`${leg?.n} ist begeistert von eurem Team, verbessert euer Projekt und steht ab sofort dauerhaft als freigeschalteter Game Director bereit!`,
       fx:`${leg?.n} schüttelt den Kopf über euren Prototyp und zieht weiter. Vielleicht klappt es beim nächsten Treffen!`,
       bonusV:fameBonus()
@@ -728,6 +817,19 @@ function afterResult(k){
 }
 
 /* ===================== Monatsabschluss ===================== */
+const DELAYS=[
+  'Ein Kern-Feature muss neu gebaut werden',
+  'Die Build-Pipeline ist eine Woche lang kaputt',
+  'Ein Lead fällt mit Grippe aus',
+  'Der Asset-Zulieferer liefert zu spät',
+  'Ein Engine-Update bricht die halbe Codebasis',
+  'Die Vertonung muss nachproduziert werden',
+  'Der Server-Umzug dauert länger als geplant',
+  'Feature-Creep: der Director will „nur noch eine Sache“ einbauen',
+  'Ein Datenverlust kostet zwei Wochen Arbeit',
+  'Die Plattform ändert kurzfristig ihre Richtlinien'
+];
+
 function monthEnd(){
   const sc=T().scale;
   const lines=monthLines();let sum=0;lines.forEach(([c,v])=>{S.spend[c]=(S.spend[c]||0)+v;sum+=v});S.res.budget-=sum;
@@ -810,6 +912,10 @@ function monthEnd(){
   S.res.wl+=wlg;
 
   if(!S.algo&&S.res.wl>=10000*T().sales){S.algo=true;add('hype',1);notes.push('Der Store-Algorithmus empfiehlt euch jetzt')}
+
+  // Verzögerungen: Bugs, schlechte Moral, Open World und Outsourcing machen den Zeitplan wackelig
+  const delayChance=0.10+Math.max(0,S.res.bugs-8)*0.006+(S.res.moral<=3?0.12:0)+(S.world==='open'?0.05:0)+0.03*S.plan.outs;
+  if(Math.random()<delayChance){add('zeit',-1);notes.push('Verzögerung: '+DELAYS[Math.floor(Math.random()*DELAYS.length)])}
   const pc=apply(pe).filter(([k])=>k!=='note');
   S.res.zeit-=1;S.round++;
 
@@ -824,6 +930,11 @@ function monthEnd(){
     }else{
       S.res.moral=clamp(S.res.moral-1,0,10);
       notes.push(`Publisher-Meilenstein verfehlt (−1 Moral, kein Bonus)`);
+      if(Math.random()<0.4){
+        const repay=Math.round(S.recoup*0.5*10)/10;
+        S.res.budget-=repay;S.publisher=false;S.recoup=Math.max(0,S.recoup-repay);
+        notes.push(`Der Publisher kündigt den Vertrag und fordert ${money(repay)} Vorschuss zurück!`);
+      }
     }
   }
 
@@ -847,8 +958,9 @@ function afterMonth(){
   });
   const lockedCandidates=legCandidates.filter(k=>!isCharUnlocked(k));
   const poolToUse=lockedCandidates.length?lockedCandidates:legCandidates;
-  const forceLegend=(S.round===3&&S.seenLegends.length===0)||(S.round===8&&S.seenLegends.length<=1);
-  if(poolToUse.length&&(forceLegend||Math.random()<0.32)){
+  // Seltene Begegnung: nur zu Beginn einer Phase (alle 2 Monate), 15 % Chance, höchstens eine pro Projekt
+  const phaseStart=S.round%2===0;
+  if(poolToUse.length&&phaseStart&&S.seenLegends.length===0&&Math.random()<0.15){
     const legKey=poolToUse[Math.floor(Math.random()*poolToUse.length)];
     S.seenLegends.push(legKey);
     S.curLegend=legKey;
@@ -876,9 +988,8 @@ function chooseLegendAction(mode){
   const legKey=S.curLegend;
   const leg=DIRS[legKey];
   if(!leg)return;
-  const sc=T().scale;
   const role=leg.leadRole||'senior';
-  const hireCost=Math.round(4*sc);
+  const hireCost=legendHireCost();
 
   if(mode==='hire'){
     if(S.res.budget<hireCost)return;
@@ -1001,8 +1112,8 @@ function rescueDo(id,ok){
   else if(id==='ea'){S.ea=true;S.eaPenalty=3;const a=gain((2+S.res.hype)*3*sc);S.income+=a;txt='Die Beta ist ab sofort käuflich.'}
   else if(ok){
     if(id==='publisher'){const a=gain(need);S.recoup+=a;S.publisher=true;ensureMilestone();S.pubExtra+=.1;if(S.ip==='neu'){S.ipLost=true;txt='Die Rechte an eurer neuen Welt gehören jetzt dem Publisher.'}}
-    else if(id==='kredit'){const a=gain(need+monthSum());S.loan+=a}
-    else if(id==='investor'){const a=gain(need+monthSum());S.investIn+=a;S.equity+=.2}
+    else if(id==='kredit'){const a=gain(need);S.loan+=a}
+    else if(id==='investor'){const a=gain(need);S.investIn+=a;S.equity+=.25}
     else if(id==='crowd'){const a=gain(need);S.income+=a}
     else if(id==='haus'){const a=gain(need);S.einlage+=a;ch.push(...apply({moral:2}))}
   }else if(id==='haus'){S.over='haus'}
@@ -1013,7 +1124,7 @@ function rescueDo(id,ok){
 function buy(id){
   if(rolling)return;
   const it=SHOP.find(x=>x.id===id);
-  const cost=it.cost*T().scale;
+  const cost=shopCost(it);
   if(S.shop.includes(id)||S.res.budget<cost)return;
   S.res.budget-=cost;S.spend.invest=(S.spend.invest||0)+cost;S.shop.push(id);
   addLog(`<span>M${S.round+1}</span> Shop: ${it.n} für ${money(cost)}`);
@@ -1030,8 +1141,9 @@ function buy(id){
 
 function hire(id){
   if(rolling)return;
-  const fee=2*T().scale;
-  if(S.res.budget<fee||hasStaff(id))return;
+  const fee=hireFee();
+  // Neue Leads nur im ersten Entwicklungsmonat (Legenden kommen über Begegnungen dazu)
+  if(S.round>0||S.res.budget<fee||hasStaff(id))return;
   S.res.budget-=fee;S.spend.invest=(S.spend.invest||0)+fee;
   startRoll({kind:'hire',ev:id,adv:false});
 }
@@ -1132,6 +1244,13 @@ function launch(){
       S.res.hype=clamp(S.res.hype-z,0,10);
       late=`Ihr wart ${z} Monat${z>1?'e':''} zu spät dran. Das hat Bugs und Hype gekostet. `;
     }
+    // Fail-State: zu viele Bugs → Plattform-Zertifizierung fällt durch
+    let certPen=0;
+    if(S.res.bugs>=30&&!S.works){
+      certPen=S.res.bugs>=45?15:8;
+      S.res.hype=clamp(S.res.hype-2,0,10);
+      late+=`Die Plattform-Zertifizierung ist durchgefallen: Notfall-Patches, verschobene Konsolenfassung und Spott in den Foren (−${certPen} Wertung, −2 Hype). `;
+    }
     recalcQual();
     const pr=S.model==='f2p'?0:[2,0,-1][S.price];
     const qaRevBonus=staffLevel('qalead')>=5?3:staffLevel('qalead')===4?2:staffLevel('qalead')===3?1:0;
@@ -1141,20 +1260,21 @@ function launch(){
       late+=`Die Tester bemängeln die angestaubte Technik eurer Engine (${fmt(engAgeRev)} Wertung). `;
     }
     const extraRevBonus=(S.extras||[]).reduce((acc,ek)=>acc+(PROJECT_EXTRAS[ek]?.reviewBonus||0),0);
-    const meta=clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)),15,98);
+    const meta=clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()-certPen),15,98);
+    if(rookiePenalty()>0)late+=`Die Presse kennt euch kaum und bewertet streng (Newcomer-Skepsis −${rookiePenalty()}). `;
     const rivalGames=simulateRivalReleases();
     // GOTY-Awards Auswertung gegen die Konkurrenz!
-    const bestRivalMeta=Math.max(...rivalGames.map(x=>x.meta));
-    const bestRivalGp=Math.max(...rivalGames.map(x=>x.gp));
-    const bestRivalGfx=Math.max(...rivalGames.map(x=>x.gfx));
-    const awards=[];
-    if(meta>=75&&meta>=bestRivalMeta)awards.push('Spiel des Jahres (GOTY)');
-    if(S.res.gp>=75&&S.res.gp>=bestRivalGp)awards.push('Bestes Gameplay');
-    if(S.res.gfx>=75&&S.res.gfx>=bestRivalGfx)awards.push('Beste Grafik & Technik');
+    const awards=[['Spiel des Jahres (GOTY)','meta',meta],['Bestes Gameplay','gp',S.res.gp],['Beste Grafik & Technik','gfx',S.res.gfx]].map(([cat,k,own])=>{
+      const best=rivalGames.reduce((a,b)=>b[k]>a[k]?b:a);
+      const won=own>=75&&own>=best[k];
+      return {cat,won,winner:won?S.title:best.studio,score:won?own:best[k]};
+    });
+    C.lastAwards=awards;
 
     S.end={r,meta,gp:S.res.gp,gfx:S.res.gfx,late,rivalGames,awards};
     S.screen='sales';
-    addLog(`<span>Release</span> Review-Wurf W100 ${r} → Wertungsschnitt ${meta} (GP ${S.res.gp} · GFX ${S.res.gfx})${awards.length?' · 🏆 '+awards.join(', '):''}`);
+    const won=wonAwardNames(S.end);
+    addLog(`<span>Release</span> Review-Wurf W100 ${r} → Wertungsschnitt ${meta} (GP ${S.res.gp} · GFX ${S.res.gfx})${won.length?' · 🏆 '+won.join(', '):''}`);
     render();save();
   },true);
 }
@@ -1169,7 +1289,7 @@ function sales(){
     const organic=Math.pow(e.meta/10,3)*(S.res.hype+2)*(roll20+5)*.45*t.sales;
     const conv=clamp(.06+(e.meta-50)/250+[.06,.03,0][pi],.02,.4);
     const trendMult=S.trendHot?1.15:S.trendCold?0.90:1;
-    const awardMult=1+(e.awards?.length||0)*0.08;
+    const awardMult=1+wonAwardNames(e).length*0.08;
     const exList=S.extras||[];
     const sportFit=['sport','racing'].includes(S.genre)||['sport','racing'].includes(S.subGenre);
     const extraSalesMult=(exList.includes('sportLic')?(sportFit?1.25:1.10):1)
@@ -1201,7 +1321,7 @@ function sales(){
     if(S.age!=null)mods.push('USK '+S.age+' ×'+nf(ageFactor(),2));
     if(S.trendHot)mods.push('Boom-Genre ×1,15');
     if(S.trendCold)mods.push('Übersättigt ×0,90');
-    if(e.awards?.length)mods.push(`Awards ×${nf(awardMult,2)}`);
+    if(wonAwardNames(e).length)mods.push(`Awards ×${nf(awardMult,2)}`);
     if(mods.length)detail.push(['Marktfaktoren',mods.join(' · ')]);
     if(S.china==='ok')detail.push(['China','zugelassen, Partner bekommt die Hälfte']);
     else if(S.china==='fail')detail.push(['China','keine Zulassung im ersten Jahr']);
@@ -1264,7 +1384,7 @@ function finishGame(){
   let fd=clamp(Math.round((e.meta-65)/2.5+(e.ratio>=1?6:e.ratio>=0?2:-6)),-15,20);
   if(S.seq&&e.meta<S.seq.meta-10)fd-=5;
   if(C.studio.engine&&C.studio.engine.licenseMode==='opensource')fd+=3;
-  fd+=(e.awards?.length||0)*3;
+  fd+=wonAwardNames(e).length*3;
   e.fd=fd;
 
   C.studio.fame=clamp(C.studio.fame+fd,0,100);
@@ -1323,7 +1443,7 @@ function finishGame(){
   C.studio.kasse=e.kasseNew;
   C.studio.tier=S.tier;
   const engLabel=S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short||'';
-  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),tier:t.n,engine:engLabel,meta:e.meta,gp:S.res.gp,gfx:S.res.gfx,units:e.units,erg:e.erg,v:e.v[0],awards:e.awards||[],ipLost:!!S.ipLost||S.ip==='lizenz'});
+  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),tier:t.n,engine:engLabel,meta:e.meta,gp:S.res.gp,gfx:S.res.gfx,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
   rollMarketTrend(); // Neuer Markttrend für das Folgejahr!
   addLog(`<span>Release</span> ${MODELS[S.model].sales} W100 ${e.sr} +${e.sb} → ${nf(e.units,0)} ${S.model==='f2p'?'Spieler':'Käufer'}, Ergebnis ${money(e.erg,true)}`);
   S.screen='end';render();save();

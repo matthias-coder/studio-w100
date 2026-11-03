@@ -124,7 +124,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   padding:7px 12px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;
   white-space:nowrap;transition:background .15s;
 }
-.ws-tab:hover{background:var(--chip)}
+.ws-tab:hover:not(:disabled){background:var(--chip)}
+.ws-tab:disabled{opacity:.4;cursor:not-allowed}
 .ws-tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .ws-tab .dot{background:var(--accent);color:var(--accent-ink);padding:1px 6px;border-radius:10px;font-size:11px}
 
@@ -492,7 +493,8 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
 
 /* 2-Spalten-Grid für Optionen im Shop, Aufträgen & Personal */
 .opts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:9px}
-.opts-grid .opt{align-content:space-between;height:100%;padding:10px 12px}
+.opts-grid .opt{grid-template-columns:minmax(0,1fr);align-content:start;height:100%;padding:10px 12px;min-width:0}
+.opts-grid .opt .check{justify-self:start;white-space:normal}
 
 /* Kompakte Auswahlkarten (.choices.compact): Details klappen erst bei Auswahl auf */
 .choices.compact{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}
