@@ -333,6 +333,7 @@ const LEAD_NAMES={
 const STAFF_XP_THRESH=[0,2,5,9,14]; // XP für Level 1..5
 const STAFF_TITLES=['Lead','Senior Lead','Principal','Director','Branchen-Legende'];
 const STAFF_STAT_BONUS=[0,3,5,8,11,15]; // W100-Bonus für Stufe 1..5 (+3% bis +15%)
+const AUDIO_SND=[0,0.5,0.8,1.2,1.6,2.0]; // Sound pro Monat durch den Audio Director
 
 const STAFF={
   senior:{
@@ -348,6 +349,13 @@ const STAFF={
     sal:2.5,
     stat:'design',
     effDesc:lv=>`Design +${STAFF_STAT_BONUS[lv]}, +${[0,0.3,0.5,0.8,1.1,1.5][lv]} Grafik/M${lv>=4?', Start-Hype +1':''}`
+  },
+  audio:{
+    n:'Audio Director',
+    d:'Komponiert, mischt und vertont: verantwortet Soundtrack und Sounddesign.',
+    sal:2.5,
+    stat:'design',
+    effDesc:lv=>`+${nf(AUDIO_SND[lv])} Sound/M, Sound-Würfe +${STAFF_STAT_BONUS[lv]}${lv>=4?', Sound-Ereignisse +3 Sound':''}`
   },
   producer:{
     n:'Executive Producer',

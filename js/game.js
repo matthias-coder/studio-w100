@@ -534,6 +534,7 @@ function modFor(st){
 
 function optMod(o){
   let bonus=0;
+  if(hasStaff('audio')&&((o.s&&o.s.snd>0)||(o.f&&o.f.snd)))bonus+=STAFF_STAT_BONUS[staffLevel('audio')];
   const isEngOrPort=o.set&&(o.set.engine==='eigen'||['konsole','alle'].includes(o.set.plat))||o.l==='Eigene Server-Architektur';
   if(hasP('engine')&&isEngOrPort)bonus+=15;
   if(isEngOrPort&&staffLevel('senior')>=4)bonus+=(staffLevel('senior')>=5?10:6);
@@ -543,6 +544,7 @@ function optMod(o){
 
 function apply(eff){
   const out=[];if(!eff)return out;const sc=T().scale;
+  if(eff.snd>=5&&staffLevel('audio')>=4)eff={...eff,snd:eff.snd+3};
   for(const k in eff){
     let v=eff[k];if(!v)continue;
     if(k==='payers'){S.payers+=v;out.push([k,v]);continue}
@@ -615,7 +617,36 @@ function applySet(sp,ok){
   return out;
 }
 
+// Krypto: Einsatz sofort abbuchen, Auflösung nach 1–2 Monaten
+function cryptoInvest(pct,out){
+  const amt=Math.round(Math.max(0,S.res.budget)*pct*10)/10;
+  if(amt<=0){out.push(['note','Kein Geld zum Zocken da. Der Tech-Bro zieht weiter.']);return}
+  S.res.budget-=amt;
+  S.crypto={amt,due:S.round+1+(Math.random()<.5?1:2),done:false};
+  out.push(['budget',-amt],['note',`🪙 ${money(amt)} in $MOONCAT, Auflösung Ende Monat ${S.crypto.due}`]);
+}
+const CRYPTO_OUT=[
+  {p:.50,m:0,t:'Totalverlust: Der Coin hieß in Wahrheit RugPullToken. Der Tech-Bro ist auf den Bahamas.',moral:-1},
+  {p:.20,m:.5,t:'Der Kurs hat sich halbiert. Ihr steigt mit einem blauen Auge aus.'},
+  {p:.17,m:2,t:'Verdoppelt! Der Tech-Bro schickt euch ein Raketen-Emoji.'},
+  {p:.10,m:10,t:'x10! $MOONCAT geht viral. Das Team will plötzlich auch einsteigen.'},
+  {p:.03,m:100,t:'x100! Ihr seid Krypto-Millionäre. Fast jedenfalls.'}
+];
+function resolveCrypto(){
+  const c=S.crypto;
+  if(!c||c.done||S.round+1<c.due)return null;
+  let r=Math.random(),o=CRYPTO_OUT[0];
+  for(const x of CRYPTO_OUT){if(r<x.p){o=x;break}r-=x.p}
+  const cap=Math.round(monthSum()*20*10)/10;
+  let pay=Math.round(c.amt*o.m*10)/10,capped=false;
+  if(pay>cap){pay=cap;capped=true}
+  S.res.budget+=pay;S.income+=pay;
+  c.done=true;c.mult=o.m;c.pay=pay;
+  return {moral:o.moral||0,note:`🪙 Krypto: ${o.t} ${pay>0?`Auszahlung ${money(pay)}${capped?' (die Börse sperrt den Rest ein)':''}`:`${money(c.amt)} sind weg`}`};
+}
+
 function onSet(st,out,ok){
+  if(st.cryptoPct){cryptoInvest(st.cryptoPct,out);delete S.cryptoPct}
   if(st.world){
     const g=worldFit();
     if(g.w.includes(st.world)){out.push(...apply({gp:3,gfx:2}),['note','Weltstruktur passt zum Genre'])}
@@ -919,7 +950,7 @@ function monthEnd(){
 
   acc('pol_gp',d.s.polish*.35+engDrag,x=>add('gp',x));
   acc('pol_gfx',d.s.polish*.30+artGfx+engDrag,x=>add('gfx',x));
-  acc('pol_snd',.6+d.s.polish*.3+artGfx*.5,x=>add('snd',x));
+  acc('pol_snd',.6+d.s.polish*.3+(AUDIO_SND[staffLevel('audio')]||0),x=>add('snd',x));
   // Hype verfliegt langsam, wenn er hoch ist und nichts nachkommt
   if(S.res.hype>=6)acc('hype_decay',-(S.res.hype-5)*.2,x=>add('hype',x));
 
@@ -973,6 +1004,8 @@ function monthEnd(){
   // Verzögerungen: Bugs, schlechte Moral, Open World und Outsourcing machen den Zeitplan wackelig
   const delayChance=0.10+Math.max(0,S.res.bugs-8)*0.006+(S.res.moral<=3?0.12:0)+(S.world==='open'?0.05:0)+0.03*S.plan.outs;
   if(Math.random()<delayChance){add('zeit',-1);notes.push('Verzögerung: '+DELAYS[Math.floor(Math.random()*DELAYS.length)])}
+  const cr=resolveCrypto();
+  if(cr){notes.push(cr.note);if(cr.moral)add('moral',cr.moral)}
   const pc=apply(pe).filter(([k])=>k!=='note');
   S.res.zeit-=1;S.round++;
 

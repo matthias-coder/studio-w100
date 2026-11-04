@@ -213,11 +213,11 @@ function engineBlock(){
 function staffBlock(){
   if(!C)return '';
   const list=C.studio.staff||[];
-  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/6)</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Über „👥 Personal“ oder 🌟 Zufallsbegegnungen rekrutierbar.</p></div>`;
+  if(!list.length)return `<div class="blk"><span class="label">Lead-Personal (0/${Object.keys(STAFF).length})</span><p class="note" style="margin:0">Noch keine Leads eingestellt. Über „👥 Personal“ oder 🌟 Zufallsbegegnungen rekrutierbar.</p></div>`;
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
   const canAct=S&&['event','shop'].includes(S.screen);
   return `<div class="blk">
-    <span class="label">Lead-Personal (${list.length}/6)</span>
+    <span class="label">Lead-Personal (${list.length}/${Object.keys(STAFF).length})</span>
     <div class="staff-list">
       ${list.map(st=>{
         const def=STAFF[st.id];
@@ -324,6 +324,12 @@ function qualPanel(){
   </div>`;
 }
 
+function cryptoBlock(){
+  const c=S.crypto;if(!c)return '';
+  if(!c.done)return `<div class="alert mid"><b>🪙 Krypto-Position: ${money(c.amt)}</b><span>$MOONCAT · Auflösung am Ende von Monat ${c.due}</span></div>`;
+  return `<div class="note">🪙 Krypto: ${money(c.amt)} eingesetzt → ${c.pay>0?money(c.pay)+' ausgezahlt (×'+nf(c.pay/c.amt,1)+')':'Totalverlust'}</div>`;
+}
+
 function renderSheet(){
   const sh=$('sheet');
   if(!sh)return;
@@ -379,6 +385,7 @@ function renderSheet(){
     <div class="insp"><span class="label">Inspiration</span>${[0,1,2].map(i=>`<span class="pip ${i<S.insp?'on':''}"></span>`).join('')}<span class="note">Moral ${fmt(moralMod())}</span></div>
     ${trendBlock()}
     ${milestoneBlock()}
+    ${cryptoBlock()}
     ${dirBlock()}`;
   bindSheetEvents(sh);
 }
@@ -489,7 +496,7 @@ function renderWsNav(){
   const activeTab=inShop&&wsTab==='board'?'shop':wsTab;
   const eng=C?.studio?.engine;
   const tpBadge=eng&&(eng.techPts||0)>0?`<span class="dot">${eng.techPts}</span>`:'';
-  const staffBadge=C?`<span class="dot">${C.studio.staff.length}/6</span>`:'';
+  const staffBadge=C?`<span class="dot">${C.studio.staff.length}/${Object.keys(STAFF).length}</span>`:'';
   const rivalsCount=C?getAllRivals().length:BASE_RIVALS.length;
   const unlCount=getUnlockedChars().length;
   const totCount=LEGEND_KEYS.length;
@@ -916,7 +923,7 @@ function renderMain(){
     m.innerHTML=monthNote()+budgetAlert()+`<div class="studio-actions">
       <span class="label">Diesen Monat außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
-      <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/6)</button>
+      <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
     </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
@@ -1029,7 +1036,7 @@ function renderShop(m){
     </div>
     <div class="sub-tabs" role="tablist" aria-label="Bereich wählen">
       <button type="button" class="sub-tab ${shopSubTab==='invest'?'active':''}" data-stsub="invest">🛒 Investieren (${S.shop.length}/${SHOP.length})</button>
-      <button type="button" class="sub-tab ${shopSubTab==='hire'?'active':''}" data-stsub="hire">👥 Personal anwerben (${C.studio.staff.length}/6)</button>
+      <button type="button" class="sub-tab ${shopSubTab==='hire'?'active':''}" data-stsub="hire">👥 Personal anwerben (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button type="button" class="sub-tab ${shopSubTab==='earn'?'active':''}" data-stsub="earn">💼 Geld verdienen ${contractThisPhase?'(✓)':''}</button>
     </div>
     ${S.shopMsg?`<div class="alert mid"><b>${esc(S.shopMsg.n)}</b><span>${esc(S.shopMsg.txt||'')}</span>${chips(S.shopMsg.ch)}</div>`:''}
@@ -1197,7 +1204,8 @@ function ledger(e){
   if(S.einlage)R2('Privatgeld des Directors',money(S.einlage,true));
   if(S.investIn)R2('Investorengeld',money(S.investIn,true));
   if(S.loan)R2('Kredit aufgenommen',money(S.loan,true));
-  if(S.income)R2('Vorab-, Auftrags- & Lizenz-Einnahmen',money(S.income,true));
+  if(S.income)R2('Vorab-, Auftrags- & Lizenz-Einnahmen'+(S.crypto?.pay?' (inkl. Krypto)':''),money(S.income,true));
+  if(S.crypto)R2('🪙 Krypto-Einsatz $MOONCAT',money(-S.crypto.amt));
   Object.keys(CAT).forEach(k=>{if(S.spend[k]>0)R2(CAT[k][0]+(k==='server'&&e&&e.live?' (inkl. erstem Live-Jahr)':''),money(-S.spend[k]))});
   if(e){
     if(S.loan)R2('Kredit-Rückzahlung',money(-S.loan));
