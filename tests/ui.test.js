@@ -31,3 +31,6 @@ test('renderMilestone with null msResult does not throw',()=>{const {run}=load({
   run(`renderMilestone({innerHTML:'',className:''})`);assert.notEqual(run('S.screen'),'milestone');});
 test('Ist column shows plain numbers',()=>{const {run}=load({ui:true});newProject(run);
   run(`S.res.gp=29`);assert.doesNotMatch(run('msBlock()'),/\+29/);});
+test('monthNote names the finished step after a skip',()=>{const {run}=load({ui:true});newProject(run);
+  run(`Math.random=()=>0.999;S.res.budget=1e9;S.skip=['pit_mix'];S.round=stepIndex('pit_meet')`);run('monthEnd()');
+  const n=run('monthNote()');assert.match(n,/Pitch-Termine/);assert.doesNotMatch(n,/Finanzierung steht/);});

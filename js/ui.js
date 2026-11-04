@@ -895,7 +895,7 @@ function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
   const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
-  return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
+  return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.done??M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
 function headFor(kind,ev){

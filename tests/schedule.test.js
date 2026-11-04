@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert');
-const {load}=require('./harness');
+const {load,newProject}=require('./harness');
 test('step table: 13 steps, 5 phases, shares sum 100',()=>{const {run}=load();
   assert.equal(run('STEPS.length'),13);assert.equal(run('PHASES.length'),5);
   assert.equal(run('STEPS.reduce((a,s)=>a+s.share,0)'),100);
@@ -21,7 +21,6 @@ test('stepIndex and flags',()=>{const {run}=load();
   assert.equal(run(`stepFlag('ea',stepIndex('pol_ship'))`),false);});
 test('durMonths falls back to normal',()=>{const {run}=load();
   assert.equal(run(`durMonths('aa','bogus')`),36);});
-const {newProject}=require('./harness');
 test('skipped pit_mix: no months, no time, license moves to pre_tech',()=>{const {run}=load();newProject(run);
   run('Math.random=()=>0.999;S.res.budget=1e9');const m0=run('projMonths()');
   run(`S.skip=['pit_mix'];S.round=stepIndex('pit_meet')`);

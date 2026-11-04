@@ -1032,7 +1032,7 @@ function monthEnd(){
   }
 
   S.prevRound=S.round;S.round=nextStep(S.round);
-  S.month={sum,pc,sprint:sApplied,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
+  S.month={sum,pc,sprint:sApplied,n:S.round,done:S.prevRound,ea:eaInc,lic:licInc,wl:wlg,notes};
   addLog(`<span>${stepTag(lastStep())}</span> Abschluss „${STEPS[lastStep()].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
