@@ -392,7 +392,6 @@ const STAFF={
 const SHOP=[
   {id:'messe',c:'Marketing',n:'Messestand',d:'Eigener Stand auf einer großen Spielemesse.',cost:8,min:2,st:'business',dc:11,s:{hype:2,wl:3},sx:'Lange Schlangen am Stand, die Demo kommt an.',f:{hype:1,wl:1},fx:'Euer Stand liegt direkt neben den Toiletten.'},
   {id:'showcase',c:'Marketing',n:'Trailer in einer Showcase-Show',d:'Zwei Minuten in der großen Sommer-Show.',cost:25,min:2,st:'design',dc:13,s:{hype:4,wl:6},sx:'Der Chat explodiert, euer Spiel trendet weltweit.',f:{hype:1,wl:1},fx:'Zwischen zwei Blockbustern geht ihr unter.'},
-  {id:'influencer',c:'Marketing',n:'Influencer-Kampagne',d:'Bezahlte Videos bei fünf großen Kanälen.',cost:6,eff:{hype:1,wl:2},sx:'Fünf Videos, Hunderttausende Aufrufe.'},
   {id:'plakate',c:'Marketing',n:'Plakate am Bahnhof',d:'Großflächen in fünf Städten.',cost:4,eff:{hype:1},sx:'Euer Logo hängt neben der Werbung für Bausparverträge.'},
   {id:'tv',c:'Marketing',n:'TV-Spot zur Primetime',d:'Dreißig Sekunden vor dem Samstagabend-Krimi.',cost:40,tiers:['aaa'],eff:{hype:3,wl:5},sx:'Sogar eure Eltern haben es gesehen.'},
   {id:'fokus',c:'Qualität',n:'Fokusgruppen-Playtest',d:'Echte Spieler testen das Gameplay, ihr schaut durch die Scheibe.',cost:5,st:'design',dc:10,s:{gp:7},sx:'Die Tester finden genau die Stellen im Spielfluss, die euch nie aufgefallen sind.',f:{gp:3},fx:'Die Gruppe will vor allem mehr Pausen.'},

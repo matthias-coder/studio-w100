@@ -92,3 +92,41 @@ function revealJour(id,part){
 }
 function infKnown(id){return !!_known().inf[id]}
 function jourKnown(id,part){const j=_known().jour[id];return !!(j&&j[part])}
+
+function infOffers(){
+  const ph=curPhase();
+  if(!S.inf.offer||S.inf.offer.ph!==ph){
+    const pool=INF_KEYS.filter(k=>!S.inf.asked.includes(k));
+    const ids=[];
+    while(ids.length<INF.offerN&&pool.length)ids.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+    S.inf.offer={ph,ids};
+  }
+  return S.inf.offer.ids.filter(k=>!S.inf.asked.includes(k));
+}
+function infPrice(id){return INF.price*INFLUENCERS[id].reach*T().scale}
+function infCanAsk(id){return !S.inf.asked.includes(id)&&S.inf.hired.length<INF.maxHired&&!S.inf.pending}
+function askInfluencer(id,r){
+  if(r===undefined)r=d100();
+  const total=r+(infBock(id)-50);
+  const tier=total>=INF.free?'free':total>=INF.normal?'normal':total>=INF.double?'double':'refuse';
+  const price=tier==='free'?0:infPrice(id)*(tier==='double'?2:1);
+  S.inf.asked.push(id);
+  if(tier==='refuse'){
+    S.inf.pending=null;
+    S.shopMsg={n:INFLUENCERS[id].n,ch:[],txt:INFLUENCERS[id].n+' winkt ab: kein Interesse an eurem Spiel.'};
+    addLog(`<span>${stepTag()}</span> ${INFLUENCERS[id].n} lehnt die Kooperation ab`);
+  }else S.inf.pending={id,r,total,tier,price};
+  return tier;
+}
+function acceptInfluencer(){
+  const p=S.inf.pending;
+  if(!p||S.res.budget<p.price||S.inf.hired.length>=INF.maxHired)return false;
+  const d=INFLUENCERS[p.id],reach=d.reach;
+  S.res.budget-=p.price;S.spend.invest=(S.spend.invest||0)+p.price;
+  const ch=apply(infLikes(p.id)===-1?{hype:Math.floor(reach/2),wl:reach}:{hype:reach,wl:2*reach});
+  revealInf(p.id);S.inf.hired.push(p.id);S.inf.pending=null;
+  S.shopMsg={n:d.n,ch:[['budget',-p.price],...ch],txt:d.n+' zeigt euer Spiel seiner Community.'};
+  addLog(`<span>${stepTag()}</span> Influencer: ${d.n} für ${money(p.price)}`);
+  return true;
+}
+function declineInfluencer(){S.inf.pending=null}
