@@ -182,7 +182,7 @@ function initStorage(){
     }
     const cur=getActiveProfile();
     C=normalizeCareer(cur.C);
-    S=normalizeProject(cur.S,C);
+    cur.S=S=normalizeProject(cur.S,C);
     checkUrlImport();
   }catch(e){
     profiles=[{id:'slot_1',userName:'Spieler 1',updatedAt:new Date().toISOString(),C:null,S:null}];
@@ -220,7 +220,7 @@ function switchProfile(slotId){
   if(!target)return;
   activeSlotId=target.id;
   C=normalizeCareer(target.C);
-  S=normalizeProject(target.S,C);
+  target.S=S=normalizeProject(target.S,C);
   save();
   render();
 }
@@ -253,7 +253,7 @@ function deleteProfile(slotId){
   if(activeSlotId===slotId){
     activeSlotId=profiles[0].id;
     C=normalizeCareer(profiles[0].C);
-    S=normalizeProject(profiles[0].S,C);
+    profiles[0].S=S=normalizeProject(profiles[0].S,C);
   }
   save();render();
 }
