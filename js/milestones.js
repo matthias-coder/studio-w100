@@ -63,6 +63,6 @@ function applyMsOutcome(r){
   else if(r.outcome==='near')notes.push(`Meilenstein „${n}“ knapp verfehlt`);
   else{S.res.moral=clamp(S.res.moral-1,0,10);notes.push(`Meilenstein „${n}“ verfehlt (−1 Moral)`)}
   notes.push(...applyFundingOutcome(r));
-  r.notes=notes;
+  r.notes=notes.slice(0,1);
   return notes;
 }

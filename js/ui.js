@@ -342,7 +342,7 @@ function msBlock(){
   if(!nx)return '';
   const n=stepIndex(nx.at)-S.round;
   const when=n<=0?'nach diesem Schritt':`in ${n} Schritt${n===1?'':'en'}`;
-  const stake=((S.fund&&S.fund.deals)||[]).filter(d=>d.status==='active'&&d.rates&&d.rates[nx.id]).map(d=>`<p class="note">${FUNDERS[d.id].ic} ${esc(FUNDERS[d.id].n)}-Rate +${money(d.rates[nx.id])}${d.id==='inv'?' · Hype ≥ '+FUND.invHype:''}</p>`).join('');
+  const stake=((S.fund&&S.fund.deals)||[]).filter(d=>d.status==='active'&&d.rates&&d.rates[nx.id]).map(d=>`<p class="note">${esc(fname(d.id))}-Rate +${money(d.rates[nx.id])}${d.id==='inv'?' · Hype ≥ '+FUND.invHype:''}</p>`).join('');
   return `<details class="fold">
     <summary>🎯 Nächster Meilenstein: ${esc(nx.n)} · ${when}</summary>
     <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}${stake}</div>
@@ -353,7 +353,7 @@ function renderMilestone(m){
   if(!r){closeMilestone();return}
   const o={met:['Erreicht','pos'],near:['Knapp verfehlt','wrn'],miss:['Verfehlt','neg']}[r.outcome];
   const F=S.fund||{};
-  const lines=(r.deals||[]).map(d=>`<p class="note">${FUNDERS[d.id].ic} ${esc(d.n)}: ${esc(d.txt)}</p>`).join('');
+  const lines=(r.deals||[]).map(d=>`<p class="note">${esc(d.txt)}</p>`).join('');
   let ctl='';
   if(F.renego){
     const ch=winChance(FUND.renegoDc,optMod({st:'business'})+fameBonus()+moralMod());
@@ -369,8 +369,7 @@ function renderMilestone(m){
   const g=$('renegoGo');if(g)g.onclick=startRenego;
   const a=$('renegoAccept');if(a)a.onclick=()=>{resolveRenego(false);renderMain();save()};
   m.querySelectorAll?.('[data-cut]').forEach(x=>x.onclick=()=>{
-    const notes=cutFeature(x.dataset.cut);
-    if(S.msResult)S.msResult.notes=(S.msResult.notes||[]).concat(notes);
+    cutFeature(x.dataset.cut);
     renderMain();save();
   });
 }
@@ -380,14 +379,15 @@ let pitchDraft={sel:[],amb:false};
 function renderPitch(m){
   m.className='card';
   const ids=Object.keys(FUNDERS).filter(id=>funderAvail(id));
+  pitchDraft.sel=pitchDraft.sel.filter(id=>funderAvail(id));
   const amb=pitchDraft.amb;
   const mod=pitchMod();
   const opts=ids.map(id=>{
     const f=FUNDERS[id],on=pitchDraft.sel.includes(id);
     const dc=f.dc+(amb?FUND.ambDc:0);
-    return `<button type="button" class="opt" data-fd="${id}" aria-pressed="${on}"><span class="t">${f.ic} ${esc(f.n)} · ${money(funderOffer(id,amb))}</span><span class="check">SG ${dc100(dc)} (${winChance(dc,mod)} %)</span><span class="d">${esc(planText(id))} ${esc(f.d)}</span></button>`;
+    return `<button type="button" class="opt" data-fd="${id}" aria-pressed="${on}"><span class="t">${esc(fname(id))} · ${money(funderOffer(id,amb))}</span><span class="check">SG ${dc100(dc)} (${winChance(dc,mod)} %)</span><span class="d">${esc(planText(id))} ${esc(f.d)}</span></button>`;
   }).join('');
-  m.innerHTML=`<span class="stamp">Pitch &amp; Finanzierung · ${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
+  m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
     <p class="note">Geschätzte Projektkosten ${money(projCost())} · Budget ${money(S.res.budget)}</p>
     <div class="opts">${opts}</div>
     <label class="check"><input type="checkbox" id="pitchAmb"${amb?' checked':''}> Ambitionierter Pitch: +30 % Geld von Publisher und Investoren, SG +2, Meilenstein-Soll +3</label>
@@ -566,7 +566,7 @@ function renderDock(){
             ${S.income?`<div class="burn"><span>Vorab-/Auftrags-Einnahmen</span><span class="pos">${money(S.income,true)}</span></div>`:''}
             ${S.loan?`<div class="burn"><span>Kredit offen</span><span class="neg">${money(S.loan)}</span></div>`:''}
             ${S.recoup?`<div class="burn"><span>Vorschüsse (Recoup)</span><span>${money(S.recoup)}</span></div>`:''}
-            ${((S.fund&&S.fund.deals)||[]).map(d=>`<div class="burn"><span>${FUNDERS[d.id].ic} ${esc(FUNDERS[d.id].n)}${d.status==='cancelled'?' · gekündigt':d.status==='exited'?' · ausgestiegen':''}</span><span>${money(d.paid)} / ${money(d.total)}</span></div>`).join('')}
+            ${((S.fund&&S.fund.deals)||[]).map(d=>`<div class="burn"><span>${esc(fname(d.id))}${d.status==='cancelled'?' · gekündigt':d.status==='exited'?' · ausgestiegen':''}</span><span>${money(d.paid)} / ${money(d.total)}</span></div>`).join('')}
           </div>
         </details>
       `:`
@@ -942,6 +942,10 @@ function monthNote(){
   return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.done??M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
+function resultNextLabel(L){
+  return {card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage',pitch:'Weiter',renego:'Zurück zum Meilenstein'}[L.kind]||'Weiter';
+}
+
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
   if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
@@ -958,7 +962,7 @@ function headFor(kind,ev){
         </div>
       </div>`;
   }
-  if(kind==='pitch')return `<span class="stamp">Pitch &amp; Finanzierung</span><h3>Der Pitch</h3><p>${(S.pitchSel||[]).filter(id=>FUNDERS[id]).map(id=>FUNDERS[id].ic+' '+esc(FUNDERS[id].n)).join(' · ')}</p>`;
+  if(kind==='pitch')return `<span class="stamp">Pitch &amp; Finanzierung</span><h3>Der Pitch</h3><p>${(S.pitchSel||[]).filter(id=>FUNDERS[id]).map(id=>esc(fname(id))).join(' · ')}</p>`;
   if(kind==='renego')return `<span class="stamp">Meilenstein</span><h3>Nachverhandeln</h3><p>Ihr sitzt noch einmal mit dem Geldgeber am Tisch.</p>`;
   if(kind==='shop'){const it=SHOP.find(x=>x.id===ev);return `<span class="stamp">Studio-Shop</span><h3>${it.n}</h3><p>${it.d}</p>`}
   if(kind==='hire'){const s=STAFF[ev];return `<span class="stamp">Personal</span><h3>${s.n}</h3><p>${s.d}</p>`}
@@ -1116,7 +1120,7 @@ function renderMain(){
     const L=S.last;
     m.className='card'+(['rand','rescue','legend'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
-    const nx={card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage'}[L.kind];
+    const nx=resultNextLabel(L);
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;
     bindZoomTriggers(m);
     $('nx').onclick=()=>afterResult(L.kind);bindRR();

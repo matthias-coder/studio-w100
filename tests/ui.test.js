@@ -48,3 +48,18 @@ test('cut buttons appear when a cut is pending',()=>{const {run}=load({ui:true})
   run(`S.msResult=msCheck('vs');S.msResult.notes=[];S.fund.cutPending=true;S.screen='milestone'`);assert.match(html(run,'renderMilestone'),/data-cut="scope"/);});
 test('next-milestone panel shows the rate at stake',()=>{const {run}=load({ui:true});newProject(run);
   run(`signDeal('pub',100)`);assert.match(run('msBlock()'),/Publisher/);});
+const noDouble=h=>assert.doesNotMatch(h,/(🏢|💼|🏛️|🙌) (🏢|💼|🏛️|🙌)/u);
+test('pitch and renego result screens have real button labels',()=>{const {run}=load({ui:true});newProject(run);
+  assert.equal(run(`resultNextLabel({kind:'pitch'})`),'Weiter');assert.equal(run(`resultNextLabel({kind:'renego'})`),'Zurück zum Meilenstein');});
+test('funder names carry the icon exactly once',()=>{const {run}=load({ui:true});newProject(run);
+  run(`signDeal('pub',100);signDeal('inv',50);S.round=stepIndex('pit_meet');S.screen='pitch'`);
+  noDouble(html(run,'renderPitch'));noDouble(run('msBlock()'));
+  run(`S.msResult=msCheck('vs');applyMsOutcome(S.msResult);S.screen='milestone'`);
+  const h=html(run,'renderMilestone');noDouble(h);
+  assert.equal((h.match(/Publisher/g)||[]).length,run(`S.msResult.deals.filter(d=>d.id==='pub').length`));
+  noDouble(run(`headFor('pitch','pitch')`));});
+test('pitch header is a label, not a stamp',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.round=stepIndex('pit_meet')`);assert.doesNotMatch(html(run,'renderPitch'),/class="stamp"/);});
+test('stale pitch draft is filtered by availability',()=>{const {run}=load({ui:true});newProject(run,{tier:'aaa'});
+  run(`pitchDraft.sel=['grant','pub'];S.round=stepIndex('pit_meet')`);const h=html(run,'renderPitch');
+  assert.doesNotMatch(h,/data-fd="grant"[^>]*true/);assert.match(h,/data-fd="pub"[^>]*aria-pressed="true"/);});

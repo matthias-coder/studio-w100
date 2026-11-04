@@ -76,3 +76,10 @@ test('v2 save later in the project counts as pitched, old publisher bonus become
 test('pending renegotiation survives save and load',()=>{const {run}=load();newProject(run);
   run(`S.fund.renego=true;S.screen='milestone'`);const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
   assert.equal(s.fund.renego,true);assert.equal(s.screen,'milestone');});
+test('renegotiation updates the milestone deal line',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);setRes(run,'vs',-3);
+  run(`S.msResult=msCheck('vs');applyMsOutcome(S.msResult);S.screen='milestone'`);
+  assert.match(run(`S.msResult.deals[0].txt`),/Kippe/);assert.equal(run(`S.msResult.notes.length`),1);
+  run('resolveRenego(false)');const t=run(`S.msResult.deals[0].txt`);assert.match(t,/halbe Rate/);assert.doesNotMatch(t,/Kippe/);});
+test('cutFeature adds a line naming what was cut',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);
+  run(`S.msResult=msCheck('vs');S.msResult.deals=[];S.fund.cutPending=true;cutFeature('scope')`);
+  assert.match(run(`S.msResult.deals.map(d=>d.txt).join('|')`),/Umfang gekürzt/);});
