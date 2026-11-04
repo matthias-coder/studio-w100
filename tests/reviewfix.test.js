@@ -44,9 +44,9 @@ test('M1 acc rate 1 over AAA long yields 14 ticks',()=>{const {run}=load();newPr
   assert.strictEqual(n,14);});
 
 // M3 / M6
-test('M6 milestone without at is backfilled',()=>{const {run}=load();newProject(run);
-  run('S.milestone={month:4,done:false}');assert.equal(run('normalizeProject(S,C).milestone.at'),'fp');
-  run('S.milestone={month:9,done:false}');assert.equal(run('normalizeProject(S,C).milestone.at'),'beta');});
+test('M6 milestone without at is backfilled into the pub deal',()=>{const {run}=load();newProject(run);
+  run('S.milestone={month:4,reward:10,done:false}');assert.deepEqual([...run('Object.keys(normalizeProject(S,C).fund.deals[0].rates)')],['fp']);
+  run('S.fund.deals=[];S.milestone={month:9,reward:10,done:false}');assert.deepEqual([...run('Object.keys(normalizeProject(S,C).fund.deals[0].rates)')],['beta']);});
 test('M3 chronicle clamps step after release',()=>{const {run}=load();newProject(run);run('S.round=STEPS.length');
   const t=run('generateChronicleText()');
   assert.doesNotMatch(String(t),/14\/13/);assert.match(String(t),/13\/13/);});

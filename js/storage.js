@@ -141,11 +141,22 @@ function normalizeProject(s,c){
   if(!s||!s.res)return s;
   if(!s.sprint)s.sprint=defaultSprint();
   if(s.contractStep==null)s.contractStep=-1;
+  if(!s.skip)s.skip=[];
+  if(!s.fund){
+    s.fund=defaultFund();
+    s.fund.pitched=s.round>stepIndex('pit_meet');
+    s.fund.self=s.fund.pitched&&!s.publisher;
+  }
   if(s.milestone){
     if(!s.milestone.at)s.milestone.at=s.milestone.month<=6?'prod_fp':'prod_beta';
-    s.milestone.at=({prod_fp:'fp',prod_beta:'beta'})[s.milestone.at]||s.milestone.at;
-    delete s.milestone.gp;delete s.milestone.gfx;
+    const at=({prod_fp:'fp',prod_beta:'beta'})[s.milestone.at]||s.milestone.at;
+    if(!s.milestone.done&&!s.fund.deals.some(d=>d.id==='pub')){
+      const reward=s.milestone.reward||0;
+      s.fund.deals.push({id:'pub',total:reward,paid:0,rates:{[at]:reward},misses:0,status:'active',pend:null});
+    }
+    delete s.milestone;
   }
+  if(s.round===stepIndex('pit_meet')&&!s.fund.pitched&&s.screen==='event')s.screen='pitch';
   if(!s.msDone)s.msDone=MILESTONES.filter(m=>stepIndex(m.at)<s.round).map(m=>m.id);
   if(s.msResult===undefined)s.msResult=null;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;

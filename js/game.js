@@ -1628,7 +1628,9 @@ function finishGame(){
   const e=S.end,t=T();
   e.live=S.model!=='kauf'?36*t.scale:0;
   if(e.live)S.spend.server=(S.spend.server||0)+e.live;
-  e.kasseEnd=S.res.budget-e.live+e.net+e.merch+(e.engRoyalty||0)-S.loan;
+  e.lawsuit=crowdLawsuit();
+  if(e.lawsuit>0)addLog(`<span>Geldgeber</span> Sammelklage der Backer: ${money(-e.lawsuit)}`);
+  e.kasseEnd=S.res.budget-e.live+e.net+e.merch+(e.engRoyalty||0)-S.loan-e.lawsuit;
   e.capital=S.start+S.einlage+S.investIn;
   e.erg=e.kasseEnd-e.capital;
   e.ratio=e.erg/Math.max(1,spendTotal());

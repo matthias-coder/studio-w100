@@ -64,3 +64,15 @@ test('cut options always include scope; cutting ea stops early access',()=>{cons
 test('crowd deal turns a cut into a broken promise',()=>{const {run}=load();newProject(run);run(`signDeal('crowd',10);const p=S.promises;cutFeature('scope');S._d=S.promises-p`);assert.equal(run('S._d'),1);});
 test('ambitious pitch raises targets by 3',()=>{const {run}=load();newProject(run);const a=run(`msTargets('fp').gp`);run('S.fund.amb=true');assert.equal(run(`msTargets('fp').gp`),a+3);});
 test('ensureMilestone is gone',()=>{const {run}=load();newProject(run);assert.equal(run(`typeof ensureMilestone`),'undefined');});
+test('lawsuit only with crowd deal and a cut',()=>{const {run}=load();newProject(run);run('Math.random=()=>0');
+  run(`signDeal('crowd',10)`);assert.equal(run('crowdLawsuit()'),0);run(`cutFeature('scope')`);assert.equal(run('crowdLawsuit()'),5);
+  run('Math.random=()=>0.999');assert.equal(run('crowdLawsuit()'),0);});
+test('v2 save without fund at pit_meet shows the pitch',()=>{const {run}=load();newProject(run);
+  run(`S.round=stepIndex('pit_meet');S.screen='event';delete S.fund;delete S.skip`);const s=run('normalizeProject(S,C)');
+  assert.equal(s.screen,'pitch');assert.equal(s.fund.pitched,false);assert.deepEqual([...s.skip],[]);});
+test('v2 save later in the project counts as pitched, old publisher bonus becomes a deal',()=>{const {run}=load();newProject(run);
+  run(`S.round=8;delete S.fund;S.publisher=true;S.milestone={at:'beta',reward:15,done:false}`);const s=run('normalizeProject(S,C)');
+  assert.equal(s.fund.pitched,true);assert.equal(s.milestone,undefined);assert.equal(s.fund.deals[0].rates.beta,15);});
+test('pending renegotiation survives save and load',()=>{const {run}=load();newProject(run);
+  run(`S.fund.renego=true;S.screen='milestone'`);const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
+  assert.equal(s.fund.renego,true);assert.equal(s.screen,'milestone');});

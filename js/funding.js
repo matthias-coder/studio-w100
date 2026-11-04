@@ -159,3 +159,8 @@ function cutFeature(id){
   if(S.fund.deals.some(d=>d.id==='crowd')){S.promises+=1;notes.push('Stretch Goal gebrochen – die Backer sind sauer')}
   return notes;
 }
+function crowdLawsuit(s=S){
+  const crowd=s.fund.deals.find(d=>d.id==='crowd');
+  if(!crowd||!s.fund.cuts.length)return 0;
+  return Math.random()<FUND.lawsuitChance?r1(crowd.paid*FUND.lawsuitShare):0;
+}
