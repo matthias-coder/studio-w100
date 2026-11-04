@@ -124,7 +124,14 @@ function dropUnknownGenres(c){
   if(c.dir?.aff)c.dir.aff=Object.fromEntries(Object.entries(c.dir.aff).filter(([k])=>GENRES[k]));
 }
 
-function normalizeProject(s){
+function normalizeProject(s,c){
+  // Laufendes Projekt aus der Zeit vor dem Schrittmodell: abbrechen, Restbudget erstatten
+  if(s&&s.v!==2){
+    const refund=Math.max(0,s.res?.budget||0);
+    if(c?.studio)c.studio.kasse=(c.studio.kasse||0)+refund;
+    if(c)c.notice='Euer laufendes Projekt „'+(s.title||'Unbenannt')+'“ stammt aus einer älteren Version und wurde beendet. Das Restbudget ('+money(refund)+') ist zurück in der Studiokasse.';
+    return null;
+  }
   if(!s||!s.res)return s;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
@@ -149,12 +156,13 @@ function initStorage(){
     if(!profiles.length){
       const old=JSON.parse(localStorage.getItem('w20v5')||'null');
       if(old&&(old.C||old.S)){
+        const oldC=normalizeCareer(old.C);
         profiles.push({
           id:'slot_1',
           userName:old.C?.studio?.name||'Spieler 1',
           updatedAt:new Date().toISOString(),
-          C:normalizeCareer(old.C),
-          S:normalizeProject(old.S)
+          C:oldC,
+          S:normalizeProject(old.S,oldC)
         });
       }else{
         profiles.push({
@@ -174,7 +182,7 @@ function initStorage(){
     }
     const cur=getActiveProfile();
     C=normalizeCareer(cur.C);
-    S=normalizeProject(cur.S);
+    S=normalizeProject(cur.S,C);
     checkUrlImport();
   }catch(e){
     profiles=[{id:'slot_1',userName:'Spieler 1',updatedAt:new Date().toISOString(),C:null,S:null}];
@@ -212,7 +220,7 @@ function switchProfile(slotId){
   if(!target)return;
   activeSlotId=target.id;
   C=normalizeCareer(target.C);
-  S=normalizeProject(target.S);
+  S=normalizeProject(target.S,C);
   save();
   render();
 }
@@ -220,12 +228,13 @@ function switchProfile(slotId){
 function createProfile(userName,initialC=null,initialS=null){
   const id='slot_'+Date.now()+'_'+Math.floor(Math.random()*1000);
   const name=(userName||'').trim()||('Spieler '+(profiles.length+1));
+  const normalizedC=normalizeCareer(initialC);
   profiles.push({
     id,
     userName:name,
     updatedAt:new Date().toISOString(),
-    C:normalizeCareer(initialC),
-    S:normalizeProject(initialS)
+    C:normalizedC,
+    S:normalizeProject(initialS,normalizedC)
   });
   switchProfile(id);
   return id;
@@ -244,7 +253,7 @@ function deleteProfile(slotId){
   if(activeSlotId===slotId){
     activeSlotId=profiles[0].id;
     C=normalizeCareer(profiles[0].C);
-    S=normalizeProject(profiles[0].S);
+    S=normalizeProject(profiles[0].S,C);
   }
   save();render();
 }
@@ -320,7 +329,7 @@ function generateChronicleText(){
   if(S){
     lines.push('');
     lines.push(`## 🚧 Aktuelles Projekt in Entwicklung: „${S.title}“`);
-    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Monat:** ${Math.min(S.round+1,12)}/12`);
+    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Schritt:** ${S.round+1}/${STEPS.length} (${PHASES[curStep(S).ph]})`);
     lines.push(`- **Status:** Budget ${money(S.res.budget)} | Gesamt-Qualität ${S.res.qual} (Gameplay ${S.res.gp} · Grafik ${S.res.gfx} · Sound ${S.res.snd??'–'}) | Bugs ${S.res.bugs} | Hype ${S.res.hype}/10 | Moral ${S.res.moral}/10 | Wishlists ${nf(S.res.wl,0)}`);
   }
   return lines.join('\n');
