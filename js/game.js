@@ -1517,7 +1517,8 @@ function launch(){
     if(engAgeRev<0){
       late+=`Die Tester bemängeln die angestaubte Technik eurer Engine (${fmt(engAgeRev)} Wertung). `;
     }
-    const meta=reviewScore(r,certPen);
+    const mc=buildMetaReviews(reviewScore(r,certPen));
+    const meta=mc.metascore;
     if(rookiePenalty()>0)late+=`Die Presse kennt euch kaum und bewertet streng (Newcomer-Skepsis −${rookiePenalty()}). `;
     const rivalGames=simulateRivalReleases();
     // GOTY-Awards Auswertung gegen die Konkurrenz!
@@ -1528,7 +1529,6 @@ function launch(){
     });
     C.lastAwards=awards;
 
-    const mc=buildMetaReviews(meta);
     S.end={r,meta,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,late,rivalGames,awards,critics:mc.critics,user:mc.user,mcNotes:mc.notes,qb:qualBreakdown()};
     revealCritics(S.end.critics);
     S.screen='sales';

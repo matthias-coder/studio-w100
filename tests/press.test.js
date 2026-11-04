@@ -117,3 +117,9 @@ test('interview reveals the tone, release reveals prefs',()=>{const {run}=load()
   run('recalcQual()');run('S.end={critics:buildMetaReviews(70).critics};revealCritics(S.end.critics)');
   const js=[...run('S.end.critics')].filter(c=>c.j).map(c=>c.j);assert.equal(js.length,3);
   for(const j of js)assert.ok(run(`jourKnown('${j}','pref')`),j);});
+
+test('launch stores the critic mean as the final metascore',()=>{const {run}=load();newProject(run);
+  run('matchMedia=()=>({matches:true})');run('launch()');assert.equal(run('S.screen'),'sales');
+  const c=[...run('S.end.critics')];assert.equal(c.length,7);
+  assert.equal(run('S.end.meta'),Math.round(c.reduce((a,x)=>a+x.v,0)/c.length));
+  for(const j of c.filter(x=>x.j).map(x=>x.j))assert.ok(run(`jourKnown('${j}','pref')`));});
