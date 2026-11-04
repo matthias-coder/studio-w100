@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','interview','shop','crisis','roll','manual','milestone','pitch'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -540,7 +540,7 @@ function renderDock(){
     return;
   }
 
-  const editable=S&&['event','mand','lang','random','legend','fair','stream','result','shop','crisis'].includes(S.screen);
+  const editable=S&&['event','mand','lang','random','legend','fair','stream','probe','result','shop','crisis'].includes(S.screen);
   const t=S?T():(C.studio.tier?TIERS[C.studio.tier]:TIERS.indie);
   const logCount=S&&S.log?S.log.length:0;
 
@@ -1008,7 +1008,7 @@ function monthNote(){
 }
 
 function resultNextLabel(L){
-  return {card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,fair:`Weiter zu „${curStep().n}“`,stream:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage',pitch:'Weiter',renego:'Zurück zum Meilenstein'}[L.kind]||'Weiter';
+  return {card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,fair:`Weiter zu „${curStep().n}“`,stream:`Weiter zu „${curStep().n}“`,probe:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage',pitch:'Weiter',renego:'Zurück zum Meilenstein'}[L.kind]||'Weiter';
 }
 
 function headFor(kind,ev){
@@ -1041,6 +1041,17 @@ function headFor(kind,ev){
   if(kind==='stream'){
     const d=INFLUENCERS[ev]||{n:'Ein Streamer',tag:'',img:''},c=streamCard(ev);
     return banner+`<span class="stamp">📺 Live-Stream · Ende ${STEPS[lastStep()]?.n||''}</span>
+      <div class="legend-enc">
+        ${d.img?charPortraitHTML(d.img,false,'lg',false,d.n):''}
+        <div class="dir-info">
+          <h3>${esc(d.n)} <small class="note">(${esc(d.tag)})</small></h3>
+          <p style="margin:4px 0">${esc(c.x)}</p>
+        </div>
+      </div>`;
+  }
+  if(kind==='probe'){
+    const d=JOURNALISTS[ev]||JOURNALISTS.peschkeller,c=probeCard(ev);
+    return `<span class="stamp">📣 Recherche · ${esc(d.outlet)}</span>
       <div class="legend-enc">
         ${d.img?charPortraitHTML(d.img,false,'lg',false,d.n):''}
         <div class="dir-info">
@@ -1193,10 +1204,11 @@ function renderMain(){
   if(sc==='legend'){renderLegendEncounter(m);return}
   if(sc==='fair'){m.className='card rnd';m.innerHTML=headFor('fair',S.fair)+optsHTML(fairCard(S.fair));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='stream'){m.className='card rnd';m.innerHTML=headFor('stream',S.stream)+optsHTML(streamCard(S.stream));bindOpts(m);bindZoomTriggers(m);return}
+  if(sc==='probe'){m.className='card rnd';m.innerHTML=headFor('probe',S.probe.j)+optsHTML(probeCard(S.probe.j));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='interview'){renderInterview(m);return}
   if(sc==='roll'){
     const p=S.pending;
-    m.className='card'+(['rand','rescue','legend','fair','stream'].includes(p.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair','stream','probe'].includes(p.kind)?' rnd':'');
     m.innerHTML=headFor(p.kind,p.ev)+`<div class="tray"><div class="dice" id="dice">${Array.from({length:p.adv?2:1},()=>dieSVG('?')).join('')}</div><div class="calc"><span class="label">Der W100 rollt …</span></div></div>`;
     return;
   }
@@ -1208,7 +1220,7 @@ function renderMain(){
   }
   if(sc==='result'){
     const L=S.last;
-    m.className='card'+(['rand','rescue','legend','fair','stream'].includes(L.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair','stream','probe'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
     const nx=resultNextLabel(L);
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;

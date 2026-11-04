@@ -150,3 +150,61 @@ function streamCard(id){
        {l:'Nur Key schicken',safe:l>0?{hype:r}:l<0?{}:{hype:1},sx:`${d.n} bekommt einen Key und spielt in Ruhe.`},
        {l:'Absagen',safe:{},sx:'Ihr sagt höflich ab. Der Stream findet ohne euch statt.'}]};
 }
+
+/* ===================== Kritische Recherche ===================== */
+const PROBE_TOPICS=['finanzen','versprechen','crunch','personal','monetarisierung'];
+function probePoints(){
+  const s=S,f=s.fund||{};
+  const deals=f.deals||[];
+  return {
+    finanzen:(s.crisisSeen?1:0)+((s.rescued||[]).includes('kredit')?1:0)+(deals.some(d=>d.status==='cancelled')?1:0),
+    versprechen:(s.promises>=2?1:0)+((f.cuts||[]).length&&deals.some(d=>d.id==='crowd')?1:0),
+    crunch:(s.crunchN||0)>=3?1:0,
+    personal:s.layoff?1:0,
+    monetarisierung:s.lootbox?1:0
+  };
+}
+function probeScore(){const p=probePoints();return PROBE_TOPICS.reduce((a,k)=>a+p[k],0)}
+function probeTopic(){
+  const p=probePoints();let best=PROBE_TOPICS[0];
+  for(const k of PROBE_TOPICS)if(p[k]>p[best])best=k;
+  return best;
+}
+function probeJournalist(topic){
+  const pool=JOUR_KEYS.filter(k=>JOURNALISTS[k].topics.includes(topic));
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:'peschkeller';
+}
+function probeDue(){
+  if(!S||S.probeSeen||S.round<PRESS.probeStart||S.round>=STEPS.length-1)return false;
+  const sc=probeScore();
+  return sc>0&&Math.random()<Math.min(PRESS.probeMax,PRESS.probePer*sc);
+}
+function startProbe(){
+  const topic=probeTopic(),j=probeJournalist(topic);
+  S.probe={j,topic,score:probeScore()};S.probeSeen=true;S.screen='probe';
+  addLog(`<span>${stepTag(lastStep())}</span> 📣 ${JOURNALISTS[j].n} recherchiert über euer Studio`);
+  render();save();return true;
+}
+const PROBE_TEXT={
+  finanzen:'fragt nach eurer Finanzierung',
+  versprechen:'fragt nach euren gebrochenen Versprechen',
+  crunch:'fragt nach den Arbeitszeiten in eurem Team',
+  personal:'fragt nach den Entlassungen im Studio',
+  monetarisierung:'fragt nach den Lootboxen in eurem Spiel'
+};
+function probeCard(id){
+  const d=JOURNALISTS[id],score=S.probe?S.probe.score:probeScore(),topic=S.probe?S.probe.topic:probeTopic();
+  return {t:`${d.n} recherchiert über euer Studio`,
+    x:`${d.n} (${d.outlet}) ${PROBE_TEXT[topic]}. Die Antwort steht bald im Netz.`,
+    o:[{l:'Offen Stellung nehmen',st:'team',dc:PRESS.probeDc+Math.max(0,score-1),s:{hype:1,fame:2},f:{hype:-3,fame:-4},
+        sx:'Ihr legt alles offen. Der Artikel ist fair und die Leser honorieren die Ehrlichkeit.',fx:'Das Statement geht nach hinten los und der Artikel zerpflückt euch.'},
+       {l:'Kein Kommentar',safe:{hype:-2,fame:-2},sx:'Ihr schweigt. Im Artikel steht nur „auf Anfrage nicht geantwortet“.'},
+       {l:'Abwiegeln mit PR-Agentur',safe:{budget:-PRESS.prCost},sx:'Die Agentur verschickt eine glatte Erklärung.',
+        onSafe:()=>{
+          if(Math.random()<PRESS.prBase+PRESS.prPer*score){
+            const ch=apply({hype:-4,fame:-6});
+            return {ch,txt:`Es fliegt auf: ${d.n} deckt die Agentur-Mail auf und der Skandal wächst.`};
+          }
+          return {ch:[],txt:'Die Agentur hält dicht.'};
+        }}]};
+}

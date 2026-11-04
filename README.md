@@ -72,6 +72,12 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 - **Raten an Meilensteinen:** Erreicht zahlt die volle Rate. Knapp verfehlt: Nachverhandlung per Wurf oder halbe Rate akzeptieren. Klar verfehlt: Der Publisher hält die Rate zurück und verlangt eine Kürzung (Projekt-Extra oder *Umfang kürzen*), beim zweiten Mal kündigt er und will die Hälfte zurück. Investoren halten zurück und steigen beim zweiten Mal aus (Gewinnbeteiligung bleibt), Förderung will die Hälfte zurück.
 - **Crowdfunding:** Das Geld kommt sofort; gekürzter Umfang zählt als gebrochenes Stretch-Goal, und beim Release droht eine Klage der Backer (ca. 1 % pro Projekt, 5 %, sobald ihr ein Feature gestrichen habt). Fehlendes Geld löst die normale Krisenmechanik aus.
 
+### 10. 📣 Influencer & Presse
+- **Influencer anheuern:** Streamer mit verdeckten Genre-Vorlieben (Bock) bewerben euer Spiel gegen Geld; der Preis wird per W100-Wurf verhandelt, höchstens zwei pro Projekt. Ob sie Lust haben, zeigt sich erst durch Erfahrung.
+- **Überraschungs-Stream:** Ab *First Playable* entdeckt ein Streamer eure Demo: live dazuschalten (Wurf), nur einen Key schicken oder absagen.
+- **Journalisten:** Benannte Redakteure schreiben die Testberichte und führen Interviews. Jeder hat Genre-Vorlieben, einen Ton und einen Schwerpunkt, die ihr nach und nach aufdeckt. Der Release-Score ist der Mittelwert der Kritiker.
+- **Kritische Recherche:** Wer eine Notlage hatte, Versprechen gebrochen, gecruncht, entlassen oder Lootboxen eingebaut hat, bekommt einmal pro Projekt unbequeme Fragen. Offen Stellung nehmen (Wurf), kein Kommentar oder die PR-Agentur, die dichthalten kann oder auffliegt.
+
 ---
 
 ## ⚖️ Disclaimer & Hinweise (Charaktere & KI-Grafiken)
