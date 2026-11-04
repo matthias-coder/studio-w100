@@ -24,9 +24,10 @@ test('milestone step shows the milestone screen once',()=>{const {run}=load();ne
 test('met raises moral, miss lowers it',()=>{const {run}=load();newProject(run);run('S.res.moral=5');
   run(`S.res.gp=99;S.res.gfx=99;S.res.snd=99;S.res.bugs=0;applyMsOutcome(msCheck('vs'))`);assert.equal(run('S.res.moral'),6);
   run(`S.res.gp=0;applyMsOutcome(msCheck('vs'))`);assert.equal(run('S.res.moral'),5);});
-test('publisher pays on met milestone',()=>{const {run}=load();newProject(run);run('S.publisher=true;ensureMilestone()');
-  const b=run('S.res.budget');run(`S.res.gp=99;S.res.gfx=99;S.res.snd=99;S.res.bugs=0;applyMsOutcome(msCheck('fp'))`);
-  assert.equal(run('S.res.budget'),b+run('S.milestone.reward'));assert.equal(run('S.milestone.done'),true);});
+test('publisher pays on met milestone',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);
+  const t=run(`msTargets('vs')`);run(`Object.assign(S.res,{gp:${t.gp},gfx:${t.gfx},snd:${t.snd},bugs:${t.bugs}})`);
+  const b=run('S.res.budget');run(`applyMsOutcome(msCheck('vs'))`);
+  assert.equal(run('S.res.budget'),b+14);assert.equal('vs' in run(`findDeal('pub').rates`),false);});
 test('crisis on a milestone step still shows the milestone',()=>{const {run}=load();newProject(run);run('Math.random=()=>0.999');
   run(`S.round=stepIndex('pre_slice');S.res.budget=-1`);run('monthEnd()');assert.equal(run('S.screen'),'crisis');
   run('S.res.budget=1e9;leaveCrisis()');assert.equal(run('S.screen'),'milestone');});

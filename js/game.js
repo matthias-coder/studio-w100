@@ -335,14 +335,6 @@ function runEngineProject(goal,months,spec){
 }
 
 /* ===================== Auftragsarbeiten & Publisher-Meilensteine ===================== */
-function ensureMilestone(){
-  if(!S||!S.publisher||S.milestone)return;
-  const done=S.msDone||[];
-  const m=['fp','beta'].map(msById).find(m=>stepIndex(m.at)>=S.round&&!done.includes(m.id));
-  if(!m)return;
-  S.milestone={at:m.id,reward:15*T().scale,done:false};
-}
-
 function startContract(id){
   if(rolling||!S)return;
   const ph=curPhase();
@@ -477,7 +469,7 @@ function startGame(o){
      mods:extras.includes('mods'),ea:extras.includes('ea'),
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
-     shop:[],contractsPh:[],milestone:null,msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
+     shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[]};
 
@@ -556,7 +548,7 @@ function apply(eff){
     if(k==='payers'){S.payers+=v;out.push([k,v]);continue}
     if(k==='ea'){S.ea=true;out.push([k,v]);continue}
     if(k==='promise'){S.promises=Math.max(0,S.promises+v);out.push([k,v]);continue}
-    if(k==='recoup'){S.recoup+=v*sc;S.publisher=true;ensureMilestone();out.push([k,v*sc]);continue}
+    if(k==='recoup'){S.recoup+=v*sc;S.publisher=true;out.push([k,v*sc]);continue}
     if(k==='wl'){v=Math.round(v*1000*T().sales*(D().s.hype>=3?1.15:1));S.res.wl+=v;out.push([k,v]);continue}
     if(k==='moral'&&v<0&&hasP('crunch')){v=Math.min(0,v+1);if(!v)continue}
     if(k==='zeit'&&v<0&&hasStaff('producer')){
@@ -812,12 +804,14 @@ function curTitle(kind,ev){
     :kind==='hire'?STAFF[ev].n
     :kind==='dlc'?DLC_OPTS.find(x=>x.id===ev).n
     :kind==='pitch'?'Pitch-Termine'
+    :kind==='renego'?'Nachverhandlung'
     :RESC.find(x=>x.id===ev).n;
 }
 
 function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
   if(p.kind==='pitch'){const amb=S.fund.amb;return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
+  if(p.kind==='renego')return {l:'Nachverhandeln',st:'business',dc:FUND.renegoDc,s:{},f:{},bonusV:fameBonus()};
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
   if(p.kind==='rand'){const r=R[p.ev];const adj=r.dcAdj?r.dcAdj(S):0;return {...r,l:'Rettungswurf',dc:dc100(r.dc)+adj*4}}
   if(p.kind==='legend'){
@@ -895,6 +889,7 @@ function resolve(rolls){
     if(x.txt)txt+=' '+x.txt;
   }
   if(p.kind==='pitch'){const x=resolvePitch(total,crit,fumble);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
+  if(p.kind==='renego'){const x=resolveRenego(ok);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
   if(ok&&o.onOk){const x=o.onOk();if(x)txt+=' '+x}
   if(!ok&&o.onFail){const x=o.onFail();if(x)txt+=' '+x}
   S.last={...p,rolls,r,mod,mm,total,ok,crit,fumble,ch,pre,txt,dc:target,st:o.st,l:o.l};
@@ -908,6 +903,7 @@ function afterResult(k){
   else if(k==='rand'||k==='legend')afterRandom();
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
   else if(k==='pitch')goMonth();
+  else if(k==='renego'){S.screen='milestone';render();save()}
   else if(k==='dlc'){S.screen='end';render();save()}
   else if(k==='rescue'){if(S.over)gameOver(S.over);else{S.screen='crisis';render();save()}}
 }
@@ -1043,6 +1039,7 @@ function monthEnd(){
 }
 
 function closeMilestone(){
+  if(S.fund&&(S.fund.renego||S.fund.cutPending))return;
   S.msResult=null;
   afterMonth();
 }
@@ -1270,7 +1267,7 @@ function rescueDo(id,ok){
   }
   else if(id==='ea'){S.ea=true;S.eaPenalty=3;const a=gain((2+S.res.hype)*3*sc);S.income+=a;txt='Die Beta ist ab sofort käuflich.'}
   else if(ok){
-    if(id==='publisher'){const a=gain(need);S.recoup+=a;S.publisher=true;ensureMilestone();S.pubExtra+=.1;if(S.ip==='neu'){S.ipLost=true;txt='Die Rechte an eurer neuen Welt gehören jetzt dem Publisher.'}}
+    if(id==='publisher'){const a=gain(need);S.recoup+=a;S.publisher=true;S.pubExtra+=.1;if(S.ip==='neu'){S.ipLost=true;txt='Die Rechte an eurer neuen Welt gehören jetzt dem Publisher.'}}
     else if(id==='kredit'){const a=gain(need);S.loan+=a}
     else if(id==='investor'){const a=gain(need);S.investIn+=a;S.equity+=.25}
     else if(id==='crowd'){const a=gain(need);S.income+=a}

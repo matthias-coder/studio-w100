@@ -338,16 +338,13 @@ function msRowsHTML(rows){
 }
 function msBlock(){
   if(!S)return '';
-  ensureMilestone();
   const nx=nextMs();
   if(!nx)return '';
   const n=stepIndex(nx.at)-S.round;
   const when=n<=0?'nach diesem Schritt':`in ${n} Schritt${n===1?'':'en'}`;
-  const pub=S.milestone&&!S.milestone.done&&S.milestone.at===nx.id
-    ?`<div class="mini"><div><span>Publisher-Prämie</span><span class="pos">+${money(S.milestone.reward)}</span></div></div>`:'';
   return `<details class="fold">
     <summary>🎯 Nächster Meilenstein: ${esc(nx.n)} · ${when}</summary>
-    <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}${pub}</div>
+    <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}</div>
   </details>`;
 }
 function renderMilestone(m){

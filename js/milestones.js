@@ -13,8 +13,8 @@ function msById(id){return MILESTONES.find(m=>m.id===id)}
 // Ziele folgen dem, was der ausgewogene Sprint im Genre aufbaut: Tier-Niveau + Basis + Genre-Gewichtung
 function msTargets(id,s=S){
   const m=msById(id),t=T(),w=qualWeights();
-  const adj=k=>Math.round(m.k[k]*(w[k]-MS_REF_W[k]));
-  return {gp:m.gp+t.gp+adj('gp'),gfx:m.gfx+t.gfx+adj('gfx'),snd:m.snd+Math.round((t.gp+t.gfx)/2)+adj('snd'),bugs:m.bugs};
+  const adj=k=>Math.round(m.k[k]*(w[k]-MS_REF_W[k])),amb=s.fund&&s.fund.amb?FUND.ambSoll:0;
+  return {gp:m.gp+t.gp+adj('gp')+amb,gfx:m.gfx+t.gfx+adj('gfx')+amb,snd:m.snd+Math.round((t.gp+t.gfx)/2)+adj('snd')+amb,bugs:m.bugs};
 }
 function nextMs(s=S){
   const done=s.msDone||[];
@@ -56,24 +56,13 @@ function msNeed(s=S){
   }};
   FOCUS.custom=c;
 })();
-// Wendet das Ergebnis einer Meilenstein-Prüfung an (Moral, ggf. Publisher-Deal) und liefert die Log-Notizen
+// Wendet das Ergebnis einer Meilenstein-Prüfung an (Moral, Geldgeber-Raten) und liefert die Log-Notizen
 function applyMsOutcome(r){
   const notes=[],n=r.n;
   if(r.outcome==='met'){S.res.moral=clamp(S.res.moral+1,0,10);notes.push(`Meilenstein „${n}“ erreicht (+1 Moral)`)}
   else if(r.outcome==='near')notes.push(`Meilenstein „${n}“ knapp verfehlt`);
   else{S.res.moral=clamp(S.res.moral-1,0,10);notes.push(`Meilenstein „${n}“ verfehlt (−1 Moral)`)}
-  const pm=S.milestone;
-  if(pm&&pm.at===r.id&&!pm.done){
-    pm.done=true;
-    if(r.outcome==='met'){
-      S.res.budget+=pm.reward;S.income+=pm.reward;
-      notes.push(`Publisher-Meilenstein erreicht (+${money(pm.reward)})!`);
-    }else if(r.outcome==='miss'&&Math.random()<0.4){
-      const repay=Math.round(S.recoup*0.5*10)/10;
-      S.res.budget-=repay;S.publisher=false;S.recoup=Math.max(0,S.recoup-repay);
-      notes.push(`Der Publisher kündigt den Vertrag und fordert ${money(repay)} Vorschuss zurück!`);
-    }
-  }
+  notes.push(...applyFundingOutcome(r));
   r.notes=notes;
   return notes;
 }

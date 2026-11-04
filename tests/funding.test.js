@@ -36,3 +36,31 @@ test('fumble or total miss signs nothing and skips pit_mix',()=>{const {run}=loa
 test('ambitious pitch is harder',()=>{const {run}=load();newProject(run);assert.equal(run(`pitchTarget('pub',true)-pitchTarget('pub',false)`),10);});
 test('pitch card no longer creates a publisher',()=>{const {run}=load();newProject(run);
   assert.equal(run(`E.some(e=>e.o.some(o=>o.s&&o.s.recoup))`),false);});
+
+/* ---- Task 4: milestone consequences ---- */
+const setRes=(run,id,d=0)=>{const t=run(`msTargets('${id}')`);run(`Object.assign(S.res,{gp:${t.gp+d},gfx:${t.gfx+d},snd:${t.snd+d},bugs:${t.bugs}})`)};
+test('met pays the rate',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);setRes(run,'vs');
+  const b=run('S.res.budget');run(`applyMsOutcome(msCheck('vs'))`);assert.equal(run('S.res.budget'),b+14);});
+test('near blocks Weiter until renegotiated',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);setRes(run,'vs',-3);
+  run(`S.msResult=msCheck('vs');applyMsOutcome(S.msResult);S.screen='milestone'`);assert.equal(run('S.fund.renego'),true);
+  run('closeMilestone()');assert.equal(run('S.screen'),'milestone');
+  const b=run('S.res.budget');run('resolveRenego(false)');assert.equal(run('S.res.budget'),b+7);assert.equal(run('S.fund.renego'),false);});
+test('publisher: first miss withholds rate and demands a cut, second miss cancels',()=>{const {run}=load();newProject(run);
+  run(`signDeal('pub',100)`);setRes(run,'vs',-20);const b=run('S.res.budget');
+  run(`applyMsOutcome(msCheck('vs'))`);assert.equal(run('S.res.budget'),b);assert.equal(run('S.fund.cutPending'),true);
+  run(`cutFeature('scope')`);setRes(run,'fp',-20);run(`applyMsOutcome(msCheck('fp'))`);
+  assert.equal(run(`findDeal('pub').status`),'cancelled');assert.equal(run('S.publisher'),false);assert.equal(run('S.res.budget'),b-15);});
+test('investor downgrades when hype is low',()=>{const {run}=load();newProject(run);run(`signDeal('inv',40);S.res.hype=1`);
+  assert.equal(run(`dealOutcome(findDeal('inv'),'met')`),'near');assert.equal(run(`dealOutcome(findDeal('inv'),'near')`),'miss');});
+test('grant miss repays half and can trigger the crisis before the milestone screen',()=>{const {run}=load();newProject(run);
+  run(`Math.random=()=>0.999;signDeal('grant',20);signDeal('pub',100);S.round=stepIndex('pre_slice')`);
+  const t=run(`msTargets('vs')`);run(`Object.assign(S.res,{gp:${t.gp-3},gfx:${t.gfx},snd:${t.snd},bugs:${t.bugs+30},budget:0})`);
+  run('monthEnd()');assert.equal(run('S.screen'),'crisis');assert.equal(run(`findDeal('grant').status`),'cancelled');
+  run('S.res.budget=1e9;leaveCrisis()');assert.equal(run('S.screen'),'milestone');});
+test('cut options always include scope; cutting ea stops early access',()=>{const {run}=load();newProject(run,{extras:['ea']});
+  assert.deepEqual([...run('cutOptions().map(o=>o.id)')],['ea','scope']);run(`S.fund.cutPending=true;cutFeature('ea')`);
+  assert.equal(run('S.ea'),false);assert.equal(run(`S.extras.includes('ea')`),false);assert.equal(run('S.fund.cutPending'),false);
+  run(`Math.random=()=>0.999;S.res.budget=1e9;S.round=stepIndex('prod_alpha');monthEnd()`);assert.equal(run('S.month.ea'),0);});
+test('crowd deal turns a cut into a broken promise',()=>{const {run}=load();newProject(run);run(`signDeal('crowd',10);const p=S.promises;cutFeature('scope');S._d=S.promises-p`);assert.equal(run('S._d'),1);});
+test('ambitious pitch raises targets by 3',()=>{const {run}=load();newProject(run);const a=run(`msTargets('fp').gp`);run('S.fund.amb=true');assert.equal(run(`msTargets('fp').gp`),a+3);});
+test('ensureMilestone is gone',()=>{const {run}=load();newProject(run);assert.equal(run(`typeof ensureMilestone`),'undefined');});

@@ -13,15 +13,16 @@ test('full normal project consumes exactly 12 time units',()=>{const {run}=load(
 test('long AAA keeps 2 units of buffer without delays',()=>{const {run}=load();newProject(run,{tier:'aaa',dur:'long'});noRandom(run);
   run('S.res.budget=1e12');for(let i=0;i<13;i++){run('monthEnd()');if(run('S.screen')==='milestone')run('closeMilestone()')}
   assert.ok(Math.abs(run('S.res.zeit')-2)<1e-6);});
-test('publisher early → milestone at fp; late → none',()=>{const {run}=load();newProject(run);
-  run('S.publisher=true;ensureMilestone()');assert.equal(run('S.milestone.at'),'fp');
-  newProject(run);run(`S.round=stepIndex('pol_bugs');S.publisher=true;ensureMilestone()`);
-  assert.equal(run('S.milestone'),null);
-  noRandom(run);run('S.res.budget=1e9');run('monthEnd();monthEnd()');});
 test('milestone fires at end of prod_fp',()=>{const {run}=load();newProject(run);noRandom(run);
-  run('S.res.budget=1e9;S.publisher=true;ensureMilestone()');
-  for(let i=0;i<=run("stepIndex('prod_fp')");i++)run('monthEnd()');
-  assert.equal(run('S.milestone.done'),true);assert.ok(run(`S.msDone.includes('fp')`));});
+  run(`S.res.budget=1e9;signDeal('pub',100)`);
+  for(let i=0;i<=run("stepIndex('prod_fp')");i++){
+    run('monthEnd()');
+    if(run('S.screen')==='crisis')run('leaveCrisis()');
+    run('S.fund.renego=false;S.fund.cutPending=false');
+    if(run('S.screen')==='milestone')run('closeMilestone()');
+  }
+  assert.ok(run(`S.msDone.includes('fp')`));
+  assert.ok(run(`findDeal('pub').status==='cancelled'||!('fp' in findDeal('pub').rates)`));});
 test('crisis path resumes at next step',()=>{const {run}=load();newProject(run);noRandom(run);
   run('S.res.budget=-1;monthEnd()');assert.equal(run('S.round'),1);
   run('S.res.budget=1e9;afterMonth()');assert.notEqual(run('S.screen'),'launch');});

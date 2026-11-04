@@ -82,3 +82,80 @@ function resolvePitch(total,crit,fumble){
   const txt=(won.length?`Zugesagt: ${won.join(', ')}. `:'')+(lost.length?`Abgesagt: ${lost.join(', ')}.`:'');
   return {ch,txt:txt.trim()};
 }
+
+/* ===================== Meilenstein-Folgen: Raten, Nachverhandlung, Feature-Kürzung ===================== */
+// Investoren werten das Ergebnis bei schwachem Hype eine Stufe schlechter
+function dealOutcome(deal,outcome,s=S){
+  if(deal.id==='inv'&&s.res.hype<FUND.invHype)return outcome==='met'?'near':'miss';
+  return outcome;
+}
+function clearRates(deal){deal.rates={};deal.pend=null}
+function applyFundingOutcome(r){
+  const notes=[];r.deals=[];
+  S.fund.deals.filter(d=>d.status==='active'&&d.rates&&d.rates[r.id]!==undefined).forEach(deal=>{
+    const f=FUNDERS[deal.id],oc=dealOutcome(deal,r.outcome),rate=deal.rates[r.id];
+    let amount=0,txt='';
+    if(oc==='met'){
+      delete deal.rates[r.id];amount=payDeal(deal,rate);
+      txt=`${f.n}: Rate von ${money(amount)} gezahlt`;
+    }else if(oc==='near'){
+      deal.pend=r.id;S.fund.renego=true;
+      txt=`${f.n}: Rate von ${money(rate)} steht auf der Kippe – Nachverhandlung nötig`;
+    }else{
+      delete deal.rates[r.id];deal.misses++;
+      if(deal.id==='pub'){
+        if(deal.misses===1){S.fund.cutPending=true;txt=`${f.n}: Rate von ${money(rate)} gestrichen – ein Feature muss weichen`}
+        else{
+          const repay=r1(deal.paid*FUND.repay);
+          S.res.budget-=repay;S.recoup=Math.max(0,S.recoup-repay);S.publisher=false;
+          deal.status='cancelled';clearRates(deal);amount=-repay;
+          txt=`${f.n} kündigt den Vertrag und fordert ${money(repay)} zurück`;
+        }
+      }else if(deal.id==='inv'){
+        if(deal.misses===1)txt=`${f.n}: Rate von ${money(rate)} gestrichen`;
+        else{deal.status='exited';clearRates(deal);txt=`${f.n} steigen aus (Gewinnanteil bleibt)`}
+      }else{
+        const repay=r1(deal.paid*FUND.repay);
+        S.res.budget-=repay;S.income-=repay;deal.status='cancelled';clearRates(deal);amount=-repay;
+        txt=`${f.n} endet: ${money(repay)} müssen zurückgezahlt werden`;
+      }
+    }
+    r.deals.push({id:deal.id,n:f.n,outcome:oc,amount,txt});
+    notes.push(txt);
+  });
+  return notes;
+}
+function resolveRenego(ok){
+  let got=0;const parts=[];
+  S.fund.deals.filter(d=>d.pend).forEach(deal=>{
+    const rate=deal.rates[deal.pend];
+    if(rate!==undefined&&deal.status==='active'){
+      delete deal.rates[deal.pend];
+      const x=payDeal(deal,ok?rate:rate*FUND.nearRate);got=r1(got+x);
+      parts.push(`${FUNDERS[deal.id].n}: ${money(x)}`);
+    }
+    deal.pend=null;
+  });
+  S.fund.renego=false;
+  const txt=parts.length?(ok?'Einigung auf die volle Rate. ':'Nur die halbe Rate. ')+parts.join(', '):'';
+  return {ch:got?[['budget',got]]:[],txt};
+}
+function startRenego(){startRoll({kind:'renego',ev:'renego',adv:false})}
+function cutOptions(s=S){
+  const o=(s.extras||[]).map(id=>({id,n:PROJECT_EXTRAS[id]?.n||id}));
+  o.push({id:'scope',n:'Umfang kürzen'});
+  return o;
+}
+function cutFeature(id){
+  const notes=[];
+  if(id==='scope'){S.res.gp-=FUND.cutGp;recalcQual();notes.push(`Umfang gekürzt (Gameplay −${FUND.cutGp})`)}
+  else{
+    S.extras=(S.extras||[]).filter(x=>x!==id);
+    if(id==='mods')S.mods=false;
+    if(id==='ea')S.ea=false;
+    notes.push(`${PROJECT_EXTRAS[id]?.n||id} gestrichen`);
+  }
+  S.res.zeit+=FUND.cutZeit;S.fund.cuts.push(id);S.fund.cutPending=false;
+  if(S.fund.deals.some(d=>d.id==='crowd')){S.promises+=1;notes.push('Stretch Goal gebrochen – die Backer sind sauer')}
+  return notes;
+}
