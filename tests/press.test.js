@@ -60,3 +60,14 @@ test('pending offer survives a save round-trip',()=>{const {run}=load();newProje
   run(`S.res.budget=1e9;askInfluencer('blech',50)`);const p=JSON.stringify(run('S.inf.pending'));
   run('save();load()');assert.equal(JSON.stringify(run('S.inf.pending')),p);});
 test('old influencer shop item is gone',()=>{const {run}=load();assert.equal(run(`SHOP.some(x=>x.id==='influencer')`),false);});
+const html=(run,fn)=>run(`(()=>{const m={innerHTML:'',className:'',querySelectorAll:()=>[]};${fn}(m);return m.innerHTML})()`);
+test('shop shows influencer offers with hidden prefs',()=>{const {run}=load({ui:true});newProject(run);
+  const h=run('infShopHTML()');assert.equal((h.match(/data-infask=/g)||[]).length,3);assert.match(h,/\?\?\?/);});
+test('pending offer shows accept disabled without money',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.res.budget=1e9;askInfluencer('blech',50);S.res.budget=0;S.inf.pending.price=5`);
+  assert.match(run('infShopHTML()'),/id="infAccept"[^>]*disabled/);});
+test('manual mode shows a roll input',()=>{const {run}=load({ui:true});newProject(run);
+  run('manual=true');assert.match(run('infShopHTML()'),/id="infR"/);});
+test('press album lists streamers and journalists',()=>{const {run}=load({ui:true});newProject(run);
+  run(`revealInf('zockrange')`);const h=run('pressAlbumHTML()');
+  assert.match(h,/Erik Zockrange/);assert.match(h,/André Peschkeller/);assert.match(h,/Survival/);});

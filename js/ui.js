@@ -175,7 +175,7 @@ function hallHTML(){
 
 let shopSubTab='invest'; // 'invest' | 'hire' | 'earn'
 let shopCatFilter='all'; // 'all' | 'Marketing' | 'Qualität' | 'Studio' | 'Spekulativ'
-let legendFilter='unlocked'; // 'unlocked' | 'locked' | 'all'
+let legendFilter='unlocked'; // 'unlocked' | 'locked' | 'all' | 'press'
 
 function engineBlock(){
   if(!C||!C.studio.engine)return `<div class="blk"><span class="label">Eigene Studio-Engine</span><p class="note" style="margin:0">Noch keine eigene Engine (in der Pre-Production baubar).</p></div>`;
@@ -706,6 +706,66 @@ function renderWsNav(){
   });
 }
 
+/* ===================== Influencer-Shop & Presse-Album ===================== */
+function _genreNames(list){return list.map(g=>GENRES[g]?GENRES[g].n:g).join(', ')||'–'}
+function _prefLine(d,known){return known?`Mag: ${esc(_genreNames(d.likes))} · Mag nicht: ${esc(_genreNames(d.dislikes))}`:'Mag: ??? · Mag nicht: ???'}
+function infShopHTML(){
+  const p=S.inf.pending,tierTxt={free:'Hat richtig Bock – macht es kostenlos',normal:'Normalpreis',double:'Will das Doppelte'};
+  const offers=infOffers();
+  const card=id=>{
+    const d=INFLUENCERS[id],can=infCanAsk(id);
+    return `<div class="legend-card">
+      ${charPortraitHTML(d.img,false,'sm',false,d.n)}
+      <div class="dir-info">
+        <b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span>
+        <div class="note">Reichweite: ${'★'.repeat(d.reach)} · ${money(infPrice(id))}</div>
+        <div class="note">${_prefLine(d,infKnown(id))}</div>
+        <div class="row" style="gap:6px;align-items:center">
+          ${manual?'<input type="number" min="1" max="100" id="infR" placeholder="W100" style="width:70px">':''}
+          <button type="button" class="btn tiny alt" data-infask="${id}" ${can?'':'disabled'}>Anfragen</button>
+        </div>
+      </div>
+    </div>`;
+  };
+  let pend='';
+  if(p){
+    const d=INFLUENCERS[p.id],bock=infBock(p.id)-50;
+    pend=`<div class="alert mid" style="display:block">
+      <b>${esc(d.n)}</b> antwortet: W100 ${p.r} ${bock<0?'−':'+'} ${Math.abs(bock)} (Bock−50) = ${p.total}<br>
+      ${tierTxt[p.tier]} · ${p.price?money(p.price):'0'}
+      <div class="row" style="gap:6px;margin-top:6px">
+        <button type="button" class="btn small alt" id="infAccept" ${S.res.budget<p.price?'disabled':''}>Annehmen</button>
+        <button type="button" class="btn small ghost" id="infDecline">Ablehnen</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="infshop" style="margin-bottom:12px">
+    <div class="stamp" style="margin-bottom:6px">📣 Influencer anfragen</div>
+    ${pend}
+    <div class="legend-grid">${offers.map(card).join('')}</div>
+    <p class="note" style="margin:6px 0 0">Angeheuert: ${S.inf.hired.length} / ${INF.maxHired}</p>
+  </div>`;
+}
+function pressAlbumHTML(){
+  const inf=INF_KEYS.map(id=>{
+    const d=INFLUENCERS[id];
+    return `<div class="legend-card">
+      ${charPortraitHTML(d.img,false,'sm',false,d.n)}
+      <div class="dir-info"><b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span>
+        <div class="note">${_prefLine(d,infKnown(id))}</div></div>
+    </div>`}).join('');
+  const jour=JOUR_KEYS.map(id=>{
+    const d=JOURNALISTS[id],pk=jourKnown(id,'pref'),tk=jourKnown(id,'tone');
+    return `<div class="legend-card">
+      ${charPortraitHTML(d.img,false,'sm',false,d.n)}
+      <div class="dir-info"><b>${esc(d.n)}</b> <span class="note">${esc(d.tag)}</span>
+        <div class="note">${_prefLine(d,pk)}</div>
+        <div class="note">Lieblingston: ${tk?esc(IV_TONES[d.tone]||d.tone):'???'}</div></div>
+    </div>`}).join('');
+  return `<div class="stamp" style="margin:8px 0">📺 Streamer</div><div class="legend-grid">${inf}</div>
+    <div class="stamp" style="margin:8px 0">📰 Journalisten</div><div class="legend-grid">${jour}</div>`;
+}
+
 /* ===================== Legenden-Album (Mit Filter-Tabs gegen langes Scrollen) ===================== */
 function renderLegendsView(m){
   const unl=getUnlockedChars();
@@ -723,10 +783,12 @@ function renderLegendsView(m){
       <button type="button" class="sub-tab ${legendFilter==='unlocked'?'active':''}" data-lfilt="unlocked">⭐ Freigeschaltet (${unl.length})</button>
       <button type="button" class="sub-tab ${legendFilter==='locked'?'active':''}" data-lfilt="locked">🔒 Unentdeckt (${allEntries.length-unl.length})</button>
       <button type="button" class="sub-tab ${legendFilter==='all'?'active':''}" data-lfilt="all">Alle (${allEntries.length})</button>
+      <button type="button" class="sub-tab ${legendFilter==='press'?'active':''}" data-lfilt="press">📰 Presse & Streamer</button>
     </div>
-    ${filtered.length?'':`<p class="note">${legendFilter==='unlocked'?'Noch keine Legende freigeschaltet.':'Alle Legenden sind freigeschaltet.'}</p>`}
+    ${legendFilter==='press'?pressAlbumHTML():''}
+    ${legendFilter==='press'||filtered.length?'':`<p class="note">${legendFilter==='unlocked'?'Noch keine Legende freigeschaltet.':'Alle Legenden sind freigeschaltet.'}</p>`}
     <div class="legend-grid">
-      ${filtered.map(([k,o])=>{
+      ${(legendFilter==='press'?[]:filtered).map(([k,o])=>{
         const ok=isCharUnlocked(k);
         const roleName=STAFF[o.leadRole]?.n||'Spezialist';
         if(!ok){
@@ -1229,6 +1291,7 @@ function renderShop(m){
         <button type="button" class="cat-pill ${shopCatFilter==='all'?'active':''}" data-cfilt="all">Alle (${SHOP.filter(it=>!it.tiers||it.tiers.includes(S.tier)).length})</button>
         ${cats.map(c=>`<button type="button" class="cat-pill ${shopCatFilter===c?'active':''}" data-cfilt="${c}">${c}</button>`).join('')}
       </div>
+      ${shopCatFilter==='Marketing'||shopCatFilter==='all'?infShopHTML():''}
       <div class="opts-grid">
         ${shopItems.map(it=>{
           const cost=shopCost(it),bought=S.shop.includes(it.id),early=it.min&&ph<it.min;
@@ -1294,6 +1357,14 @@ function renderShop(m){
   m.querySelectorAll('[data-cfilt]').forEach(b=>b.onclick=()=>{shopCatFilter=b.dataset.cfilt;renderShop(m)});
   const finBtn=$('openFinFromShop');if(finBtn)finBtn.onclick=()=>openCrisis('event');
   m.querySelectorAll('[data-contract]').forEach(b=>b.onclick=()=>startContract(b.dataset.contract));
+  m.querySelectorAll('[data-infask]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.infask;if(!infCanAsk(id))return;
+    let r;
+    if(manual){const el=$('infR'),v=el?Number(el.value):NaN;if(!Number.isInteger(v)||v<1||v>100)return;r=v}
+    askInfluencer(id,r);render();save();
+  });
+  const iA=$('infAccept');if(iA)iA.onclick=()=>{acceptInfluencer();render();save()};
+  const iD=$('infDecline');if(iD)iD.onclick=()=>{declineInfluencer();render();save()};
   m.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   m.querySelectorAll('[data-hire]').forEach(b=>b.onclick=()=>hire(b.dataset.hire));
   m.querySelectorAll('[data-fire]').forEach(b=>b.onclick=()=>fire(b.dataset.fire));
