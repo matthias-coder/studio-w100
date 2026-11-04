@@ -302,7 +302,6 @@ const PLAN={
   qa:{n:'QA & Testing',d:'Tester, Testgeräte, Crash-Reporting',lv:['Wenig','Normal','Viel'],cost:[0,1,3],key:'bugs',val:[1,0,-1.5],cat:'qa',def:1},
   team:{n:'Team-Extras',d:'Obst, Teamabende, gute Stühle',lv:['Wenig','Normal','Viel'],cost:[0,.5,1.5],key:'moral',val:[-.25,0,.34],cat:'team',def:1},
   gehalt:{n:'Gehälter',d:'Unter Markt spart, über Markt hält die Leute & Leads',lv:['Unter','Markt','Über'],cost:[-1.5,0,2.5],key:'moral',val:[-.34,0,.25],cat:'personal',def:1},
-  content:{n:'Content & Polish',d:'Mehr Level, Quests, Grafik-Details & Gameplay-Feinschliff',lv:['Aus','Klein','Groß'],cost:[0,1.5,4],key:'qual',val:[0,.6,1.4],cat:'welt',def:0},
   weiter:{n:'Weiterbildung',d:'Hebt Studiowerte (+2) & gibt Lead-Personal schneller XP',lv:['Aus','Etwas','Viel'],cost:[0,1,2.5],key:'skill',val:[0,.2,.4],cat:'team',def:0},
   outs:{n:'Outsourcing',d:'Externe Studios sparen Zeit, bringen aber Bugs',lv:['Aus','Etwas','Viel'],cost:[0,2,5],key:'zeit',val:[0,.25,.5],cat:'outs',def:0}
 };

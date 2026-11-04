@@ -139,6 +139,8 @@ function normalizeProject(s,c){
     return null;
   }
   if(!s||!s.res)return s;
+  if(!s.sprint)s.sprint=defaultSprint();
+  if(s.contractStep==null)s.contractStep=-1;
   if(s.milestone&&!s.milestone.at)s.milestone.at=s.milestone.month<=6?'prod_fp':'prod_beta';
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;

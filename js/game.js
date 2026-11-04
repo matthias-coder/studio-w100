@@ -355,6 +355,7 @@ function startContract(id){
   if(!S.contractsPh)S.contractsPh=[];
   if(S.contractsPh.includes(ph))return;
   S.contractsPh.push(ph);
+  S.contractStep=S.round;
   startRoll({kind:'contract',ev:id,adv:false});
 }
 
@@ -483,7 +484,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],milestone:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9)};
+     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1};
 
   S.res.zeit=totalW(S)+2;
   recalcQual();
@@ -750,7 +751,7 @@ function monthLines(){
   const over=(2+(C?.studio?.overheadDrift||0)+fameOver)*sc;
   add('buero',over);
 
-  for(const k of ['mkt','qa','team','content','weiter','outs'])add(PLAN[k].cat,PLAN[k].cost[S.plan[k]]*sc);
+  for(const k of ['mkt','qa','team','weiter','outs'])add(PLAN[k].cat,PLAN[k].cost[S.plan[k]]*sc);
   if(S.world==='open')add('welt',2*sc);else if(S.world==='hub')add('welt',1*sc);
   if(S.model!=='kauf'&&stepFlag('live'))add('server',2*sc);
   if(S.mods)add('mods',1*sc);
@@ -948,13 +949,6 @@ function monthEnd(){
         checkStaffLevelUp(st);
       }
     });
-    else if(P.key==='qual'){
-      const eng=C&&C.studio.engine;
-      const agePen=(S.engine==='eigen'&&eng&&(eng.age||0)>=3)?0.75:1;
-      acc('content_gp',v*0.6*agePen,x=>add('gp',x));
-      acc('content_gfx',v*0.5*agePen,x=>add('gfx',x));
-      acc('content_snd',v*0.5,x=>add('snd',x));
-    }
     else acc(k,v,x=>add(P.key,x));
   }
 
@@ -962,9 +956,16 @@ function monthEnd(){
   const eng=C&&C.studio.engine;
   const engDrag=(S.engine==='eigen'&&eng)?((eng.age||0)>=4?-0.4:(eng.age||0)===3?-0.2:0):0;
 
-  acc('pol_gp',d.s.polish*.35+engDrag,x=>add('gp',x));
-  acc('pol_gfx',d.s.polish*.30+artGfx+engDrag,x=>add('gfx',x));
-  acc('pol_snd',.6+d.s.polish*.3+(AUDIO_SND[staffLevel('audio')]||0),x=>add('snd',x));
+  acc('pol_gp',engDrag,x=>add('gp',x));
+  acc('pol_gfx',artGfx+engDrag,x=>add('gfx',x));
+  acc('pol_snd',.6+(AUDIO_SND[staffLevel('audio')]||0),x=>add('snd',x));
+  // Sprint: Kapazität x Verteilung (Schrittlänge ist in sprintDelta schon enthalten, daher ohne x w)
+  if(!S.sprint)S.sprint=defaultSprint();
+  const sd=sprintDelta(),sApplied={pts:sd.pts,gp:0,gfx:0,snd:0,bugs:0,hype:0};
+  const accN=(key,v,f)=>{S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1-1e-9){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1+1e-9){S.acc[key]+=1;f(-1)}};
+  for(const k of ['gp','gfx','snd','bugs','hype'])accN('sp_'+k,sd[k],x=>{add(k,x);sApplied[k]+=x});
+  if(sd.moral)add('moral',sd.moral);
+  S.sprint.crunch=false;
   // Hype verfliegt langsam, wenn er hoch ist und nichts nachkommt
   if(S.res.hype>=6)acc('hype_decay',-(S.res.hype-5)*.2,x=>add('hype',x));
 
@@ -1046,7 +1047,7 @@ function monthEnd(){
   }
 
   S.round++;
-  S.month={sum,pc,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
+  S.month={sum,pc,sprint:sApplied,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
   addLog(`<span>${stepTag(S.round-1)}</span> Abschluss „${STEPS[S.round-1].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
