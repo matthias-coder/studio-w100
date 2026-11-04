@@ -152,7 +152,7 @@ function budgetAlert(){
   const tip=plan.length?`Senke rechts im Budget-Dock ${plan.join(', ')}, nimm eine Auftragsarbeit an oder suche frisches Geld.`:'Der Budgetplan ist schon auf Minimum. Jetzt hilft eine Auftragsarbeit oder frisches Geld.';
   const btn=`<div class="row"><button class="btn small alt" id="finBtn">Jetzt Finanzierung suchen (+8 auf Würfe)</button></div>`;
   if(crit)return `<div class="alert" role="alert"><b>Achtung: Pleite droht</b><span>Mit ${money(S.res.budget)} könnt ihr den nächsten Schritt (${money(stepCost())}) nicht mehr bezahlen. Am Ende des Schritts kommt die Notlage. ${tip}</span>${btn}</div>`;
-  return `<div class="alert ${rw>1?'mid':''}" role="status"><b>Das Geld wird knapp</b><span>Das Budget reicht nur noch für ${rw} Monat${rw>1?'e':''}, bis zum Release sind es noch ${fmtSpan(left)}. ${tip}</span>${btn}</div>`;
+  return `<div class="alert ${rw>1?'mid':''}" role="status"><b>Das Geld wird knapp</b><span>Das Budget reicht nur noch für ${rw<1?'weniger als einen Monat':rw+' Monat'+(rw>1?'e':'')}, bis zum Release sind es noch ${fmtSpan(left)}. ${tip}</span>${btn}</div>`;
 }
 function bindFin(){const b=$('finBtn');if(b)b.onclick=()=>openCrisis('event')}
 
