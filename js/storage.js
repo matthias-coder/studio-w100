@@ -105,6 +105,9 @@ function normalizeCareer(c){
     c.studio.engine.techDebt=c.studio.engine.techDebt||0;
     if(c.studio.engine.techPts===undefined)c.studio.engine.techPts=1;
   }
+  if(!c.known)c.known={inf:{},jour:{}};
+  if(!c.known.inf)c.known.inf={};
+  if(!c.known.jour)c.known.jour={};
   if(!c.trend){
     const keys=Object.keys(GENRES);
     c.trend={hot:keys[0],cold:keys[1],note:'Branchen-Beobachtung aktiv'};
@@ -124,6 +127,13 @@ function dropUnknownGenres(c){
   if(c.dir?.aff)c.dir.aff=Object.fromEntries(Object.entries(c.dir.aff).filter(([k])=>GENRES[k]));
 }
 
+function _pressDefaults(s){
+  if(!s.inf)s.inf=defaultInf();
+  if(s.crunchN===undefined)s.crunchN=0;
+  if(s.crisisSeen===undefined)s.crisisSeen=false;
+  if(s.probeSeen===undefined)s.probeSeen=false;
+}
+
 function normalizeProject(s,c){
   // Laufendes Projekt aus der Zeit vor dem Schrittmodell: abbrechen, Restbudget erstatten
   if(s&&s.v!==2&&(s.end||['sales','end','over','launch'].includes(s.screen))){
@@ -131,6 +141,7 @@ function normalizeProject(s,c){
     s.v=2;s.durKey='normal';s.dur=refMonths(s.tier||'indie');
     if(!s.fund){s.fund=defaultFund();s.fund.pitched=true}
     if(!s.skip)s.skip=[];
+    _pressDefaults(s);
     if(s.round>=12)s.round=STEPS.length;
     return s;
   }
@@ -141,6 +152,7 @@ function normalizeProject(s,c){
     return null;
   }
   if(!s||!s.res)return s;
+  _pressDefaults(s);
   if(!s.sprint)s.sprint=defaultSprint();
   if(s.contractStep==null)s.contractStep=-1;
   if(!s.skip)s.skip=[];

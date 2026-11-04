@@ -1,0 +1,34 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const fs=require('fs'),path=require('path');
+const {load,newProject}=require('./harness');
+test('press data is complete and images exist',()=>{const {run}=load();
+  assert.equal(run('Object.keys(INFLUENCERS).length'),28);assert.equal(run('INF_KEYS.length'),23);
+  assert.equal(run('JOUR_KEYS.length'),11);
+  for(const [L,keys] of [['INFLUENCERS','INF_KEYS'],['JOURNALISTS','JOUR_KEYS']])for(const k of run(`[...${keys}]`)){
+    const d=run(`${L}['${k}']`);assert.ok(fs.existsSync(path.join(__dirname,'..',d.img)),d.img);
+    for(const g of [...d.likes,...d.dislikes])assert.ok(run(`!!GENRES['${g}']`),`${k}: ${g}`);}
+  assert.deepEqual([...run(`INFLUENCERS.zockrange.likes`)].sort(),['adventure','survival']);
+  assert.deepEqual([...run(`INFLUENCERS.zockrange.dislikes`)],['sports']);
+  assert.equal(run('INFLUENCERS.zockrange.reach'),3);
+  assert.ok(run(`JOURNALISTS.peschkeller.topics.includes('finanzen')`));});
+test('bock follows genre, hype and fame',()=>{const {run}=load();newProject(run,{genre:'survival'});
+  run('S.res.hype=0;C.studio.fame=0');assert.equal(run(`infBock('zockrange')`),75);
+  run(`S.genre='sports'`);assert.equal(run(`infBock('zockrange')`),20);
+  run(`S.genre='rpg';S.res.hype=5;C.studio.fame=50`);assert.equal(run(`infBock('zockrange')`),62);
+  run(`S.genre='sports';S.res.hype=0;C.studio.fame=0`);run(`INFLUENCERS.zockrange.dislikes=['sports','rpg']`);
+  run(`S.genre='survival';INFLUENCERS.zockrange.likes=['survival'];S.res.hype=10;C.studio.fame=1000`);
+  assert.equal(run(`infBock('zockrange')`),95);});
+test('reveal is per career and starts hidden',()=>{const {run}=load();newProject(run);
+  assert.equal(run(`infKnown('zockrange')`),false);run(`revealInf('zockrange')`);assert.ok(run(`infKnown('zockrange')`));
+  assert.equal(run(`jourKnown('heiko','tone')`),false);run(`revealJour('heiko','tone')`);
+  assert.ok(run(`jourKnown('heiko','tone')`));assert.equal(run(`jourKnown('heiko','pref')`),false);});
+test('fame effect applies, clamps and unapplies',()=>{const {run}=load();newProject(run);
+  run('C.studio.fame=3');const ch=run('apply({fame:-5})');assert.equal(run('C.studio.fame'),0);
+  run('C.studio.fame=3');const ch2=run('apply({fame:2})');assert.equal(run('C.studio.fame'),5);
+  run(`unapply(${JSON.stringify([['fame',2]])})`);assert.equal(run('C.studio.fame'),3);
+  assert.match(run(`chip(['fame',2])`),/Studio-Ruf/);});
+test('old saves get press defaults',()=>{const {run}=load();newProject(run);
+  run('delete C.known;delete S.inf;delete S.crunchN;delete S.crisisSeen;delete S.probeSeen');
+  run('normalizeCareer(C);normalizeProject(S,C)');
+  assert.deepEqual({...run('C.known.inf')},{});assert.equal(run('S.inf.hired.length'),0);
+  assert.equal(run('S.crunchN'),0);assert.equal(run('S.probeSeen'),false);});

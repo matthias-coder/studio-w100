@@ -1544,7 +1544,7 @@ function launchSetupProject(){
     C={
       studio:{name:(setupDraft.studioName||'').trim()||'Pixelpott Studios',fame:0,kasse:0,staff:[],exStaff:[],engine:null,salaryDrift:0,overheadDrift:0},
       dir:{...dir,fame:0,wealth:0,games:0,xp:0,perkUnlocked:false},
-      hall:[],gameNo:0,unlockedChars:getUnlockedChars()
+      hall:[],gameNo:0,unlockedChars:getUnlockedChars(),known:{inf:{},jour:{}}
     };
     rollMarketTrend();
   }

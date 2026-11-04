@@ -471,7 +471,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[]};
+     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
   S.res.zeit=totalW(S)+2;
   recalcQual();
@@ -562,6 +562,7 @@ function apply(eff){
         if(!v)continue;
       }
     }
+    if(k==='fame'){const old=C.studio.fame||0;C.studio.fame=Math.max(0,old+v);out.push([k,C.studio.fame-old]);continue}
     if(k==='budget'){v=v*sc;if(v<0)S.spend.projekt=(S.spend.projekt||0)-v;else S.income+=v;S.res.budget+=v;out.push([k,v]);continue}
     if(k==='qual'){
       S.res.gp=(S.res.gp||20)+v;
@@ -602,6 +603,7 @@ function unapply(ch){
   for(const [k,v] of ch){
     if(k==='budget'){S.res.budget-=v;if(v<0)S.spend.projekt-=-v;else S.income-=v}
     else if(k==='payers')S.payers-=v;else if(k==='promise')S.promises=Math.max(0,S.promises-v);else if(k==='recoup')S.recoup-=v;
+    else if(k==='fame')C.studio.fame=Math.max(0,(C.studio.fame||0)-v);
     else if(k in S.res)S.res[k]-=v;
   }
   normRes();
@@ -715,7 +717,7 @@ function chip([k,v]){
   if(k==='recoup')return `<span class="chip">Vorschuss ${money(v)} wird später verrechnet</span>`;
   if(k==='wl')return `<span class="chip ${v>0?'p':'n'}">${v>0?'+':'−'}${nf(Math.abs(v),0)} Wishlists</span>`;
   if(k==='budget')return `<span class="chip ${v>0?'p':'n'}">${money(v,true)}</span>`;
-  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
+  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit',fame:'Studio-Ruf'};
   const good=k==='bugs'?v<0:v>0;
   return `<span class="chip ${good?'p':'n'}">${fmt(v)} ${L[k]||k}</span>`;
 }
