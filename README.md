@@ -24,11 +24,13 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 - **Schritt 3 — Genre, Sub-Genre & Modifikator:** Wählt eines von **10 Hauptgenres** (*Action & Shooter*, *Action-Adventure*, *Adventure*, *Rollenspiel*, *Strategie*, *Simulation*, *Sport & Rennen*, *Survival & Sandbox*, *Puzzle & Denkspiele*, *Plattformer*) und eines von **45 Sub-Genres** — vom *Soulslike* über *Factory & Colony Sim* bis zum *Sportmanager*. Optional kommt ein **genreübergreifender Modifikator** dazu (*Roguelike*, *Horror-Stimmung*, *Live Service*, *Party & Couch-Koop*, *VR*), der mit manchen Genres eine **Synergie** bildet und sich mit anderen beißt.
 - **Schritt 4 — Extras & Offizielle Lizenzen:** Erweitert euer Projekt um **⚽ Offizielle Sport- & Verbandslizenzen**, **🤝 Koop-/Multiplayer-Modus**, **☁️ Crossplay & Cloud-Saves**, **🎻 Orchester-Soundtrack & Stargast-Synchro**, **📦 Physische Collector’s Edition**, **🛡️ Kernel-Anti-Cheat**, **🛠️ Mod-Support** oder eine **🧪 Early-Access-Phase**.
 
-### 2. 🌟 21 Branchen-Legenden & seltene Begegnungen
+### 2. 🌟 31 Branchen-Legenden & seltene Begegnungen
 - **Alle Legenden starten gesperrt:** Eure erste Karriere beginnt immer mit einem eigenen Director aus dem Charakter-Editor.
 - **Meilensteine:** Beim ersten **Top-Erfolg** (Wertung ab 80 oder ein Hit) und beim ersten **Double-A- oder Triple-A-Release** wird je eine zufällige Legende freigeschaltet.
 - **Seltene Begegnungen:** Sobald die erste Legende freigeschaltet ist, tauchen weitere während eurer Projekte als **Zufallsbegegnung** auf — nur zu Beginn einer Phase, mit 15 % Chance und höchstens einmal pro Projekt.
 - **Rekrutieren & Dauerhaft Freischalten:** Wer eine Legende als **Star-Lead (Stufe 2)** anwirbt (teuer!) oder sie im schweren W100-Fachgespräch überzeugt, schaltet sie im **🌟 Legenden-Album** dauerhaft als Director für künftige Karrieren frei.
+- **Neu dabei:** drei Audio Directors (Nobuo Overtura, Chris Pieptonbeck, Mick Djentdon), Business-Haie (Teut Monetaris, Bobby Cashtick), der Siedler-Architekt Volker Wuselstein, Konsolen-Pionier Ralf Braunkasten sowie Ken Rapturine, Shinji Zombikami und Eric Soloone — jede mit eigener Fähigkeit.
+- **🎪 Game-Dev-Messe:** Höchstens einmal pro Projekt (nicht im ersten, zweiten und letzten Schritt) trifft ihr auf einer Entwicklermesse eine Legende, auch eine noch gesperrte. Sie gibt einen Tipp passend zu ihrer Lead-Rolle. Umsetzen ist ein W100-Wurf mit Bonus bei Erfolg und Zeitverlust, Bugs oder Feature Creep bei Misserfolg; Ablehnen geht ohne Wurf.
 
 ### 3. 🎯 W100-Würfelsystem (1–100) & Gameplay/Grafik-Split
 - **Prozentgenaue W100-Proben:** Jede riskante Entscheidung zeigt vor dem Klick den Schwierigkeitsgrad (**SG**) und die exakte prozentuale Erfolgschance (`z. B. SG 60 · 72 %`).

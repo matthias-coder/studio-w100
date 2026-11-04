@@ -39,7 +39,10 @@ const EVENT_IMAGES={
   enc_critic:'raw-assets/encounter/71c5fb25-a250-434f-abff-601b6712e1bb.jpg',
   enc_data:'raw-assets/encounter/8217b3a2-e17c-4185-a44f-466a37d82a75.jpg',
   enc_os:'raw-assets/encounter/aef913b5-0ca2-4505-b3fb-285070a3599e.jpg',
-  enc_kernel:'raw-assets/encounter/dc3ba1df-f5ec-4149-9121-7299c4a258c5.jpg'
+  enc_kernel:'raw-assets/encounter/dc3ba1df-f5ec-4149-9121-7299c4a258c5.jpg',
+  pitch:'raw-assets/encounter/648c2064-b8fa-491e-8492-dd611bbcb74b.jpg',
+  audit:'raw-assets/encounter/7050ed3d-227e-415e-bed2-82b7dc7a18a7.jpg',
+  fair:'raw-assets/encounter/997aa40a-b5ef-441e-be4e-df3510e38a55.jpg'
 };
 
 const TIERS={
@@ -501,7 +504,17 @@ const ABIL={
   minimal:{n:'Ein-Knopf-Design-Purismus',d:'Alles Überflüssige fliegt raus: +9 Grafik, +3 Hype, −1 Moral.'},
   kernel:{n:'Grimmiger Kernel-Rewrite',d:'4.000 Zeilen sauberer Code: −10 Bugs, +4 Grafik, −1 Moral.'},
   telemetry:{n:'Metaverse-Telemetrie-Deal',d:'Daten gegen Bargeld: +40 Budget, −3 Bugs, −1 Hype.'},
-  pagerank:{n:'Rollerskate-Suchalgorithmus',d:'Platz 1 in allen Suchmaschinen: +6.000× Wishlists, +2 Hype.'}
+  pagerank:{n:'Rollerskate-Suchalgorithmus',d:'Platz 1 in allen Suchmaschinen: +6.000× Wishlists, +2 Hype.'},
+  overture:{n:'Tränenreiche Retrospektive',d:'Der Bossfight-Chor rührt alle zu Tränen: +10 Sound, +2 Gameplay, +1 Hype.'},
+  whale:{n:'Beschleunigungs-Kristalle',d:'Wartezeit gegen Echtgeld: +45 Budget, aber −2 Hype.'},
+  wusel:{n:'Der perfekte Arbeitsweg',d:'Jeder Träger kennt seinen Weg: +7 Gameplay und +1 Monat Puffer.'},
+  margin:{n:'Aktionärs-Paradies',d:'Die Marge steigt, das Team ächzt: +50 Budget, −2 Moral.'},
+  sidchip:{n:'Fünf-Kanal-Sinfonie',d:'Orchesterklang aus kleinster Hardware: +9 Sound, −2 Bugs.'},
+  kindly:{n:'Würdet ihr freundlicherweise …',d:'Eine Wendung, die alle umhaut: +9 Gameplay, +2 Hype, −1 Monat.'},
+  tank:{n:'Panzersteuerung',d:'Enge Flure, knappe Munition, pure Panik: +8 Gameplay, +3 Sound, +2 Hype.'},
+  solo:{n:'Solo-Synthese',d:'Einer ersetzt drei Abteilungen: −7 Bugs, +4 Gameplay, +3 Sound, +3 Grafik.'},
+  firstcontact:{n:'Erster Kontakt',d:'Zurück zum leuchtenden Quadrat: +6 Gameplay, −5 Bugs, +1 Hype.'},
+  djent:{n:'Pures Adrenalin',d:'Der Soundtrack zwingt zum Angriff: +10 Sound, +3 Hype, −1 Moral.'}
 };
 
 const PERKS={
@@ -842,7 +855,132 @@ const DIRS={
     encEff:{gp:8,moral:2,wl:2},
     s:{vision:3,technik:1,fuehrung:3,business:1,hype:2,polish:1},
     aff:{rpg:2,actadv:1,sim:1},perks:['spezial','crunch'],flaws:['buggy'],ab:'kolonie'
+  },
+
+  // === Neue Legenden: Audio, Business & Pioniere ===
+  uematsu:{
+    n:'Nobuo Overtura',
+    tag:'Der Kristall-Maestro',
+    img:'raw-assets/chars/548c436e-a9c9-43fb-ae07-b1639336787f.jpg',
+    leadRole:'audio',
+    d:'Grauhaariger Komponist mit Stirnband und goldbestickter Jacke, dem beim Spielen die Noten von den Tasten schweben. Bei seinen Bossfight-Chören bleibt niemand trocken, und keiner schaltet je den Titelbildschirm aus.',
+    encStory:'Leise Klaviertöne wehen durch den Flur. Ein Herr mit Stirnband setzt sich an euer verstimmtes Büro-Keyboard, und plötzlich schweben Kristalle durch den Raum: „Euer Endboss braucht einen Chor. Und euer Titelbildschirm eine Melodie, die man nie wieder vergisst.“',
+    encEff:{snd:9,hype:2},
+    s:{vision:3,technik:1,fuehrung:2,business:1,hype:2,polish:3},
+    aff:{rpg:2,adventure:1},perks:['kritik'],flaws:['perfekt'],ab:'overture'
+  },
+  weidemann:{
+    n:'Teut Monetaris',
+    tag:'Der Wal-Ernter',
+    img:'raw-assets/chars/af1fc982-9aac-4aa3-8c0f-30d3d4e6fd2e.jpg',
+    leadRole:'bizdev',
+    d:'Strahlt mit Sonnenbrille, Goldkette und Sanduhr vor steil steigenden Umsatzkurven. Verwandelt jede Wartezeit in einen Kauf-Knopf und nennt Spieler, die nichts ausgeben, liebevoll „Geduldsreserve“.',
+    encStory:'Ein gut gelaunter Herr mit Sonnenbrille dreht eine goldene Sanduhr auf eurem Tisch um: „Fünf Minuten und 42 Sekunden warten, bis das Gebäude fertig ist? Oder einen Kristall für 99 Cent? Ich zeige euch, wie man aus Geduld Geld macht.“',
+    encEff:{budget:30,wl:2,hype:-1},
+    s:{vision:2,technik:1,fuehrung:1,business:4,hype:2,polish:1},
+    aff:{strategy:2,sim:1},perks:['netz','spar'],flaws:['creep'],ab:'whale'
+  },
+  wertich:{
+    n:'Volker Wuselstein',
+    tag:'Der Siedler-Architekt',
+    img:'raw-assets/chars/ca3977a6-0cea-471d-ab97-cd2bd8495fbe.jpg',
+    leadRole:'producer',
+    d:'Bärtiger Tüftler im karierten Hemd mit Bauplan unterm Arm und einem Holzbrett in der Hand. Seine Träger laufen perfekte Wege, nur ein einziges festsitzendes Schwein legt die ganze Wirtschaft lahm.',
+    encStory:'Ein freundlicher Herr mit Brille rollt einen Bauplan über eurem Schreibtisch aus. Darauf: Windmühle, Burg, 340 Wegpunkte. „Eure Spieler laufen zu viele Umwege. Gebt mir einen Nachmittag, dann wuselt hier alles wie am Schnürchen.“',
+    encEff:{gp:7,bugs:-2},
+    s:{vision:3,technik:3,fuehrung:2,business:1,hype:0,polish:3},
+    aff:{strategy:2,sim:2},perks:['spezial'],flaws:['perfekt'],ab:'wusel'
+  },
+  kotick:{
+    n:'Bobby Cashtick',
+    tag:'Der Margen-Presser',
+    img:'raw-assets/chars/caa27f10-f68d-4134-a5a9-6023c7354f08.jpg',
+    leadRole:'bizdev',
+    d:'Sitzt im Nadelstreifenanzug hinter einem Marmortisch voller Goldbarren und tippt auf seinem goldenen Taschenrechner. Der Aktienkurs steigt um 40 Prozent, der Stresspegel im Team auch.',
+    encStory:'Ein Mann im Nadelstreifenanzug legt einen goldenen Taschenrechner auf euren Tisch und sieht sich kurz im Büro um: „Schöne Kaffeemaschine. Brauchen wir die? Ich verdopple eure Marge bis zum Quartalsende. Über die Stimmung im Team reden wir danach.“',
+    encEff:{budget:40,moral:-2},
+    s:{vision:1,technik:0,fuehrung:2,business:4,hype:3,polish:0},
+    aff:{action:2,sports:1},perks:['netz','spar'],flaws:['social'],ab:'margin'
+  },
+  huelsbeck:{
+    n:'Chris Pieptonbeck',
+    tag:'Der Chip-Synthesizer',
+    img:'raw-assets/chars/0427bfe1-1787-4383-843e-b85669267864.jpg',
+    leadRole:'audio',
+    d:'Deutsche Chiptune-Legende mit Kopfhörern um den Hals und bunter Jacke am Synthesizer. Holt aus drei Soundkanälen einen Soundtrack heraus, der es in die Charts schafft.',
+    encStory:'Ein Musiker mit Kopfhörern um den Hals stöpselt einen alten Soundchip an euren Rechner, und aus den Lautsprechern dröhnt eine Basslinie, dass die Monitore wackeln: „Ihr braucht kein Orchester. Gebt mir drei Kanäle und ein Wochenende.“',
+    encEff:{snd:8,bugs:-2},
+    s:{vision:3,technik:3,fuehrung:1,business:1,hype:2,polish:2},
+    aff:{platformer:2,action:1},perks:['spar'],flaws:[],ab:'sidchip'
+  },
+  levine:{
+    n:'Ken Rapturine',
+    tag:'Der Unterwasser-Philosoph',
+    img:'raw-assets/chars/3c3c1c7e-d541-4b5c-bbaa-9bbfc6a44513.jpg',
+    leadRole:'senior',
+    d:'Ernster Visionär im zerrissenen Tweedmantel mit leuchtender Spritze und handgeschriebener Seite. Baut Unterwasserstädte, lässt die Spieler blind gehorchen und hält ihnen dabei einen Vortrag über freien Willen.',
+    encStory:'Hinter einem gesprungenen Bullauge leuchtet eine versunkene Stadt, als ein ernster Herr mit Manuskript eintritt: „Würdet ihr freundlicherweise eure Geschichte noch einmal umschreiben? Ich hätte da eine Wendung, die alles infrage stellt.“',
+    encEff:{gp:8,hype:2,zeit:-1},
+    s:{vision:4,technik:2,fuehrung:1,business:1,hype:3,polish:2},
+    aff:{actadv:2,action:1,rpg:1},perks:['kritik'],flaws:['perfekt'],ab:'kindly'
+  },
+  mikami:{
+    n:'Shinji Zombikami',
+    tag:'Der Horror-Architekt',
+    img:'raw-assets/chars/8b940ae3-7ff0-4707-8267-8ee41d156dd9.jpg',
+    leadRole:'senior',
+    d:'Vater des Survival-Horrors mit Sonnenbrille, Lederjacke und Pumpgun in einem Flur mit vernagelten Fenstern. Weiß auf die Millisekunde, wann eine Tür am langsamsten aufgehen muss.',
+    encStory:'Das Licht im Flur flackert. Ein Mann mit Sonnenbrille und Lederjacke öffnet sehr, sehr langsam die Tür zu eurem Besprechungsraum: „Zu viel Munition. Zu helle Flure. Eure Spieler haben keine Angst. Das ändern wir.“',
+    encEff:{gp:7,snd:3},
+    s:{vision:3,technik:3,fuehrung:2,business:1,hype:2,polish:2},
+    aff:{survival:2,actadv:1,action:1},perks:['spezial'],flaws:['diva'],ab:'tank'
+  },
+  barone:{
+    n:'Eric Soloone',
+    tag:'Der Einsiedler-Farmer',
+    img:'raw-assets/chars/b9b11fc8-9bb4-4d09-b80d-b9b33719a948.jpg',
+    leadRole:'qalead',
+    d:'Junger Entwickler im grünen Hoodie mit Zeichenstift und Spitzhacke, vor dem Fenster eine Farm mit Schafen und Kürbissen. Ersetzt allein die Grafik-, Audio- und Programmierabteilung und schläft dafür fast nie.',
+    encStory:'Ein ruhiger junger Mann im Hoodie hat sich an einen freien Rechner gesetzt und schon drei Bugs gefixt, bevor ihn jemand bemerkt: „Oh, hallo. Ich mache eigentlich alles allein. Soll ich bei euch mal kurz durchgehen?“',
+    encEff:{bugs:-6,gp:4},
+    s:{vision:3,technik:3,fuehrung:0,business:1,hype:1,polish:4},
+    aff:{sim:2,rpg:1,adventure:1},perks:['ea','spar'],flaws:['perfekt'],ab:'solo'
+  },
+  baer:{
+    n:'Ralf Braunkasten',
+    tag:'Der Röhren-Pionier',
+    img:'raw-assets/chars/985b9546-ea36-4418-8838-25d5f94748b5.jpg',
+    leadRole:'senior',
+    d:'Weißhaariger Erfinder aus Pirmasens im Laborkittel, zwischen Elektronenröhren und Oszilloskopen, mit einem Drehregler-Controller in der Hand. Machte aus einem leuchtenden Quadrat auf dem Fernseher eine ganze Industrie.',
+    encStory:'Ein älterer Herr im Laborkittel stellt eine braune Holzkiste mit zwei Drehreglern auf euren Tisch und schließt sie an den Bürofernseher an: „Zwei Striche und ein Punkt. Wenn das schon Spaß macht, ist euer Spiel auf dem richtigen Weg.“',
+    encEff:{gp:5,bugs:-4},
+    s:{vision:3,technik:4,fuehrung:1,business:2,hype:0,polish:1},
+    aff:{sports:2,puzzle:1,platformer:1},perks:['engine'],flaws:[],ab:'firstcontact'
+  },
+  gordon:{
+    n:'Mick Djentdon',
+    tag:'Der Industrie-Berserker',
+    img:'raw-assets/chars/ab4f38f9-ac01-4c41-bba0-cdd2290f5782.jpg',
+    leadRole:'audio',
+    d:'Langhaariger Metal-Komponist in Stachelrüstung vor einer Wand aus Verstärkern und Effektpedalen. Koppelt den Puls der Spieler an den Kampf-Soundtrack, sodass keiner mehr zurückweichen will.',
+    encStory:'Ein ohrenbetäubendes Gitarrenriff lässt die Kaffeetassen springen. Zwischen zwei Verstärkertürmen steht ein Mann in Stachelrüstung: „Eure Kampfmusik ist zu höflich. Ich brauche acht Saiten, eine Kettensäge und euren Serverraum als Hallraum.“',
+    encEff:{snd:9,hype:2},
+    s:{vision:3,technik:2,fuehrung:1,business:1,hype:4,polish:1},
+    aff:{action:2,actadv:1},perks:[],flaws:['diva','kosten'],ab:'djent'
   }
+};
+
+/* ===================== Game-Dev-Messe (Zufallsbegegnung) ===================== */
+// Eine Legende gibt auf der Messe einen Tipp passend zu ihrer Lead-Rolle.
+const FAIR={chance:.1,dc:12};
+const FAIR_TIPS={
+  art:{q:'Eure Szenen brauchen eine klare Lichtstimmung. Weniger Effekte, mehr Atmosphäre.',s:{gfx:6},f:{gfx:-1,zeit:-1},sx:'Das neue Licht verwandelt jede Szene.',fx:'Der Umbau der Beleuchtung frisst Wochen und sieht am Ende kaum anders aus.'},
+  senior:{q:'Räumt eure Kernschleife auf, bevor ihr neue Features baut.',s:{gp:3,bugs:-4},f:{bugs:3},sx:'Der aufgeräumte Code läuft spürbar runder.',fx:'Beim Aufräumen bricht mehr, als repariert wird.'},
+  audio:{q:'Euer Spiel klingt nach Platzhalter. Gebt jedem Treffer einen eigenen Sound.',s:{snd:7},f:{zeit:-1},sx:'Plötzlich fühlt sich jeder Schlag nach etwas an.',fx:'Die Soundbibliothek wächst, der Zeitplan schrumpft.'},
+  producer:{q:'Streicht ein Feature. Das eine, an dem ihr am meisten hängt.',s:{gp:5},f:{zeit:-1},sx:'Ohne den Ballast wird das Spiel fokussierter.',fx:'Statt zu streichen, baut das Team zwei neue Features dazu. Feature Creep.'},
+  community:{q:'Zeigt eure Demo früher. Die Leute wollen mitreden.',s:{hype:2,wl:3},f:{hype:-1},sx:'Die frühe Demo spricht sich herum.',fx:'Die Demo war noch nicht so weit, und das Netz merkt es.'},
+  qalead:{q:'Testet jede Nacht automatisch. Jede einzelne Nacht.',s:{bugs:-5},f:{bugs:1,zeit:-1},sx:'Die nächtlichen Tests fangen Fehler, bevor sie wehtun.',fx:'Das Test-Setup verschlingt Zeit und findet vor allem Fehler im Test-Setup.'},
+  bizdev:{q:'Euer Preis ist zu niedrig. Verhandelt mit dem Store über einen Platz auf der Startseite.',s:{budget:15,wl:2},f:{budget:-10},sx:'Der Store-Deal bringt Geld und Sichtbarkeit.',fx:'Die Verhandlung kostet Reisespesen und bringt nichts.'}
 };
 
 const DPTS=10;

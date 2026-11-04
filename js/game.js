@@ -772,12 +772,12 @@ const curCP=()=>curStep().cp;
 const spendTotal=()=>Object.values(S.spend).reduce((a,b)=>a+b,0);
 
 /* ===================== Ablauf & W100-Würfeln ===================== */
-function curCard(){return S.screen==='mand'?getMand(S.mcur):E[S.deck[S.round]]}
+function curCard(){return S.screen==='mand'?getMand(S.mcur):S.screen==='fair'?fairCard(S.fair):E[S.deck[S.round]]}
 
 function choose(i){
   if(rolling)return;
-  const kind=S.screen==='mand'?'mand':'card';
-  const ev=kind==='mand'?S.mcur:S.deck[S.round];
+  const kind=S.screen==='mand'?'mand':S.screen==='fair'?'fair':'card';
+  const ev=kind==='mand'?S.mcur:kind==='fair'?S.fair:S.deck[S.round];
   const o=curCard().o[i];
   const pre=o.set?applySet({set:o.set},null):[];
   if(o.safe){
@@ -799,6 +799,7 @@ function curTitle(kind,ev){
     :kind==='card'?E[ev].t
     :kind==='rand'?R[ev].t
     :kind==='legend'?(DIRS[ev]?`Legendäre Begegnung: ${DIRS[ev].n}`:'Legendäre Begegnung')
+    :kind==='fair'?fairCard(ev).t
     :kind==='shop'?SHOP.find(x=>x.id===ev).n
     :kind==='contract'?CONTRACTS.find(x=>x.id===ev).n
     :kind==='hire'?STAFF[ev].n
@@ -810,6 +811,7 @@ function curTitle(kind,ev){
 
 function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
+  if(p.kind==='fair')return fairCard(p.ev).o[p.oi];
   if(p.kind==='pitch'){const amb=pitchAmb();return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
   if(p.kind==='renego')return {l:'Nachverhandeln',st:'business',dc:FUND.renegoDc,s:{},f:{},bonusV:fameBonus()};
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
@@ -900,7 +902,7 @@ function resolve(rolls){
 function afterResult(k){
   if(k==='card')monthEnd();
   else if(k==='mand'){S.mdone.push(S.mcur);goMonth()}
-  else if(k==='rand'||k==='legend')afterRandom();
+  else if(k==='rand'||k==='legend'||k==='fair')afterRandom();
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
   else if(k==='pitch')goMonth();
   else if(k==='renego'){S.screen='milestone';render();save()}
@@ -1071,6 +1073,9 @@ function afterMonth(){
     render();save();return;
   }
 
+  // Game-Dev-Messe: höchstens einmal pro Projekt, nicht im ersten und letzten Schritt
+  if(fairDue()&&startFair())return;
+
   // Interview: ab Monat 3, 20 % pro Monat, höchstens zwei pro Projekt
   if(ivAvail()&&S.round>=2&&(S.ivCount||0)<2&&Math.random()<0.2&&startInterview())return;
 
@@ -1216,6 +1221,26 @@ function chooseLegendAction(mode){
   render();save();
 }
 
+/* ===================== Game-Dev-Messe ===================== */
+function fairDue(){return !!S&&!S.fairSeen&&S.round>=2&&S.round<STEPS.length-1&&Math.random()<FAIR.chance}
+function fairPool(){
+  return LEGEND_KEYS.filter(k=>!(C&&C.dir&&C.dir.id===k)&&!(C&&C.studio.staff.some(st=>st.legendId===k))&&k!==S.curLegend);
+}
+function startFair(){
+  const pool=fairPool();if(!pool.length)return false;
+  const k=pool[Math.floor(Math.random()*pool.length)];
+  S.fair=k;S.fairSeen=true;S.screen='fair';
+  addLog(`<span>${stepTag(lastStep())}</span> 🎪 Game-Dev-Messe: ${DIRS[k].n} gibt euch einen Tipp`);
+  render();save();return true;
+}
+function fairCard(k){
+  const leg=DIRS[k]||{n:'Eine Legende',tag:'',leadRole:'senior'};
+  const role=leg.leadRole||'senior',tip=FAIR_TIPS[role]||FAIR_TIPS.senior;
+  return {t:`Game-Dev-Messe: ${leg.n}`,
+    x:`Auf der Entwicklermesse bleibt ${leg.n} (${leg.tag}) an eurem Stand stehen, spielt fünf Minuten eure Demo und sagt: „${tip.q}“`,
+    o:[{l:'Den Tipp umsetzen',st:STAFF[role]?.stat||'design',dc:FAIR.dc,s:tip.s,f:tip.f,sx:tip.sx,fx:tip.fx},
+       {l:'Höflich danken und weiterziehen',safe:{},sx:'Ihr bedankt euch, holt ein Autogramm und bleibt bei eurem Plan.'}]};
+}
 function afterRandom(){if(S.res.budget<0){openCrisis('rand');return}if(S.res.moral<=0){gameOver('moral');return}goMonth()}
 function openCrisis(from){S.crisisFrom=from;S.prevScreen=S.screen;S.early=S.res.budget>=0;S.crisisMsg=null;S.screen='crisis';render();save()}
 function leaveCrisis(){if(S.crisisFrom==='month')afterMonth();else if(S.crisisFrom==='rand')goMonth();else{S.screen=S.prevScreen==='crisis'?'event':(S.prevScreen||'event');render();save()}}
@@ -1321,6 +1346,44 @@ function privatZuschuss(){
 }
 
 /* ===================== Fähigkeiten ===================== */
+// Sofort-Effekte der Director-Fähigkeiten (reroll und works haben eigene Logik)
+const ABIL_EFF={
+  cash:{budget:40,hype:1,zeit:-1},
+  rewrite:{bugs:-8,gfx:5},
+  promi:{hype:3,wl:3},
+  tiefe:{gp:10,gfx:3},
+  ankuend:{hype:4,promise:1,wl:4},
+  tisch:{gp:10,gfx:6,zeit:-2},
+  fans:{budget:30,hype:1},
+  community:{moral:3,bugs:-3},
+  works:{},
+  shred:{gp:7,hype:3,bugs:2},
+  sim:{gp:9,gfx:2},
+  sale:{budget:35,wl:5},
+  excel:{gp:8,bugs:-4},
+  vent:{gp:9,bugs:-3},
+  noir:{gp:7,gfx:5},
+  insult:{gp:8,moral:2},
+  fairytale:{gp:7,gfx:4,hype:1},
+  occult:{gp:8,gfx:4},
+  chaos:{gp:6,gfx:5,hype:2},
+  kolonie:{gp:8,moral:2},
+  monopol:{budget:45,wl:3,bugs:2},
+  minimal:{gfx:9,hype:3,moral:-1},
+  kernel:{bugs:-10,gfx:4,moral:-1},
+  telemetry:{budget:40,bugs:-3,hype:-1},
+  pagerank:{wl:6,hype:2},
+  overture:{snd:10,gp:2,hype:1},
+  whale:{budget:45,hype:-2},
+  wusel:{gp:7,zeit:1},
+  margin:{budget:50,moral:-2},
+  sidchip:{snd:9,bugs:-2},
+  kindly:{gp:9,hype:2,zeit:-1},
+  tank:{gp:8,snd:3,hype:2},
+  solo:{bugs:-7,gp:4,snd:3,gfx:3},
+  firstcontact:{gp:6,bugs:-5,hype:1},
+  djent:{snd:10,hype:3,moral:-1}
+};
 function abilityReady(){
   if(!S||!C||!D().ab||S.abUsed)return false;
   if(D().ab==='reroll')return S.screen==='result'&&S.last&&!S.last.safe&&!S.last.ok&&S.last.kind!=='renego';
@@ -1339,33 +1402,7 @@ function useAbility(){
   }
   if(id==='works')S.works=true;
   if(id==='noir')S.insp=Math.min(3,S.insp+1);
-  const M={
-    cash:{budget:40,hype:1,zeit:-1},
-    rewrite:{bugs:-8,gfx:5},
-    promi:{hype:3,wl:3},
-    tiefe:{gp:10,gfx:3},
-    ankuend:{hype:4,promise:1,wl:4},
-    tisch:{gp:10,gfx:6,zeit:-2},
-    fans:{budget:30,hype:1},
-    community:{moral:3,bugs:-3},
-    works:{},
-    shred:{gp:7,hype:3,bugs:2},
-    sim:{gp:9,gfx:2},
-    sale:{budget:35,wl:5},
-    excel:{gp:8,bugs:-4},
-    vent:{gp:9,bugs:-3},
-    noir:{gp:7,gfx:5},
-    insult:{gp:8,moral:2},
-    fairytale:{gp:7,gfx:4,hype:1},
-    occult:{gp:8,gfx:4},
-    chaos:{gp:6,gfx:5,hype:2},
-    kolonie:{gp:8,moral:2},
-    monopol:{budget:45,wl:3,bugs:2},
-    minimal:{gfx:9,hype:3,moral:-1},
-    kernel:{bugs:-10,gfx:4,moral:-1},
-    telemetry:{budget:40,bugs:-3,hype:-1},
-    pagerank:{wl:6,hype:2}
-  }[id]||{gp:6};
+  const M=ABIL_EFF[id]||{gp:6};
   S.abUsed=true;apply(M);
   addLog(`<span>Director</span> Fähigkeit ${ABIL[id].n} eingesetzt`);
   render();save();

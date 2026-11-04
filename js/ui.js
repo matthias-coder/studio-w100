@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual','milestone','pitch'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','interview','shop','crisis','roll','manual','milestone','pitch'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -46,6 +46,9 @@ function eventBannerHTML(kind,ev){
     return '';
   }
   if(kind==='crisis')return `<div class="event-banner"><img src="${EVENT_IMAGES.boardroom}" alt="Finanzierungsrunde" loading="lazy"></div>`;
+  if(kind==='fair')return `<div class="event-banner"><img src="${EVENT_IMAGES.fair}" alt="Game-Dev-Messe" loading="lazy"></div>`;
+  if(kind==='pitch')return `<div class="event-banner"><img src="${EVENT_IMAGES.pitch}" alt="Pitch vor Geldgebern" loading="lazy"></div>`;
+  if(kind==='milestone')return `<div class="event-banner"><img src="${EVENT_IMAGES.audit}" alt="Meilenstein-Prüfung" loading="lazy"></div>`;
   if(kind==='launch'){
     const src=(S&&S.res.bugs>=10)?EVENT_IMAGES.bug_crash:EVENT_IMAGES.stage;
     return `<div class="event-banner"><img src="${src}" alt="Release-Tag" loading="lazy"></div>`;
@@ -364,7 +367,7 @@ function renderMilestone(m){
   }
   const pend=!!(F.renego||F.cutPending);
   m.className='card';
-  m.innerHTML=`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}${lines}${ctl}<button class="btn" id="msNext"${pend?' disabled':''}>Weiter</button>`;
+  m.innerHTML=eventBannerHTML('milestone')+`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}${lines}${ctl}<button class="btn" id="msNext"${pend?' disabled':''}>Weiter</button>`;
   const b=$('msNext');if(b)b.onclick=closeMilestone;
   const g=$('renegoGo');if(g)g.onclick=startRenego;
   const a=$('renegoAccept');if(a)a.onclick=()=>{resolveRenego(false);renderMain();save()};
@@ -387,7 +390,7 @@ function renderPitch(m){
     const dc=f.dc+(amb?FUND.ambDc:0);
     return `<button type="button" class="opt" data-fd="${id}" aria-pressed="${on}"><span class="t">${esc(fname(id))} · ${money(funderOffer(id,amb))}</span><span class="check">SG ${dc100(dc)} (${winChance(dc,mod)} %)</span><span class="d">${esc(planText(id))} ${esc(f.d)}</span></button>`;
   }).join('');
-  m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
+  m.innerHTML=eventBannerHTML('pitch')+`<span class="label">${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
     <p class="note">Geschätzte Projektkosten ${money(projCost())} · Budget ${money(S.res.budget)}</p>
     <div class="opts">${opts}</div>
     <label class="note" style="display:block;white-space:normal"><input type="checkbox" id="pitchAmb"${amb?' checked':''}> Ambitionierter Pitch: +30 % Geld von Publisher und Investoren, SG +2, Meilenstein-Soll +3</label>
@@ -537,7 +540,7 @@ function renderDock(){
     return;
   }
 
-  const editable=S&&['event','mand','lang','random','legend','result','shop','crisis'].includes(S.screen);
+  const editable=S&&['event','mand','lang','random','legend','fair','result','shop','crisis'].includes(S.screen);
   const t=S?T():(C.studio.tier?TIERS[C.studio.tier]:TIERS.indie);
   const logCount=S&&S.log?S.log.length:0;
 
@@ -943,7 +946,7 @@ function monthNote(){
 }
 
 function resultNextLabel(L){
-  return {card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage',pitch:'Weiter',renego:'Zurück zum Meilenstein'}[L.kind]||'Weiter';
+  return {card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,fair:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage',pitch:'Weiter',renego:'Zurück zum Meilenstein'}[L.kind]||'Weiter';
 }
 
 function headFor(kind,ev){
@@ -959,6 +962,17 @@ function headFor(kind,ev){
         <div class="dir-info">
           <h3>${esc(leg.n)} <small class="note">(${esc(leg.tag)})</small></h3>
           <p style="margin:4px 0">${esc(leg.encStory||leg.d)}</p>
+        </div>
+      </div>`;
+  }
+  if(kind==='fair'){
+    const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',img:''},c=fairCard(ev);
+    return banner+`<span class="stamp">🎪 Game-Dev-Messe · Ende ${STEPS[lastStep()]?.n||''}</span>
+      <div class="legend-enc">
+        ${leg.img?charPortraitHTML(leg.img,leg.isScene,'lg',false,leg.n):''}
+        <div class="dir-info">
+          <h3>${esc(leg.n)} <small class="note">(${esc(leg.tag)})</small></h3>
+          <p style="margin:4px 0">${esc(c.x)}</p>
         </div>
       </div>`;
   }
@@ -1103,10 +1117,11 @@ function renderMain(){
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
+  if(sc==='fair'){m.className='card rnd';m.innerHTML=headFor('fair',S.fair)+optsHTML(fairCard(S.fair));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='interview'){renderInterview(m);return}
   if(sc==='roll'){
     const p=S.pending;
-    m.className='card'+(['rand','rescue','legend'].includes(p.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair'].includes(p.kind)?' rnd':'');
     m.innerHTML=headFor(p.kind,p.ev)+`<div class="tray"><div class="dice" id="dice">${Array.from({length:p.adv?2:1},()=>dieSVG('?')).join('')}</div><div class="calc"><span class="label">Der W100 rollt …</span></div></div>`;
     return;
   }
@@ -1118,7 +1133,7 @@ function renderMain(){
   }
   if(sc==='result'){
     const L=S.last;
-    m.className='card'+(['rand','rescue','legend'].includes(L.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
     const nx=resultNextLabel(L);
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;
