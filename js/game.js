@@ -337,16 +337,10 @@ function runEngineProject(goal,months,spec){
 /* ===================== Auftragsarbeiten & Publisher-Meilensteine ===================== */
 function ensureMilestone(){
   if(!S||!S.publisher||S.milestone)return;
-  const t=T();
-  const at=S.round<=stepIndex('prod_fp')?'prod_fp':'prod_beta';
-  const baseTarget=34+t.qual+(at==='prod_beta'?14:0);
-  S.milestone={
-    at,
-    gp:baseTarget,
-    gfx:baseTarget-2,
-    reward:15*t.scale,
-    done:false
-  };
+  const done=S.msDone||[];
+  const m=['fp','beta'].map(msById).find(m=>stepIndex(m.at)>=S.round&&!done.includes(m.id));
+  if(!m)return;
+  S.milestone={at:m.id,reward:15*T().scale,done:false};
 }
 
 function startContract(id){
@@ -482,7 +476,7 @@ function startGame(o){
      mods:extras.includes('mods'),ea:extras.includes('ea'),
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
-     shop:[],contractsPh:[],milestone:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
+     shop:[],contractsPh:[],milestone:null,msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1};
 
@@ -1027,23 +1021,13 @@ function monthEnd(){
   const pc=apply(pe).filter(([k])=>k!=='note');
   S.res.zeit=Math.round((S.res.zeit-w)*1e6)/1e6;
 
-  // Publisher-Meilenstein prüfen!
-  if(S.milestone&&!S.milestone.done&&STEPS[S.round].id===S.milestone.at){
-    S.milestone.done=true;
-    if(S.res.gp>=S.milestone.gp&&S.res.gfx>=S.milestone.gfx){
-      S.res.budget+=S.milestone.reward;
-      S.income+=S.milestone.reward;
-      S.res.moral=clamp(S.res.moral+1,0,10);
-      notes.push(`Publisher-Meilenstein erreicht (+${money(S.milestone.reward)}, +1 Moral)!`);
-    }else{
-      S.res.moral=clamp(S.res.moral-1,0,10);
-      notes.push(`Publisher-Meilenstein verfehlt (−1 Moral, kein Bonus)`);
-      if(Math.random()<0.4){
-        const repay=Math.round(S.recoup*0.5*10)/10;
-        S.res.budget-=repay;S.publisher=false;S.recoup=Math.max(0,S.recoup-repay);
-        notes.push(`Der Publisher kündigt den Vertrag und fordert ${money(repay)} Vorschuss zurück!`);
-      }
-    }
+  // Meilenstein dieses Schritts prüfen (inkl. Publisher-Deal)
+  if(!S.msDone)S.msDone=[];
+  const msHere=MILESTONES.find(m=>m.at===STEPS[S.round].id&&!S.msDone.includes(m.id));
+  if(msHere){
+    S.msDone.push(msHere.id);
+    S.msResult=msCheck(msHere.id);
+    notes.push(...applyMsOutcome(S.msResult));
   }
 
   S.round++;
@@ -1053,8 +1037,14 @@ function monthEnd(){
   afterMonth();
 }
 
+function closeMilestone(){
+  S.msResult=null;
+  afterMonth();
+}
+
 function afterMonth(){
   if(S.res.moral<=0){gameOver('moral');return}
+  if(S.msResult){S.screen='milestone';render();save();return}
   if(S.round>=STEPS.length){S.screen='launch';render();save();return}
 
   // Chance auf eine Legendäre Zufallsbegegnung (Priorität auf noch nicht freigeschaltete Legenden!)

@@ -7,22 +7,21 @@ test('step cost equals monthSum × weight',()=>{const {run}=load();newProject(ru
   assert.ok(Math.abs(b0-run('S.res.budget')-cost)<0.2);assert.equal(run('S.round'),1);});
 test('full normal project consumes exactly 12 time units',()=>{const {run}=load();newProject(run);noRandom(run);
   run('S.res.budget=1e9');const z0=run('S.res.zeit');
-  for(let i=0;i<13;i++)run('monthEnd()');
+  for(let i=0;i<13;i++){run('monthEnd()');if(run('S.screen')==='milestone')run('closeMilestone()')}
   assert.ok(Math.abs(z0-run('S.res.zeit')-12)<1e-6);
   assert.equal(run('S.screen'),'launch');});
 test('long AAA keeps 2 units of buffer without delays',()=>{const {run}=load();newProject(run,{tier:'aaa',dur:'long'});noRandom(run);
-  run('S.res.budget=1e12');for(let i=0;i<13;i++)run('monthEnd()');
+  run('S.res.budget=1e12');for(let i=0;i<13;i++){run('monthEnd()');if(run('S.screen')==='milestone')run('closeMilestone()')}
   assert.ok(Math.abs(run('S.res.zeit')-2)<1e-6);});
-test('publisher early → milestone at prod_fp; late → none',()=>{const {run}=load();newProject(run);
-  run('S.publisher=true;ensureMilestone()');assert.equal(run('S.milestone.at'),'prod_fp');
+test('publisher early → milestone at fp; late → none',()=>{const {run}=load();newProject(run);
+  run('S.publisher=true;ensureMilestone()');assert.equal(run('S.milestone.at'),'fp');
   newProject(run);run(`S.round=stepIndex('pol_bugs');S.publisher=true;ensureMilestone()`);
-  assert.equal(run('S.milestone.at'),'prod_beta');
-  noRandom(run);run('S.res.budget=1e9');run('monthEnd();monthEnd()');
-  assert.equal(run('S.milestone.done'),false);});
+  assert.equal(run('S.milestone'),null);
+  noRandom(run);run('S.res.budget=1e9');run('monthEnd();monthEnd()');});
 test('milestone fires at end of prod_fp',()=>{const {run}=load();newProject(run);noRandom(run);
   run('S.res.budget=1e9;S.publisher=true;ensureMilestone()');
-  for(let i=0;i<=8;i++)run('monthEnd()');
-  assert.equal(run('S.milestone.done'),true);});
+  for(let i=0;i<=run("stepIndex('prod_fp')");i++)run('monthEnd()');
+  assert.equal(run('S.milestone.done'),true);assert.ok(run(`S.msDone.includes('fp')`));});
 test('crisis path resumes at next step',()=>{const {run}=load();newProject(run);noRandom(run);
   run('S.res.budget=-1;monthEnd()');assert.equal(run('S.round'),1);
   run('S.res.budget=1e9;afterMonth()');assert.notEqual(run('S.screen'),'launch');});

@@ -280,11 +280,11 @@ function milestoneBlock(){
   ensureMilestone();
   const ms=S.milestone;
   if(!ms)return '';
-  const msStep=STEPS[stepIndex(ms.at)]?.n||'Meilenstein';
+  const msStep=msById(ms.at)?.n||'Meilenstein',tg=msTargets(ms.at);
   return `<details class="fold">
     <summary>🎯 Meilenstein: ${esc(msStep)} ${ms.done?'(✓)':''}</summary>
     <div class="fold-body">
-      <div class="note">Ziel bis Ende „${esc(msStep)}“: <b>Gameplay ≥ ${ms.gp} · Grafik ≥ ${ms.gfx}</b></div>
+      <div class="note">Ziel bis Ende „${esc(STEPS[stepIndex(msById(ms.at).at)]?.n||msStep)}“: <b>Gameplay ≥ ${tg.gp} · Grafik ≥ ${tg.gfx}</b></div>
       <div class="mini"><div><span>Prämie</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div></div>
     </div>
   </details>`;

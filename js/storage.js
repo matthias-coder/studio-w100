@@ -141,7 +141,13 @@ function normalizeProject(s,c){
   if(!s||!s.res)return s;
   if(!s.sprint)s.sprint=defaultSprint();
   if(s.contractStep==null)s.contractStep=-1;
-  if(s.milestone&&!s.milestone.at)s.milestone.at=s.milestone.month<=6?'prod_fp':'prod_beta';
+  if(s.milestone){
+    if(!s.milestone.at)s.milestone.at=s.milestone.month<=6?'prod_fp':'prod_beta';
+    s.milestone.at=({prod_fp:'fp',prod_beta:'beta'})[s.milestone.at]||s.milestone.at;
+    delete s.milestone.gp;delete s.milestone.gfx;
+  }
+  if(!s.msDone)s.msDone=MILESTONES.filter(m=>stepIndex(m.at)<s.round).map(m=>m.id);
+  if(s.msResult===undefined)s.msResult=null;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
   if(s.res.snd===undefined)s.res.snd=Math.round((s.res.gp+s.res.gfx)/2);
