@@ -337,10 +337,10 @@ function runEngineProject(goal,months,spec){
 function ensureMilestone(){
   if(!S||!S.publisher||S.milestone)return;
   const t=T();
-  const targetMonth=S.round<6?6:10;
-  const baseTarget=34+t.qual+(targetMonth===10?14:0);
+  const at=S.round<=stepIndex('prod_fp')?'prod_fp':'prod_beta';
+  const baseTarget=34+t.qual+(at==='prod_beta'?14:0);
   S.milestone={
-    month:targetMonth,
+    at,
     gp:baseTarget,
     gfx:baseTarget-2,
     reward:15*t.scale,
@@ -350,7 +350,7 @@ function ensureMilestone(){
 
 function startContract(id){
   if(rolling||!S)return;
-  const ph=Math.floor(S.round/2);
+  const ph=curPhase();
   if(!S.contractsPh)S.contractsPh=[];
   if(S.contractsPh.includes(ph))return;
   S.contractsPh.push(ph);
@@ -563,7 +563,7 @@ function apply(eff){
     if(k==='wl'){v=Math.round(v*1000*T().sales*(D().s.hype>=3?1.15:1));S.res.wl+=v;out.push([k,v]);continue}
     if(k==='moral'&&v<0&&hasP('crunch')){v=Math.min(0,v+1);if(!v)continue}
     if(k==='zeit'&&v<0&&hasStaff('producer')){
-      const ph=Math.floor(S.round/2);
+      const ph=curPhase();
       const maxSave=staffLevel('producer')>=3?2:1;
       const used=S.prod[ph]||0;
       if(used<maxSave){
@@ -751,7 +751,7 @@ function monthLines(){
 
   for(const k of ['mkt','qa','team','content','weiter','outs'])add(PLAN[k].cat,PLAN[k].cost[S.plan[k]]*sc);
   if(S.world==='open')add('welt',2*sc);else if(S.world==='hub')add('welt',1*sc);
-  if(S.model!=='kauf'&&S.round>=8)add('server',2*sc);
+  if(S.model!=='kauf'&&stepFlag('live'))add('server',2*sc);
   if(S.mods)add('mods',1*sc);
   if(Array.isArray(S.extras)){
     S.extras.forEach(ek=>{
@@ -761,7 +761,7 @@ function monthLines(){
     });
   }
   // Live Service: Server und Saison-Team ab der Beta-Phase
-  if(GENRE_MODS[S.gmod]?.monthly&&S.round>=8)add('server',GENRE_MODS[S.gmod].monthly*sc);
+  if(GENRE_MODS[S.gmod]?.monthly&&stepFlag('live'))add('server',GENRE_MODS[S.gmod].monthly*sc);
 
   if(C&&C.studio.engine){
     const eng=C.studio.engine;
@@ -777,7 +777,9 @@ function monthLines(){
 }
 
 const monthSum=()=>monthLines().reduce((a,[,v])=>a+v,0);
-function runway(){const m=monthSum();return m>0?Math.floor(S.res.budget/m):99}
+function runway(){const m=costPerMonth();return m>0?Math.floor(S.res.budget/m):99}
+const curPhase=()=>curStep().ph;
+const curCP=()=>curStep().cp;
 const spendTotal=()=>Object.values(S.spend).reduce((a,b)=>a+b,0);
 
 /* ===================== Ablauf & W100-Würfeln ===================== */
@@ -925,9 +927,11 @@ const DELAYS=[
 
 function monthEnd(){
   const sc=T().scale;
-  const lines=monthLines();let sum=0;lines.forEach(([c,v])=>{S.spend[c]=(S.spend[c]||0)+v;sum+=v});S.res.budget-=sum;
+  const w=stepW();
+  const lines=monthLines();let sum=0;lines.forEach(([c,v])=>{v*=w;S.spend[c]=(S.spend[c]||0)+v;sum+=v});S.res.budget-=sum;
   const d=D(),pe={},notes=[];const add=(k,v)=>{pe[k]=(pe[k]||0)+v};
-  const acc=(key,v,f)=>{S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1){S.acc[key]+=1;f(-1)}};
+  const acc=(key,v,f)=>{v*=w;S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1){S.acc[key]+=1;f(-1)}};
+  const tick=(key,v)=>{S.acc[key]=(S.acc[key]||0)+v;const n=Math.floor(S.acc[key]);S.acc[key]-=n;return n};
 
   for(const k in PLAN){
     const P=PLAN[k];let v=P.val[S.plan[k]];
@@ -969,16 +973,19 @@ function monthEnd(){
 
   acc('pbug',-(d.s.polish-1)*.25+(hasF('buggy')?1:0)+qaBug+senBug+engBug+(S.shop.includes('hardware')?-.25:0)+.25*S.plan.outs,x=>add('bugs',x));
 
-  const mNo=S.round+1;
-  if(hasF('diva')&&mNo%3===0)add('moral',-1);
-  if(hasF('perfekt')&&mNo%4===0){add('zeit',-1);add('gp',2);add('gfx',2);add('snd',2)}
+  const nDiva3=hasF('diva')?tick('t_diva3',w/3):0;
+  for(let i=0;i<nDiva3;i++)add('moral',-1);
+  const nPerf=hasF('perfekt')?tick('t_perf4',w/4):0;
+  for(let i=0;i<nPerf;i++){add('zeit',-1);add('gp',2);add('gfx',2);add('snd',2)}
+  const nLoyDn=S.plan.gehalt===0?tick('t_loy3',w/3):0;
+  const nLoyUp=S.plan.gehalt===2?tick('t_loy4',w/4):0;
+  const nLowM=S.res.moral<=2?tick('t_lowm2',w/2):0;
+  const nDiva4=(hasF('diva')&&!hasP('crunch'))?tick('t_diva4',w/4):0;
 
   if(C.studio.staff.length){
     C.studio.staff.forEach(st=>{
-      if(S.plan.gehalt===0&&mNo%3===0)st.loyalty=clamp((st.loyalty||6)-1,1,10);
-      if(S.plan.gehalt===2&&mNo%4===0)st.loyalty=clamp((st.loyalty||6)+1,1,10);
-      if(S.res.moral<=2&&mNo%2===0)st.loyalty=clamp((st.loyalty||6)-1,1,10);
-      if(hasF('diva')&&mNo%4===0&&!hasP('crunch'))st.loyalty=clamp((st.loyalty||6)-1,1,10);
+      const dl=-nLoyDn+nLoyUp-nLowM-nDiva4;
+      if(dl)st.loyalty=clamp((st.loyalty||6)+dl,1,10);
     });
     const unhappy=C.studio.staff.find(st=>st.loyalty<=2&&Math.random()<0.35);
     if(unhappy){
@@ -991,7 +998,7 @@ function monthEnd(){
   if(eng&&ENGINE_LIC_MODES[eng.licenseMode]?.inc>0){
     const ageMult=getEngineAgeInfo(eng.age||0).licMult;
     const bizMult=staffLevel('bizdev')>=5?1.3:staffLevel('bizdev')>=4?1.2:1;
-    licInc=Math.round(ENGINE_LIC_MODES[eng.licenseMode].inc*eng.version*sc*ageMult*bizMult*10)/10;
+    licInc=Math.round(ENGINE_LIC_MODES[eng.licenseMode].inc*eng.version*sc*ageMult*bizMult*w*10)/10;
     if(licInc>0){
       S.res.budget+=licInc;
       S.income+=licInc;
@@ -999,27 +1006,27 @@ function monthEnd(){
   }
 
   let eaInc=0;
-  if(S.ea&&S.round>=7&&S.round<11){
-    eaInc=Math.round((2+S.res.hype)*1.2*sc*(hasP('ea')?1.5:1)*10)/10;
-    S.res.budget+=eaInc;S.income+=eaInc;add('bugs',-1);
+  if(S.ea&&stepFlag('ea')){
+    eaInc=Math.round((2+S.res.hype)*1.2*sc*(hasP('ea')?1.5:1)*w*10)/10;
+    S.res.budget+=eaInc;S.income+=eaInc;add('bugs',-w);
   }
 
   const commMult=[1,1.1,1.18,1.25,1.32,1.4][staffLevel('community')]||1;
-  const wlg=Math.round(Math.pow(S.res.hype,1.5)*90*T().sales*commMult*(S.round>=6?1.5:1)*(d.s.hype>=3?1.1:1));
+  const wlg=Math.round(Math.pow(S.res.hype,1.5)*90*T().sales*commMult*(stepFlag('mkt')?1.5:1)*(d.s.hype>=3?1.1:1)*w);
   S.res.wl+=wlg;
 
   if(!S.algo&&S.res.wl>=10000*T().sales){S.algo=true;add('hype',1);notes.push('Der Store-Algorithmus empfiehlt euch jetzt')}
 
   // Verzögerungen: Bugs, schlechte Moral, Open World und Outsourcing machen den Zeitplan wackelig
   const delayChance=0.10+Math.max(0,S.res.bugs-8)*0.006+(S.res.moral<=3?0.12:0)+(S.world==='open'?0.05:0)+0.03*S.plan.outs;
-  if(Math.random()<delayChance){add('zeit',-1);notes.push('Verzögerung: '+DELAYS[Math.floor(Math.random()*DELAYS.length)])}
+  if(Math.random()<1-Math.pow(1-delayChance,w)){add('zeit',-1);notes.push('Verzögerung: '+DELAYS[Math.floor(Math.random()*DELAYS.length)])}
   const cr=resolveCrypto();
   if(cr){notes.push(cr.note);if(cr.moral)add('moral',cr.moral)}
   const pc=apply(pe).filter(([k])=>k!=='note');
-  S.res.zeit-=1;S.round++;
+  S.res.zeit-=w;
 
   // Publisher-Meilenstein prüfen!
-  if(S.milestone&&!S.milestone.done&&S.round===S.milestone.month){
+  if(S.milestone&&!S.milestone.done&&STEPS[S.round].id===S.milestone.at){
     S.milestone.done=true;
     if(S.res.gp>=S.milestone.gp&&S.res.gfx>=S.milestone.gfx){
       S.res.budget+=S.milestone.reward;
@@ -1037,6 +1044,7 @@ function monthEnd(){
     }
   }
 
+  S.round++;
   S.month={sum,pc,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
   addLog(`<span>M${S.round}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
@@ -1045,7 +1053,7 @@ function monthEnd(){
 
 function afterMonth(){
   if(S.res.moral<=0){gameOver('moral');return}
-  if(S.round>=12){S.screen='launch';render();save();return}
+  if(S.round>=STEPS.length){S.screen='launch';render();save();return}
 
   // Chance auf eine Legendäre Zufallsbegegnung (Priorität auf noch nicht freigeschaltete Legenden!)
   if(!S.seenLegends)S.seenLegends=[];
@@ -1059,7 +1067,7 @@ function afterMonth(){
   const poolToUse=lockedCandidates.length?lockedCandidates:legCandidates;
   // Seltene Begegnung: nur zu Beginn einer Phase (alle 2 Monate), 15 % Chance, höchstens eine pro Projekt
   // Begegnungen erst, wenn mindestens eine Legende über einen Meilenstein freigeschaltet ist
-  const phaseStart=S.round%2===0;
+  const phaseStart=S.round<STEPS.length&&STEPS[S.round].ph!==STEPS[S.round-1]?.ph;
   if(poolToUse.length&&phaseStart&&getUnlockedChars().length&&S.seenLegends.length===0&&Math.random()<0.15){
     const legKey=poolToUse[Math.floor(Math.random()*poolToUse.length)];
     S.seenLegends.push(legKey);
@@ -1072,7 +1080,7 @@ function afterMonth(){
   // Interview: ab Monat 3, 20 % pro Monat, höchstens zwei pro Projekt
   if(ivAvail()&&S.round>=2&&(S.ivCount||0)<2&&Math.random()<0.2&&startInterview())return;
 
-  const ph=Math.floor(S.round/2);
+  const ph=curCP();
   const fpool=R.map((r,i)=>i).filter(i=>R[i].flaw&&i!==S.rnd&&fits(R[i]));
   const pool=R.map((r,i)=>i).filter(i=>!R[i].flaw&&!S.usedR.includes(i)&&(R[i].min||0)<=ph&&fits(R[i]));
   let pick=null;
