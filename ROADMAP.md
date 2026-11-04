@@ -26,5 +26,8 @@ Ebenfalls je ein Porträt in `raw-assets/chars` nötig.
 - **Koji Jinglo** (Koji Kondo, Mario, Zelda) — Art Director (Musik). Jeder kennt seine Melodien.
 - **Mick Djentdon** (Mick Gordon, Doom 2016) — Art Director (Musik). Metal-Riffs.
 
+## Neue Zufallsbegegnungen
+- **Game-Dev-Messe:** Zufallsbegegnung während der Entwicklung. Auf einer Entwicklermesse trifft der Director eine Legende (auch noch nicht freigeschaltete), die einen Tipp zum laufenden Projekt gibt. Den Tipp umsetzen ist ein W100-Wurf: Bei Erfolg gibt es einen Bonus passend zur Legende (z. B. Gameplay, Grafik, Sound oder weniger Bugs), bei Misserfolg geht es schief (Zeitverlust, Bugs oder Feature Creep). Ablehnen ist ohne Wurf möglich. Ein Bild für die Messe-Szene in `raw-assets/encounter` fehlt noch.
+
 ## Idee
 - **Audio Director als eigene Lead-Rolle:** Mit Nobuo Overtura, Chris Pieptonbeck, Koji Jinglo und Mick Djentdon gäbe es vier Komponisten, die dann nicht mehr als Art Director laufen müssten.
