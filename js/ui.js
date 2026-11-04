@@ -390,7 +390,7 @@ function renderPitch(m){
   m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
     <p class="note">Geschätzte Projektkosten ${money(projCost())} · Budget ${money(S.res.budget)}</p>
     <div class="opts">${opts}</div>
-    <label class="check"><input type="checkbox" id="pitchAmb"${amb?' checked':''}> Ambitionierter Pitch: +30 % Geld von Publisher und Investoren, SG +2, Meilenstein-Soll +3</label>
+    <label class="note" style="display:block;white-space:normal"><input type="checkbox" id="pitchAmb"${amb?' checked':''}> Ambitionierter Pitch: +30 % Geld von Publisher und Investoren, SG +2, Meilenstein-Soll +3</label>
     <div class="row"><button class="btn" id="pitchGo"${pitchDraft.sel.length?'':' disabled'}>🎤 Pitch halten (1 Wurf)</button><button class="btn ghost" id="pitchSelf">Nur Eigenkapital</button></div>`;
   m.querySelectorAll?.('[data-fd]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.fd,i=pitchDraft.sel.indexOf(id);

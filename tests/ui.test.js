@@ -63,3 +63,6 @@ test('pitch header is a label, not a stamp',()=>{const {run}=load({ui:true});new
 test('stale pitch draft is filtered by availability',()=>{const {run}=load({ui:true});newProject(run,{tier:'aaa'});
   run(`pitchDraft.sel=['grant','pub'];S.round=stepIndex('pit_meet')`);const h=html(run,'renderPitch');
   assert.doesNotMatch(h,/data-fd="grant"[^>]*true/);assert.match(h,/data-fd="pub"[^>]*aria-pressed="true"/);});
+test('ambitious pitch label wraps (not class check)',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.round=stepIndex('pit_meet')`);const h=html(run,'renderPitch');
+  assert.match(h,/id="pitchAmb"/);assert.doesNotMatch(h,/<label class="check"/);});
