@@ -375,7 +375,7 @@ const fameBonus=()=>C?Math.floor(((C.studio.fame||0)+(C.dir.fame||0))/15):0;
 const fits=c=>(!c.tiers||c.tiers.includes(S.tier))&&(!c.models||c.models.includes(S.model))&&(!c.ip||c.ip.includes(S.ip))&&(!c.mods||S.mods)&&(!c.noEA||!S.ea)&&(!c.ea||S.ea)&&(!c.cond||c.cond(S))&&(!c.flaw||hasF(c.flaw));
 const optOk=o=>(!o.g||o.g.includes(S.genre)||o.g.includes(S.genre+'.'+S.subGenre))&&(!o.ng||!o.ng.includes(S.genre))&&(!o.cond||o.cond(S));
 function addLog(t){if(!S)return;S.log.unshift(t);if(S.log.length>90)S.log.pop()}
-function mandFor(i){return (MAND_AT[STEPS[i]?.id]||[]).filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
+function mandFor(i){const ids=[];for(let j=i-1;j>=0&&isSkipped(j);j--)ids.unshift(...(MAND_AT[STEPS[j].id]||[]));ids.push(...(MAND_AT[STEPS[i]?.id]||[]));return ids.filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
 
 /* ===================== Spielstart ===================== */
 function startGame(o){
@@ -1031,9 +1031,9 @@ function monthEnd(){
     notes.push(...applyMsOutcome(S.msResult));
   }
 
-  S.round++;
+  S.prevRound=S.round;S.round=nextStep(S.round);
   S.month={sum,pc,sprint:sApplied,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
-  addLog(`<span>${stepTag(S.round-1)}</span> Abschluss „${STEPS[S.round-1].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
+  addLog(`<span>${stepTag(lastStep())}</span> Abschluss „${STEPS[lastStep()].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
 }
@@ -1060,13 +1060,13 @@ function afterMonth(){
   const poolToUse=lockedCandidates.length?lockedCandidates:legCandidates;
   // Seltene Begegnung: nur zu Beginn einer Phase (alle 2 Monate), 15 % Chance, höchstens eine pro Projekt
   // Begegnungen erst, wenn mindestens eine Legende über einen Meilenstein freigeschaltet ist
-  const phaseStart=S.round<STEPS.length&&STEPS[S.round].ph!==STEPS[S.round-1]?.ph;
+  const phaseStart=S.round<STEPS.length&&STEPS[S.round].ph!==STEPS[lastStep()]?.ph;
   if(poolToUse.length&&phaseStart&&getUnlockedChars().length&&S.seenLegends.length===0&&Math.random()<0.15){
     const legKey=poolToUse[Math.floor(Math.random()*poolToUse.length)];
     S.seenLegends.push(legKey);
     S.curLegend=legKey;
     S.screen='legend';
-    addLog(`<span>${stepTag(S.round-1)}</span> 🌟 Legendäre Begegnung: ${DIRS[legKey].n} (${DIRS[legKey].tag}) schaut im Studio vorbei!`);
+    addLog(`<span>${stepTag(lastStep())}</span> 🌟 Legendäre Begegnung: ${DIRS[legKey].n} (${DIRS[legKey].tag}) schaut im Studio vorbei!`);
     render();save();return;
   }
 
@@ -1081,7 +1081,7 @@ function afterMonth(){
   else if(pool.length&&Math.random()<.48)pick=pool[Math.floor(Math.random()*pool.length)];
   if(pick!==null){
     S.usedR.push(pick);S.rnd=pick;S.rndCh=null;
-    if(R[pick].eff){S.rndCh=apply(R[pick].eff);addLog(`<span>${stepTag(S.round-1)}</span> Zufall: ${R[pick].t}`)}
+    if(R[pick].eff){S.rndCh=apply(R[pick].eff);addLog(`<span>${stepTag(lastStep())}</span> Zufall: ${R[pick].t}`)}
     S.screen='random';render();save();return;
   }
   goMonth();
@@ -1117,7 +1117,7 @@ function startInterview(){
   S.ivCount=(S.ivCount||0)+1;
   S.iv={o:Math.floor(Math.random()*INTERVIEW_OUTLETS.length),qs,i:0,res:[]};
   S.screen='interview';
-  addLog(`<span>${stepTag(S.round-1)}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
+  addLog(`<span>${stepTag(lastStep())}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
   render();save();
   return true;
 }
@@ -1129,7 +1129,7 @@ function answerInterview(ai){
   const ch=apply(ok?a.s:a.f);
   S.iv.res.push({qi,ai,ok,r,pct,ch});
   S.iv.i++;
-  addLog(`<span>${stepTag(S.round-1)}</span> Interview-Antwort „${esc(fillTxt(a.l))}“ (${IV_TONES[a.tone]||a.tone}, ${pct} %) · W100 ${r} → ${ok?'kommt gut an':'geht nach hinten los'}`);
+  addLog(`<span>${stepTag(lastStep())}</span> Interview-Antwort „${esc(fillTxt(a.l))}“ (${IV_TONES[a.tone]||a.tone}, ${pct} %) · W100 ${r} → ${ok?'kommt gut an':'geht nach hinten los'}`);
   render();save();
 }
 function finishInterview(){
@@ -1188,7 +1188,7 @@ function chooseLegendAction(mode){
       l:`${leg.n} als Star-Lead verpflichtet`,
       txt:`${leg.n} (${leg.tag}) unterschreibt bei ${C.studio.name}, krempelt sofort die Ärmel hoch und steht euch ab jetzt dauerhaft in der Legenden-Auswahl zur Verfügung!`
     };
-    addLog(`<span>${stepTag(S.round-1)}</span> 🌟 ${leg.n} (${leg.tag}) als Star-Lead eingestellt & dauerhaft freigeschaltet!`);
+    addLog(`<span>${stepTag(lastStep())}</span> 🌟 ${leg.n} (${leg.tag}) als Star-Lead eingestellt & dauerhaft freigeschaltet!`);
     S.screen='result';
     render();save();
     return;
@@ -1210,7 +1210,7 @@ function chooseLegendAction(mode){
     l:leg.encPassLabel||'Autogramm & Kaffeepause',
     txt:`Ihr entscheidet euch für euren eigenen Weg im Gespräch mit ${leg.n}. Das Team zieht motiviert mit, und vielleicht kreuzen sich eure Wege bald wieder.`
   };
-  addLog(`<span>${stepTag(S.round-1)}</span> Kaffeepause mit ${leg.n} (+1 Moral)`);
+  addLog(`<span>${stepTag(lastStep())}</span> Kaffeepause mit ${leg.n} (+1 Moral)`);
   S.screen='result';
   render();save();
 }
@@ -1662,7 +1662,7 @@ function finishGame(){
 
   // 1. Eigene Engine: Gewinnt Routine & Forschungspunkte, altert aber ohne Upgrade!
   e.engNote='';
-  advanceCalendar(S.dur);
+  advanceCalendar(projMonths());
   applyEngineAging(e);
 
   // 2. Lead-Personal

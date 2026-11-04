@@ -21,3 +21,15 @@ test('stepIndex and flags',()=>{const {run}=load();
   assert.equal(run(`stepFlag('ea',stepIndex('pol_ship'))`),false);});
 test('durMonths falls back to normal',()=>{const {run}=load();
   assert.equal(run(`durMonths('aa','bogus')`),36);});
+const {newProject}=require('./harness');
+test('skipped pit_mix: no months, no time, license moves to pre_tech',()=>{const {run}=load();newProject(run);
+  run('Math.random=()=>0.999;S.res.budget=1e9');const m0=run('projMonths()');
+  run(`S.skip=['pit_mix'];S.round=stepIndex('pit_meet')`);
+  assert.ok(run('projMonths()')<m0);run('monthEnd()');
+  assert.equal(run('S.round'),run(`stepIndex('pre_tech')`));assert.equal(run('lastStep()'),run(`stepIndex('pit_meet')`));
+  assert.ok(run(`mandFor(S.round).includes('license')`));
+  assert.match(run('S.log[0]'),/Pitch-Termine/);});
+test('full project with skip ends at launch with the right time use',()=>{const {run}=load();newProject(run);
+  run(`Math.random=()=>0.999;S.res.budget=1e9;S.skip=['pit_mix']`);const z0=run('S.res.zeit'),w=run('totalW()');
+  for(let i=0;i<13&&run('S.screen')!=='launch';i++){run('monthEnd()');if(run('S.screen')==='milestone')run('closeMilestone()')}
+  assert.equal(run('S.screen'),'launch');assert.ok(Math.abs(z0-run('S.res.zeit')-w)<1e-6);});

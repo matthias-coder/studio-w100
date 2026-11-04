@@ -21,8 +21,12 @@ const STEPS=[
 function stepIndex(id){return STEPS.findIndex(s=>s.id===id)}
 function durMonths(tier,durKey){const d=TIERS[tier].dur,i=DUR_KEYS.indexOf(durKey);return d[i<0?1:i]}
 function refMonths(tier){return TIERS[tier].dur[1]}
-function stepMonths(i,s=S){return i>=STEPS.length?0:s.dur*STEPS[i].share/100}
-function stepW(i=S.round,s=S){return i>=STEPS.length?0:12*STEPS[i].share/100*s.dur/refMonths(s.tier)}
+function isSkipped(i,s=S){return (s.skip||[]).includes(STEPS[i]?.id)}
+function nextStep(i,s=S){let j=i+1;while(j<STEPS.length&&isSkipped(j,s))j++;return j}
+function lastStep(s=S){return s.prevRound??s.round-1}
+function stepMonths(i,s=S){return i>=STEPS.length||isSkipped(i,s)?0:s.dur*STEPS[i].share/100}
+function projMonths(s=S){return STEPS.reduce((a,_,i)=>a+stepMonths(i,s),0)}
+function stepW(i=S.round,s=S){return i>=STEPS.length||isSkipped(i,s)?0:12*STEPS[i].share/100*s.dur/refMonths(s.tier)}
 function totalW(s=S){return STEPS.reduce((a,_,i)=>a+stepW(i,s),0)}
 function curStep(s=S){return STEPS[Math.min(s.round,STEPS.length-1)]}
 function stepFlag(flag,i=S.round){return !!STEPS[i]?.[flag]}

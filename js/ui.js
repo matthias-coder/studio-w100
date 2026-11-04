@@ -902,10 +902,10 @@ function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
   if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
-  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[S.round-1]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
+  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[lastStep()]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
     const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',encStory:''};
-    return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende ${STEPS[S.round-1]?.n||''}</span>
+    return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende ${STEPS[lastStep()]?.n||''}</span>
       <div class="legend-enc">
         ${charPortraitHTML(leg.img,leg.isScene,'lg',false,leg.n)}
         <div class="dir-info">
@@ -949,7 +949,7 @@ function renderInterview(m){
         <span class="d">Bei Erfolg: ${chips(previewSafe(a.s||{}))||'kaum Wirkung'} Bei Misserfolg: ${chips(previewSafe(a.f||{}))||'kaum Wirkung'}</span>
       </button>`).join('')}</div>`;
   }
-  m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende ${STEPS[S.round-1]?.n||''}</span>
+  m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende ${STEPS[lastStep()]?.n||''}</span>
     <h3>${esc(o.n)} will mit ${esc(C.dir.n)} über „${esc(S.title)}“ sprechen</h3>
     <p class="note" style="margin:0">Drei Fragen, jede Antwort ist ein W100-Wurf. Der Hype-Wert des Directors, der aktuelle Hype und das Format beeinflussen die Chancen.</p>
     ${past}${body}`;
@@ -1299,7 +1299,7 @@ function renderRetirement(m){
 
 function renderOver(m){
   const t={budget:['Insolvenz','Das Konto ist leer. Der Insolvenzverwalter verkauft die Rechte, das Spiel erscheint nie.'],haus:['Alles verloren','Die Bank hat abgelehnt. Studio und Haus sind weg.'],moral:['Das Team ist weg','Die Moral ist auf null. Am Montag liegen die Kündigungen auf dem Tisch.']}[S.over]||['Ende',''];
-  m.innerHTML=`<span class="label">Ende ${STEPS[S.round-1]?.n||''}</span><h3>${t[0]}</h3><p>${t[1]}</p><p class="note">Bei einer Neugründung startet der Studio-Fame bei null und das Personal ist weg. Die eigene Engine und alle freigeschalteten Legenden bleiben erhalten.</p>
+  m.innerHTML=`<span class="label">Ende ${STEPS[lastStep()]?.n||''}</span><h3>${t[0]}</h3><p>${t[1]}</p><p class="note">Bei einer Neugründung startet der Studio-Fame bei null und das Personal ist weg. Die eigene Engine und alle freigeschalteten Legenden bleiben erhalten.</p>
    <div class="ledger">${ledger(null)}</div>${brokeChoiceHTML()}`;
   bindBrokeChoice();
 }
