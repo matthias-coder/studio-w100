@@ -66,9 +66,9 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 - **Meilensteine:** *Vertical Slice*, *First Playable*, *Alpha*, *Beta* und *Gold Master* prüfen Gameplay, Grafik, Sound und Bugs gegen Zielwerte. Erreicht gibt +1 Moral, verfehlt −1; bei Geldgebern hängen die Raten daran (siehe 9). Im Studio-Panel steht immer der nächste Meilenstein mit Ist/Soll.
 
 ### 9. 💰 Pitch & Geldgeber
-- **Pitch-Termine:** Ein eigener Schritt vor der Entwicklung: Wählt *Publisher*, *Investoren*, *Förderung* (Indie/AA), *Crowdfunding* (Indie/AA) oder *Nur Eigenkapital* (ein Klick, danach entfällt „Finanzierung steht“). Ein W100-Business-Wurf entscheidet über alle gewählten Geldgeber; Hype, Qualität und Bekanntheit helfen. Der *Ambitionierte Pitch* bringt +30 % Geld von Publisher/Investoren, erschwert den Wurf (SG +2) und hebt die Meilenstein-Ziele um 3.
+- **Pitch-Termine:** Ein eigener Schritt vor der Entwicklung: Wählt *Publisher*, *Investoren*, *Förderung* (Indie/AA), *Crowdfunding* (Indie/AA) oder *Nur Eigenkapital* (ein Klick, danach entfällt „Finanzierung steht“). Ein W100-Business-Wurf entscheidet über alle gewählten Geldgeber; Hype, Qualität und Bekanntheit helfen. Der *Ambitionierte Pitch* bringt +30 % Geld von Publisher/Investoren, erschwert den Wurf (SG +2) und hebt die Meilenstein-Ziele um 3, aber nur, wenn ihr mindestens einen Geldgeber überzeugt – sonst gilt er nicht.
 - **Raten an Meilensteinen:** Erreicht zahlt die volle Rate. Knapp verfehlt: Nachverhandlung per Wurf oder halbe Rate akzeptieren. Klar verfehlt: Der Publisher hält die Rate zurück und verlangt eine Kürzung (Projekt-Extra oder *Umfang kürzen*), beim zweiten Mal kündigt er und will die Hälfte zurück. Investoren halten zurück und steigen beim zweiten Mal aus (Gewinnbeteiligung bleibt), Förderung will die Hälfte zurück.
-- **Crowdfunding:** Das Geld kommt sofort; gekürzter Umfang zählt als gebrochenes Stretch-Goal, und beim Release droht selten (~1 %) eine Klage. Fehlendes Geld löst die normale Krisenmechanik aus.
+- **Crowdfunding:** Das Geld kommt sofort; gekürzter Umfang zählt als gebrochenes Stretch-Goal, und beim Release droht eine Klage der Backer (ca. 1 % pro Projekt, 5 %, sobald ihr ein Feature gestrichen habt). Fehlendes Geld löst die normale Krisenmechanik aus.
 
 ---
 
