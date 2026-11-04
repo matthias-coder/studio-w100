@@ -15,14 +15,22 @@ test('long AAA keeps 2 units of buffer without delays',()=>{const {run}=load();n
   assert.ok(Math.abs(run('S.res.zeit')-2)<1e-6);});
 test('milestone fires at end of prod_fp',()=>{const {run}=load();newProject(run);noRandom(run);
   run(`S.res.budget=1e9;signDeal('pub',100)`);
-  for(let i=0;i<=run("stepIndex('prod_fp')");i++){
+  const fpIdx=run("stepIndex('prod_fp')");let paidBefore=null,outcome=null;
+  for(let i=0;i<=fpIdx;i++){
+    if(i===fpIdx){ // fixed "met" result right before the fp step
+      const t=run("msTargets('fp')");
+      run(`Object.assign(S.res,{gp:${t.gp+10},gfx:${t.gfx+10},snd:${t.snd+10},bugs:0})`);
+      paidBefore=run("findDeal('pub').paid");
+    }
     run('monthEnd()');
     if(run('S.screen')==='crisis')run('leaveCrisis()');
-    run('S.fund.renego=false;S.fund.cutPending=false');
-    if(run('S.screen')==='milestone')run('closeMilestone()');
+    if(run('S.screen')==='milestone'){if(i===fpIdx)outcome=run('S.msResult.outcome');run('closeMilestone()')}
   }
   assert.ok(run(`S.msDone.includes('fp')`));
-  assert.ok(run(`findDeal('pub').status==='cancelled'||!('fp' in findDeal('pub').rates)`));});
+  assert.equal(outcome,'met');
+  assert.ok(run("!('fp' in findDeal('pub').rates)"));
+  assert.equal(run("findDeal('pub').status"),'active');
+  assert.ok(run("findDeal('pub').paid")>paidBefore,'fp rate was paid');});
 test('crisis path resumes at next step',()=>{const {run}=load();newProject(run);noRandom(run);
   run('S.res.budget=-1;monthEnd()');assert.equal(run('S.round'),1);
   run('S.res.budget=1e9;afterMonth()');assert.notEqual(run('S.screen'),'launch');});

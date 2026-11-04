@@ -13,7 +13,12 @@ const FUNDERS={
 const fname=id=>FUNDERS[id].ic+' '+FUNDERS[id].n;
 const r1=x=>Math.round(x*10)/10;
 function defaultFund(){return {pitched:false,self:false,amb:false,deals:[],cuts:[],renego:false,cutPending:false}}
-function projCost(s=S){return r1(monthSum()*totalW(s))}
+// Offers use the default cost levers, so maxing and resetting them around the pitch cannot inflate them
+function projCost(s=S){
+  const keep=S.plan;
+  try{S.plan=Object.fromEntries(Object.keys(PLAN).map(k=>[k,PLAN[k].def]));return r1(monthSum()*totalW(s))}
+  finally{S.plan=keep}
+}
 function funderAvail(id,s=S){const f=FUNDERS[id];return !!f&&(!f.tiers||f.tiers.includes(s.tier))}
 function funderOffer(id,amb=false,s=S){
   const f=FUNDERS[id],pc=projCost(s);
@@ -61,16 +66,19 @@ function pitchTarget(id,amb){return dc100(FUNDERS[id].dc+(amb?FUND.ambDc:0))}
 function startPitch(ids,amb){
   const sel=(ids||[]).filter(id=>funderAvail(id));
   if(!sel.length)return;
-  S.fund.amb=!!amb;S.pitchSel=sel;
+  S.fund.amb=!!amb;S.pitchAmb=!!amb;S.pitchSel=sel;
   startRoll({kind:'pitch',ev:'pitch',adv:false});
 }
+function pitchAmb(){return S.pitchAmb!==undefined?!!S.pitchAmb:!!S.fund.amb}
 function selfFund(){
   S.fund.pitched=true;S.fund.self=true;S.skip.push('pit_mix');
   addLog(`<span>${stepTag()}</span> Finanzierung: nur Eigenkapital`);
   goMonth();
 }
 function resolvePitch(total,crit,fumble){
-  const amb=S.fund.amb,ch=[],won=[],lost=[];let got=0;
+  const amb=pitchAmb(),ch=[],won=[],lost=[];let got=0;
+  S.fund.amb=amb; // a re-roll after a failed pitch keeps the ambition
+  S.skip=S.skip.filter(x=>x!=='pit_mix'); // offers are computed with the full schedule, also on a re-roll
   (S.pitchSel||[]).filter(id=>funderAvail(id)).forEach(id=>{
     const ok=crit||(!fumble&&total>=pitchTarget(id,amb));
     if(!ok){lost.push(fname(id));return}
@@ -78,7 +86,7 @@ function resolvePitch(total,crit,fumble){
     got=r1(got+deal.paid);won.push(`${fname(id)} (${money(deal.total)})`);
   });
   S.fund.pitched=true;
-  if(!S.fund.deals.length&&!S.skip.includes('pit_mix'))S.skip.push('pit_mix');
+  if(!S.fund.deals.length){S.fund.amb=false;S.skip.push('pit_mix')}
   if(got)ch.push(['budget',got]);
   const txt=(won.length?`Zugesagt: ${won.join(', ')}. `:'')+(lost.length?`Abgesagt: ${lost.join(', ')}.`:'');
   return {ch,txt:txt.trim()};
@@ -108,7 +116,7 @@ function applyFundingOutcome(r){
         if(deal.misses===1){S.fund.cutPending=true;txt=`${fname(deal.id)}: Rate von ${money(rate)} gestrichen – ein Feature muss weichen`}
         else{
           const repay=r1(deal.paid*FUND.repay);
-          S.res.budget-=repay;S.recoup=Math.max(0,S.recoup-repay);S.publisher=false;
+          S.res.budget-=repay;S.recoup=Math.max(0,S.recoup-deal.paid);S.publisher=S.recoup>0;
           deal.status='cancelled';clearRates(deal);amount=-repay;
           txt=`${fname(deal.id)} kündigt den Vertrag und fordert ${money(repay)} zurück`;
         }
@@ -121,6 +129,7 @@ function applyFundingOutcome(r){
         txt=`${fname(deal.id)} endet: ${money(repay)} müssen zurückgezahlt werden`;
       }
     }
+    if(oc!==r.outcome)txt+=' (Hype zu niedrig)';
     r.deals.push({id:deal.id,n:f.n,outcome:oc,amount,txt});
     notes.push(txt);
   });
@@ -164,7 +173,7 @@ function cutFeature(id){
   return notes;
 }
 function crowdLawsuit(s=S){
-  const crowd=s.fund.deals.find(d=>d.id==='crowd');
-  if(!crowd||!s.fund.cuts.length)return 0;
+  const crowd=s.fund?.deals.find(d=>d.id==='crowd');
+  if(!crowd||!s.fund.cuts?.length)return 0;
   return Math.random()<FUND.lawsuitChance?r1(crowd.paid*FUND.lawsuitShare):0;
 }

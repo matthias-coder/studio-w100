@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const {load,newProject}=require('./harness');
+const {load,newProject,CAREER}=require('./harness');
 test('offers scale with project cost',()=>{const {run}=load();newProject(run);const pc=run('projCost()');
   assert.ok(pc>0);assert.ok(Math.abs(run(`funderOffer('pub')`)-pc*.6)<=.1);
   assert.ok(Math.abs(run(`funderOffer('pub',true)`)-pc*.6*1.3)<=.1);
@@ -83,3 +83,40 @@ test('renegotiation updates the milestone deal line',()=>{const {run}=load();new
 test('cutFeature adds a line naming what was cut',()=>{const {run}=load();newProject(run);run(`signDeal('pub',100)`);
   run(`S.msResult=msCheck('vs');S.msResult.deals=[];S.fund.cutPending=true;cutFeature('scope')`);
   assert.match(run(`S.msResult.deals.map(d=>d.txt).join('|')`),/Umfang gekürzt/);});
+
+/* ---- Final review fixes ---- */
+test('FR1 pitch re-roll after a failed pitch signs deals and un-skips pit_mix',()=>{const {run}=load();newProject(run);toPitch(run);
+  run(`S.fund.amb=false;S.pitchSel=['pub']`);run('resolvePitch(1,false,false)');
+  assert.equal(run('S.fund.deals.length'),0);assert.ok(run(`S.skip.includes('pit_mix')`));
+  run('resolvePitch(999,false,false)');
+  assert.ok(run(`!!findDeal('pub')`));assert.equal(run(`S.skip.includes('pit_mix')`),false);});
+test('FR1 ambitious pitch stays ambitious on re-roll after a failure',()=>{const {run}=load();newProject(run);toPitch(run);
+  const o=run(`funderOffer('pub',true)`);run(`S.pitchAmb=true;S.fund.amb=true;S.pitchSel=['pub']`);run('resolvePitch(1,false,false)');
+  run('resolvePitch(999,false,false)');
+  assert.ok(Math.abs(run(`findDeal('pub').total`)-o)<=.1);assert.equal(run('S.fund.amb'),true);});
+test('FR1 no re-roll offer for a failed renegotiation',()=>{const {run}=load();newProject(run);
+  run(`C.dir={ab:'reroll'};S.abUsed=false;S.screen='result';S.last={kind:'renego',safe:false,ok:false}`);
+  assert.equal(run('abilityReady()'),false);
+  run(`S.last={kind:'pitch',safe:false,ok:false}`);assert.equal(run('abilityReady()'),true);});
+test('FR2 cancelling a pitched publisher keeps a rescue publisher recoup',()=>{const {run}=load();newProject(run);
+  run(`S.recoup=50;S.publisher=true;signDeal('pub',100);S.recoup=80`); // 50 rescue + 30 advance
+  run(`S.fund.cutPending=false;applyFundingOutcome({id:'vs',outcome:'miss'});applyFundingOutcome({id:'fp',outcome:'miss'})`);
+  assert.equal(run(`findDeal('pub').status`),'cancelled');assert.equal(run('S.recoup'),50);assert.equal(run('S.publisher'),true);});
+test('FR2 cancelling without a rescue publisher clears recoup and flag',()=>{const {run}=load();newProject(run);
+  run(`signDeal('pub',100);applyFundingOutcome({id:'vs',outcome:'miss'});applyFundingOutcome({id:'fp',outcome:'miss'})`);
+  assert.equal(run('S.recoup'),0);assert.equal(run('S.publisher'),false);});
+test('FR3 failed ambitious pitch resets amb',()=>{const {run}=load();newProject(run);toPitch(run);
+  run(`S.fund.amb=true;S.pitchSel=['pub']`);run('resolvePitch(1,false,false)');assert.equal(run('S.fund.amb'),false);
+  assert.equal(run(`msTargets('fp').gp`),run(`(S.fund.amb=false,msTargets('fp').gp)`));});
+test('FR4 pre-stage-1 finished save at launch normalizes and the lawsuit does not crash',()=>{const {run}=load();run(CAREER);
+  const s=run(`normalizeProject(Object.assign({title:'Alt',genre:'rpg',subGenre:defaultSub('rpg'),tier:'indie',round:12,res:{budget:40,gp:30,gfx:30}},{screen:'launch'}),C)`);
+  assert.ok(s.fund);assert.equal(s.fund.pitched,true);assert.deepEqual([...s.skip],[]);
+  assert.equal(run(`crowdLawsuit(${JSON.stringify({})})`),0);
+  run(`S=normalizeProject(Object.assign({title:'Alt',genre:'rpg',subGenre:defaultSub('rpg'),tier:'indie',round:12,res:{budget:40,gp:30,gfx:30}},{screen:'launch'}),C)`);
+  assert.equal(run('crowdLawsuit()'),0);});
+test('FR5 maxing the cost levers does not change projCost',()=>{const {run}=load();newProject(run);
+  const a=run('projCost()');run(`Object.keys(PLAN).forEach(k=>{S.plan[k]=PLAN[k].lv.length-1})`);
+  assert.equal(run('projCost()'),a);assert.equal(run(`S.plan.mkt`),2);});
+test('FR6 low-hype investor downgrade is explained',()=>{const {run}=load();newProject(run);run(`signDeal('inv',40);S.res.hype=1`);
+  run(`S._r={id:'fp',outcome:'met'};applyFundingOutcome(S._r)`);
+  assert.match(run('S._r.deals[0].txt'),/\(Hype zu niedrig\)/);});

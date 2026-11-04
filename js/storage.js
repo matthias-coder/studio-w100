@@ -129,6 +129,8 @@ function normalizeProject(s,c){
   if(s&&s.v!==2&&(s.end||['sales','end','over','launch'].includes(s.screen))){
     // Abgeschlossenes Altprojekt: nichts erstatten (Budget ist bereits in der Kasse), nur minimal migrieren
     s.v=2;s.durKey='normal';s.dur=refMonths(s.tier||'indie');
+    if(!s.fund){s.fund=defaultFund();s.fund.pitched=true}
+    if(!s.skip)s.skip=[];
     if(s.round>=12)s.round=STEPS.length;
     return s;
   }

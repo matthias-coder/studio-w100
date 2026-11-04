@@ -810,7 +810,7 @@ function curTitle(kind,ev){
 
 function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
-  if(p.kind==='pitch'){const amb=S.fund.amb;return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
+  if(p.kind==='pitch'){const amb=pitchAmb();return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
   if(p.kind==='renego')return {l:'Nachverhandeln',st:'business',dc:FUND.renegoDc,s:{},f:{},bonusV:fameBonus()};
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
   if(p.kind==='rand'){const r=R[p.ev];const adj=r.dcAdj?r.dcAdj(S):0;return {...r,l:'Rettungswurf',dc:dc100(r.dc)+adj*4}}
@@ -1323,7 +1323,7 @@ function privatZuschuss(){
 /* ===================== Fähigkeiten ===================== */
 function abilityReady(){
   if(!S||!C||!D().ab||S.abUsed)return false;
-  if(D().ab==='reroll')return S.screen==='result'&&S.last&&!S.last.safe&&!S.last.ok;
+  if(D().ab==='reroll')return S.screen==='result'&&S.last&&!S.last.safe&&!S.last.ok&&S.last.kind!=='renego';
   return ['event','launch','mand'].includes(S.screen);
 }
 function useAbility(){
