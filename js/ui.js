@@ -728,10 +728,10 @@ function infShopHTML(){
   };
   let pend='';
   if(p){
-    const d=INFLUENCERS[p.id],bock=infBock(p.id)-50;
+    const d=INFLUENCERS[p.id];
     pend=`<div class="alert mid" style="display:block">
-      <b>${esc(d.n)}</b> antwortet: W100 ${p.r} ${bock<0?'−':'+'} ${Math.abs(bock)} (Bock−50) = ${p.total}<br>
-      ${tierTxt[p.tier]} · ${p.price?money(p.price):'0'}
+      <b>${esc(d.n)}</b> antwortet: W100: ${p.r} → ${tierTxt[p.tier]}<br>
+      Preis: ${p.price?money(p.price):'0'}
       <div class="row" style="gap:6px;margin-top:6px">
         <button type="button" class="btn small alt" id="infAccept" ${S.res.budget<p.price?'disabled':''}>Annehmen</button>
         <button type="button" class="btn small ghost" id="infDecline">Ablehnen</button>
@@ -1051,7 +1051,7 @@ function headFor(kind,ev){
   }
   if(kind==='probe'){
     const d=JOURNALISTS[ev]||JOURNALISTS.peschkeller,c=probeCard(ev);
-    return `<span class="stamp">📣 Recherche · ${esc(d.outlet)}</span>
+    return banner+`<span class="stamp">📣 Recherche · ${esc(d.outlet)}</span>
       <div class="legend-enc">
         ${d.img?charPortraitHTML(d.img,false,'lg',false,d.n):''}
         <div class="dir-info">

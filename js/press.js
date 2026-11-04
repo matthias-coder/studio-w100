@@ -199,7 +199,7 @@ function probeCard(id){
     o:[{l:'Offen Stellung nehmen',st:'team',dc:PRESS.probeDc+Math.max(0,score-1),s:{hype:1,fame:2},f:{hype:-3,fame:-4},
         sx:'Ihr legt alles offen. Der Artikel ist fair und die Leser honorieren die Ehrlichkeit.',fx:'Das Statement geht nach hinten los und der Artikel zerpflückt euch.'},
        {l:'Kein Kommentar',safe:{hype:-2,fame:-2},sx:'Ihr schweigt. Im Artikel steht nur „auf Anfrage nicht geantwortet“.'},
-       {l:'Abwiegeln mit PR-Agentur',safe:{budget:-PRESS.prCost},sx:'Die Agentur verschickt eine glatte Erklärung.',
+       {l:'Abwiegeln mit PR-Agentur',sd:'Kann auffliegen.',safe:{budget:-PRESS.prCost},sx:'Die Agentur verschickt eine glatte Erklärung.',
         onSafe:()=>{
           if(Math.random()<PRESS.prBase+PRESS.prPer*score){
             const ch=apply({hype:-4,fame:-6});

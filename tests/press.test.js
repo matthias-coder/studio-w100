@@ -156,3 +156,12 @@ test('re-roll after a failed probe roll restores fame',()=>{const {run}=load();n
   run(`unapply(S.last.ch)`);assert.equal(run('C.studio.fame'),10);});
 test('fully clamped fame change shows no chip entry',()=>{const {run}=load();newProject(run);
   run('C.studio.fame=0');assert.equal(run(`apply({fame:-2}).some(c=>c[0]==='fame')`),false);});
+test('pending block shows roll and tier but never the Bock summand',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.res.budget=1e9;askInfluencer('blech',37)`);run('S.res.hype=90');
+  const h=run('infShopHTML()');assert.match(h,/W100: 37 →/);assert.doesNotMatch(h,/Bock/);assert.doesNotMatch(h,new RegExp('= '+run('S.inf.pending.total')));});
+test('voluntary crisis open with positive budget does not count as a finance point',()=>{const {run}=load();newProject(run);
+  run('S.res.budget=1000;openCrisis("shop")');assert.equal(run('probeScore()'),0);
+  run('S.res.budget=-1;openCrisis("shop")');assert.equal(run('probeScore()'),1);});
+test('PR agency option hints at the risk',()=>{const {run}=load();newProject(run);
+  run(`S.crisisSeen=true;S.probe={j:'peschkeller',topic:'finanzen',score:1}`);
+  assert.equal(run(`probeCard('peschkeller').o[2].sd`),'Kann auffliegen.');});

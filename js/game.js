@@ -1259,7 +1259,7 @@ function fairCard(k){
        {l:'Höflich danken und weiterziehen',safe:{},sx:'Ihr bedankt euch, holt ein Autogramm und bleibt bei eurem Plan.'}]};
 }
 function afterRandom(){if(S.res.budget<0){openCrisis('rand');return}if(S.res.moral<=0){gameOver('moral');return}goMonth()}
-function openCrisis(from){S.crisisSeen=true;S.crisisFrom=from;S.prevScreen=S.screen;S.early=S.res.budget>=0;S.crisisMsg=null;S.screen='crisis';render();save()}
+function openCrisis(from){if(S.res.budget<0)S.crisisSeen=true;S.crisisFrom=from;S.prevScreen=S.screen;S.early=S.res.budget>=0;S.crisisMsg=null;S.screen='crisis';render();save()}
 function leaveCrisis(){if(S.crisisFrom==='month')afterMonth();else if(S.crisisFrom==='rand')goMonth();else{S.screen=S.prevScreen==='crisis'?'event':(S.prevScreen||'event');render();save()}}
 
 function gameOver(reason){
