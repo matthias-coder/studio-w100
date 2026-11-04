@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path'),vm=require('vm');
 const ROOT=path.join(__dirname,'..');
-const FILES=['js/data.js','js/schedule.js','js/events.js','js/content-extra.js','js/storage.js','js/game.js'];
+const FILES=['js/data.js','js/schedule.js','js/sprint.js','js/events.js','js/content-extra.js','js/storage.js','js/game.js'];
 function el(){return {hidden:false,textContent:'',innerHTML:'',value:'',style:{},dataset:{},
   classList:{add(){},remove(){},toggle(){},contains(){return false}},addEventListener(){},
   querySelectorAll:()=>[],querySelector:()=>null,appendChild(){},setAttribute(){}}}
