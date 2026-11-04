@@ -131,7 +131,7 @@ function renderHud(){
    +cell('Bugs',r.bugs,r.bugs>=15,r.bugs>=15?'Kritisch hoch':'Bekannte Fehler',bar(Math.min(100,r.bugs*4),r.bugs>=15?'var(--bad)':'var(--warn)'),'hx')
    +cell('Prognose',fc==null?'–':'≈ '+fc,false,fc==null?'':metaLabel(fc),bar(fc||0,fc>=75?'var(--good)':fc>=50?'var(--gold)':'var(--bad)'),'hx')
    +cell('Wishlists',nf(r.wl,0),false,S.ea?'Early Access aktiv':'Vorbesteller-Interesse','','hx')
-   +cell('Zeit',Math.round(r.zeit*S.dur/12)+' Mon.',r.zeit<0,S.round<STEPS.length?'Schritt '+(S.round+1)+'/'+STEPS.length:'Release',bar(S.round/STEPS.length*100,'var(--c-pers)'))
+   +cell('Zeit',Math.round(r.zeit*refMonths(S.tier)/12)+' Mon.',r.zeit<0,S.round<STEPS.length?'Schritt '+(S.round+1)+'/'+STEPS.length:'Release',bar(S.round/STEPS.length*100,'var(--c-pers)'))
    +`<div class="hud-q" aria-label="Stand des Spiels"><span title="Gameplay">🎮 <b>${r.gp}</b></span><span title="Grafik">🎨 <b>${r.gfx}</b></span><span title="Sound">🎵 <b>${snd}</b></span><span title="Bugs" class="${r.bugs>=15?'neg':''}">🐞 <b>${r.bugs}</b></span><span title="Wertungsprognose" class="${fc>=75?'pos':fc<50?'neg':''}">🎯 <b>≈${fc??'–'}</b></span></div>`;
 }
 
@@ -279,10 +279,11 @@ function milestoneBlock(){
   ensureMilestone();
   const ms=S.milestone;
   if(!ms)return '';
+  const msStep=STEPS[stepIndex(ms.at)]?.n||'Meilenstein';
   return `<details class="fold">
-    <summary>🎯 Meilenstein M${ms.month}: ${esc(ms.label)} ${ms.done?'(✓)':''}</summary>
+    <summary>🎯 Meilenstein: ${esc(msStep)} ${ms.done?'(✓)':''}</summary>
     <div class="fold-body">
-      <div class="note">Ziel bis Ende „${STEPS[stepIndex(ms.at)].n}“: <b>${esc(ms.desc)}</b></div>
+      <div class="note">Ziel bis Ende „${esc(msStep)}“: <b>Gameplay ≥ ${ms.gp} · Grafik ≥ ${ms.gfx}</b></div>
       <div class="mini"><div><span>Prämie</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div></div>
     </div>
   </details>`;
@@ -437,12 +438,12 @@ function renderDock(){
       ${S?`
         <div class="blk" style="padding-top:4px;border-top:0">
           <div class="burn"><span>Monatliche Gesamtkosten</span><b>${money(costPerMonth())}/Monat</b></div>
-          <div class="plan">${Object.entries(PLAN).map(([k,p])=>`<div class="prow" title="${esc(p.d)}"><span class="pn">${p.n} <small class="note">(${money(p.cost[S.plan[k]]*t.scale,true)})</small></span><div class="seg" role="group" aria-label="${p.n}">${p.lv.map((l,i)=>`<button type="button" data-pk="${k}" data-pl="${i}" aria-pressed="${S.plan[k]===i}" ${editable?'':'disabled'}>${l}</button>`).join('')}</div></div>`).join('')}</div>
+          <div class="plan">${Object.entries(PLAN).map(([k,p])=>`<div class="prow" title="${esc(p.d)}"><span class="pn">${p.n} <small class="note">(${money(perMonth(p.cost[S.plan[k]]*t.scale),true)})</small></span><div class="seg" role="group" aria-label="${p.n}">${p.lv.map((l,i)=>`<button type="button" data-pk="${k}" data-pl="${i}" aria-pressed="${S.plan[k]===i}" ${editable?'':'disabled'}>${l}</button>`).join('')}</div></div>`).join('')}</div>
         </div>
         <details class="fold">
-          <summary>📊 Kosten-Aufschlüsselung (${money(monthSum())}/M)</summary>
+          <summary>📊 Kosten-Aufschlüsselung (${money(costPerMonth())}/Monat)</summary>
           <div class="fold-body">
-            <div class="legend">${monthLines().map(([c,v])=>`<div><s style="background:var(${CAT[c][1]})"></s><span>${CAT[c][0]}</span><span>${money(v)}</span></div>`).join('')}</div>
+            <div class="legend">${monthLines().map(([c,v])=>`<div><s style="background:var(${CAT[c][1]})"></s><span>${CAT[c][0]}</span><span>${money(perMonth(v))}</span></div>`).join('')}</div>
           </div>
         </details>
         <details class="fold">
@@ -808,7 +809,7 @@ function optsHTML(card){
       <span class="t">${o.l}</span>
       ${o.safe?'<span class="check safe">ohne Wurf</span>':`<span class="check">${STATS[o.st]} · SG ${target} (${pct} %)</span>`}
       <span class="d">${o.sd?o.sd+' ':''}${o.safe?(o.sd?'':'Sicherer Weg mit festen Folgen.'):`Du brauchst ${target} oder mehr mit W100 ${fmt(mod)} (Erfolgschance: ${pct} %).`}</span>
-      ${o.safe?chips(previewSafe(o.safe))+(o.safe.budget<0&&S.res.budget+o.safe.budget*T().scale<monthSum()?'<div class="chips"><span class="chip n">Danach reicht das Geld nicht für den nächsten Monat</span></div>':''):''}
+      ${o.safe?chips(previewSafe(o.safe))+(o.safe.budget<0&&S.res.budget+o.safe.budget*T().scale<stepCost()?'<div class="chips"><span class="chip n">Danach reicht das Geld nicht für den nächsten Schritt</span></div>':''):''}
       ${optHint(o)}
     </button>`;
   }).join('')}</div>
@@ -824,7 +825,7 @@ function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
   const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
-  return `<div class="monthnote" onclick="this.classList.toggle('open')">Monat ${STEPS[M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
+  return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
 function headFor(kind,ev){
@@ -967,7 +968,7 @@ function renderMain(){
     m.innerHTML=monthNote()+budgetAlert()+`<div class="studio-actions">
       <span class="label">Diesen Monat außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
-      <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
+      <button class="btn tiny ghost" data-opensub="hire">👥 Personal${stepFlag('hire')?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(curPhase())?'(✓)':''}</button>
     </div>`+eventBannerHTML('card',evIdx)+`<span class="label">${stepLabel()}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
@@ -1025,7 +1026,7 @@ function renderMain(){
     recalcQual();
     m.innerHTML=eventBannerHTML('launch')+`<span class="label">Release-Tag</span><h3>„${esc(S.title)}“ ist fertig. Mehr oder weniger.</h3>
       ${qualPanel()}
-      <p>${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${Math.round(-S.res.zeit*S.dur/12)} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
+      <p>${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${Math.round(-S.res.zeit*refMonths(S.tier)/12)} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
       <div class="tray" id="dice">${dieSVG('?')}</div>
       <button class="btn" id="go">W100 Review-Wurf</button>`;
     $('go').onclick=launch;
@@ -1759,7 +1760,7 @@ function renderSetup(m){
           <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subGenreOf(setupDraft.genre,setupDraft.subGenre)?' · '+subGenreOf(setupDraft.genre,setupDraft.subGenre).n:''}${GENRE_MODS[setupDraft.gmod]?' + '+GENRE_MODS[setupDraft.gmod].n:''}</b></span></div>
           <div><span>Startkapital / Kasse</span><span>${money(startBudget)}</span></div>
           ${(ipFee+extraUpfront)>0?`<div><span>Abzgl. Vorabkosten (Lizenz & Extras)</span><span class="neg">−${money(ipFee+extraUpfront)}</span></div>`:''}
-          <div><span><b>Verfügbares Budget in Monat 1</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(extraMonthly)}/M für Extras)`:''}</span></div>
+          <div><span><b>Verfügbares Budget im ersten Schritt</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(extraMonthly)}/M für Extras)`:''}</span></div>
         </div>
         ${netStartBudget<35*sc?`<div class="alert"><b>Warnung: Sehr knappes Startbudget!</b><span>Nach Abzug der Vorabkosten bleiben nur ${money(netStartBudget)}. Wählt im Zweifel ein teures Extra weniger!</span></div>`:''}
       </div>

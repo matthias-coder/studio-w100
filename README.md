@@ -50,7 +50,7 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 
 ### 6. 💀 Schwierigkeit, Fail-States & Karriere
 - **Newcomer-Skepsis:** Die Presse bewertet neue Studios etwas strenger (−12 beim ersten Spiel, danach −4 pro Spiel weniger). Die Wertung wirkt spürbar, aber nicht mehr kubisch auf die Verkäufe.
-- **Steigende Kosten:** Shop, Anwerben, Forschung und Gehälter werden mit jedem Spiel, jedem Lead und wachsendem Ruhm teurer. Neue Leads gibt es nur im ersten Entwicklungsmonat.
+- **Steigende Kosten:** Shop, Anwerben, Forschung und Gehälter werden mit jedem Spiel, jedem Lead und wachsendem Ruhm teurer. Neue Leads gibt es nur in Planungsschritten (Ideen sammeln, Engine & Pipeline, Produktionsplanung).
 - **Dinge gehen schief:** Verzögerungen, ein Publisher, der bei verfehlten Meilensteinen kündigt, eine durchgefallene Plattform-Zertifizierung bei zu vielen Bugs — und nur wenige, knappe Geldquellen.
 - **Handtuch werfen oder Ruhestand:** Verkauft euer Studio und gründet mit dem Privatvermögen des Directors ein neues. Geht ihr pleite, entscheidet ihr: mit dem Restkapital neu anfangen oder sich mit einer Karriere-Bilanz zur Ruhe setzen.
 

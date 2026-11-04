@@ -1047,7 +1047,7 @@ function monthEnd(){
 
   S.round++;
   S.month={sum,pc,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
-  addLog(`<span>${stepTag(S.round-1)}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
+  addLog(`<span>${stepTag(S.round-1)}</span> Abschluss „${STEPS[S.round-1].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
 }
@@ -1306,7 +1306,7 @@ function hire(id){
   if(rolling)return;
   const fee=hireFee();
   // Neue Leads nur im ersten Entwicklungsmonat (Legenden kommen über Begegnungen dazu)
-  if(S.round>0||S.res.budget<fee||hasStaff(id))return;
+  if(!stepFlag('hire')||S.res.budget<fee||hasStaff(id))return;
   S.res.budget-=fee;S.spend.invest=(S.spend.invest||0)+fee;
   startRoll({kind:'hire',ev:id,adv:false});
 }

@@ -28,6 +28,7 @@ function curStep(s=S){return STEPS[Math.min(s.round,STEPS.length-1)]}
 function stepFlag(flag,i=S.round){return !!STEPS[i]?.[flag]}
 function costPerMonth(){return monthSum()*12/refMonths(S.tier)}
 function stepCost(i=S.round){return monthSum()*stepW(i)}
+function perMonth(v,s=S){return v*12/refMonths(s.tier)}
 function monthsDone(s=S){let m=0;for(let i=0;i<Math.min(s.round,STEPS.length);i++)m+=stepMonths(i,s);return m}
 function monthsLeft(s=S){let m=0;for(let i=Math.max(0,s.round);i<STEPS.length;i++)m+=stepMonths(i,s);return m}
 function fmtSpan(m){
