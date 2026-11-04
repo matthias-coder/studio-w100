@@ -573,8 +573,30 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
     padding:8px max(10px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
     background:var(--sheet);border-top:1.5px solid var(--ink);box-shadow:0 -4px 14px rgba(0,0,0,.12);
   }
-  .mobile-bar button{min-height:44px;font:500 13px var(--f-mono);border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
+  .mobile-bar button{min-height:44px;font:500 13px var(--f-mono);border:1.5px solid var(--ink);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer;position:relative}
+  body.in-project .mobile-bar{grid-template-columns:repeat(4,1fr)}
+  body.in-project .mobile-bar button{white-space:nowrap;font-size:12px;padding:0 4px;overflow:hidden;text-overflow:ellipsis}
+  .mobile-bar button.on{background:var(--ink);color:var(--paper)}
+  .mobile-bar button.has-dot::after{content:"";position:absolute;top:6px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+
+  /* Im Projekt: nur die Karte scrollt, alles andere als Overlay */
+  body.in-project #wsNav,body.in-project .studio-actions{display:none}
+  body.in-project #sheet,body.in-project #dock{display:none}
+  body[data-ov="sheet"] #sheet,body[data-ov="dock"] #dock{
+    display:grid;align-content:start;position:fixed;left:0;right:0;top:max(56px,8vh);bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:26;
+    overflow-y:auto;overscroll-behavior:contain;border-radius:12px 12px 0 0;margin:0;max-width:none;
+  }
+  body[data-ov="sheet"],body[data-ov="dock"],body[data-ov="more"]{overflow:hidden}
+  body[data-ov="sheet"] .mob-backdrop,body[data-ov="dock"] .mob-backdrop,body[data-ov="more"] .mob-backdrop{display:block}
+  body[data-ov="more"] .mob-more{display:grid}
 }
+.mob-backdrop{display:none;position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.45)}
+.mob-more{display:none;position:fixed;left:0;right:0;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:27;max-height:75vh;overflow-y:auto;
+  gap:8px;padding:12px max(12px,env(safe-area-inset-left,0px));background:var(--sheet);border-top:1.5px solid var(--ink);border-radius:12px 12px 0 0}
+.mm-head{display:flex;justify-content:space-between;align-items:center}
+.mm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mm-grid .ws-tab{width:100%;justify-content:flex-start;text-align:left;min-height:44px}
+.mm-grid .ws-tab[disabled]{opacity:.45}
 
 @media (max-width:640px){
   /* Kopfzeile: eine Zeile, Werkzeuge hinter dem Menü-Button */
@@ -612,7 +634,14 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
   .track div{font-size:0;padding-top:2px}
   .track div.now{font-size:12px;overflow:visible}
 
-  .event-banner{max-height:110px}
+  .event-banner{max-height:80px}
+  body.in-project header{display:none}
+  .monthnote{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;padding-right:22px;position:relative}
+  .monthnote::after{content:"▾";position:absolute;right:8px;top:6px}
+  .monthnote.open{white-space:normal}
+  .monthnote.open::after{content:"▴"}
+  .evx{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+  .evx.open{display:block}
 
   /* Mindestens 12 px Schrift */
   .label,.hud .label,.chip,.check,.track div.now,.ws-tab .dot,.tog .badge,.stat span,.staff-lvl,.ledger tr.head td{font-size:12px}

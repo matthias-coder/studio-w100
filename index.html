@@ -43,10 +43,13 @@
 
   <!-- Handy: Sprungleiste zu Karte, Budget & Studio-Bogen -->
   <nav class="mobile-bar" aria-label="Schnellzugriff">
-    <button type="button" data-jump="main">🃏 Karte</button>
-    <button type="button" data-jump="dock">💰 Budget</button>
-    <button type="button" data-jump="sheet">📋 Studio</button>
+    <button type="button" data-mob="main">🃏 Karte</button>
+    <button type="button" data-mob="dock">💰 Budget</button>
+    <button type="button" data-mob="sheet">📋 Studio</button>
+    <button type="button" data-mob="more" id="mobMoreBtn">☰ Mehr</button>
   </nav>
+  <div class="mob-backdrop" id="mobBackdrop"></div>
+  <div class="mob-more" id="mobMore" role="dialog" aria-label="Weitere Bereiche"></div>
 
   <!-- Loginless Multi-User Profile & Progress Export Modal -->
   <div class="modal-backdrop" id="profileModal" hidden>
@@ -88,7 +91,8 @@
     })();
 
     $('tgMenu').onclick=()=>{const hd=$('tgMenu').closest('header');const open=hd.classList.toggle('open');$('tgMenu').setAttribute('aria-expanded',open)};
-    document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>$(b.dataset.jump).scrollIntoView({block:'start'}));
+    document.querySelectorAll('[data-mob]').forEach(b=>b.onclick=()=>mobNav(b.dataset.mob));
+    $('mobBackdrop').onclick=()=>setMobOv(null);
     $('tgProfile').onclick=()=>openProfileModal('profiles');
     $('tgExport').onclick=()=>openProfileModal('chronicle');
     $('closeModalBtn').onclick=closeProfileModal;

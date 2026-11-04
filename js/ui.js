@@ -487,6 +487,48 @@ function renderDock(){
 }
 
 /* ===================== Mittlere Spalte: Workspace-Navigation (#wsNav) ===================== */
+/* ===================== Handy: Overlays für Studio, Budget und Mehr-Menü ===================== */
+let mobOv=null;
+function syncMobBar(){
+  document.querySelectorAll('[data-mob]').forEach(b=>{
+    const t=b.dataset.mob;
+    b.classList.toggle('on',mobOv?mobOv===t:(t==='main'&&wsTab==='board'));
+  });
+}
+function setMobOv(v){
+  mobOv=v;
+  document.body.dataset.ov=v||'';
+  syncMobBar();
+  if(v==='sheet'||v==='dock'){const el=$(v);if(el)el.scrollTop=0}
+}
+function mobNav(t){
+  if(t==='main'){
+    setMobOv(null);
+    if(wsTab!=='board'||(S&&S.screen==='shop')){
+      wsTab='board';
+      if(S&&S.screen==='shop'){S.shopMsg=null;S.screen='event'}
+      render();
+    }
+    window.scrollTo({top:0});
+    return;
+  }
+  setMobOv(mobOv===t?null:t);
+}
+function renderMobMore(nav,activeTab,eng){
+  const mm=$('mobMore'),btn=$('mobMoreBtn');
+  if(!mm)return;
+  const tools=[['tgProfile','👤 Spieler'],['tgExport','📜 Export'],['tgTheme','🌓 Design'],['tgManual',manual?'🎲 Echter W100 (an)':'🎲 Echter W100'],['tgNew','↺ Karriere neu']];
+  mm.innerHTML=`<div class="mm-head"><span class="label">Bereiche</span><button type="button" class="btn tiny ghost" data-mmclose>Schließen</button></div>
+    <div class="mm-grid">${nav.innerHTML}<button type="button" class="ws-tab" data-mmlog>🎲 Würfel-Log</button></div>
+    <span class="label">Einstellungen</span>
+    <div class="mm-grid">${tools.map(([id,l])=>`<button type="button" class="ws-tab" data-mmtool="${id}">${l}</button>`).join('')}</div>`;
+  mm.querySelector('[data-mmclose]').onclick=()=>setMobOv(null);
+  mm.querySelector('[data-mmlog]').onclick=()=>{dockTab='log';renderDock();setMobOv('dock')};
+  mm.querySelectorAll('[data-mmtool]').forEach(b=>b.onclick=()=>{setMobOv(null);const t=$(b.dataset.mmtool);if(t)t.click()});
+  if(btn)btn.classList.toggle('has-dot',!!(eng&&(eng.techPts||0)>0));
+  syncMobBar();
+}
+
 function renderWsNav(){
   const nav=$('wsNav');
   if(!nav)return;
@@ -532,7 +574,9 @@ function renderWsNav(){
     </button>
   `;
 
-  nav.querySelectorAll('[data-wstab]').forEach(b=>b.onclick=()=>{
+  renderMobMore(nav,activeTab,eng);
+  document.querySelectorAll('#wsNav [data-wstab],#mobMore [data-wstab]').forEach(b=>b.onclick=()=>{
+    setMobOv(null);
     const target=b.dataset.wstab;
     if(b.dataset.sub)shopSubTab=b.dataset.sub;
     wsTab=target;
@@ -780,14 +824,14 @@ function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
   const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
-  return `<div class="monthnote">Monat ${M.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
+  return `<div class="monthnote" onclick="this.classList.toggle('open')">Monat ${M.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
-  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p>${vx(c)}</p>`}
-  if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p>${c.x}</p>`}
-  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p>${vx(rv)}</p>`}
+  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
+  if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
+  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
     const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',encStory:''};
     return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende Monat ${S.round}</span>
@@ -925,7 +969,7 @@ function renderMain(){
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
       <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
-    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p>${vx(ev)}</p>`+optsHTML(ev);
+    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
