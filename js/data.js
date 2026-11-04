@@ -859,9 +859,9 @@ const PROJECT_EXTRAS={
     upfront:0,monthly:1,eff:{bugs:1}
   },
   ea:{
-    n:'🧪 Early-Access-Phase (ab Monat 8)',
-    d:'Die Beta ist ab Monat 8 käuflich. Bringt Vorab-Einnahmen und Bug-Meldungen, nimmt dem Release aber etwas Überraschung.',
-    code:'Vorab-Einnahmen & −1 Bug/Monat ab M8 · −2 Kritiker · ×0,85 Release-Spitze',
+    n:'🧪 Early-Access-Phase (ab Alpha)',
+    d:'Die Beta ist ab Alpha käuflich. Bringt Vorab-Einnahmen und Bug-Meldungen, nimmt dem Release aber etwas Überraschung.',
+    code:'Vorab-Einnahmen & −1 Bug/Monat ab Alpha · −2 Kritiker · ×0,85 Release-Spitze',
     upfront:0,monthly:0,eff:{}
   },
   sportLic:{

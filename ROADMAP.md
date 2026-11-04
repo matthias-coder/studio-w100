@@ -1,10 +1,10 @@
 # 🗺️ Roadmap — Studio W100
 
 ## Als Nächstes
+- **Erlebbare Phasen, Etappen 2–7** (siehe docs/superpowers/specs/2026-11-04-phasen-erlebnis-design.md).
 - **Mehr Ereignisse und Content:** Kommt vor der längeren Entwicklungsdauer, damit mehrjährige Projekte genug Abwechslung haben.
 
 ## Später
-- **Wählbare Entwicklungsdauer (1–5 Jahre):** Zurückgestellt, bis es mehr Ereignisse gibt. Längere Projekte bringen mehr Ereignisse, kosten aber mehr. Das Spiel geht bisher überall von 12 Monaten aus (Phasen, Pflichtkarten, Meilensteine, Early Access, „Monat x/12“), daher zuerst planen.
 
 ## Neue Legenden (deutsche Entwickler)
 Beide brauchen ein Porträt in `raw-assets/chars`, Parodie-Name auf Deutsch.

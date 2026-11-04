@@ -2,7 +2,7 @@
 
 👉 **[Jetzt direkt im Browser spielen (GitHub Pages): https://matthias-coder.github.io/studio-w100/](https://matthias-coder.github.io/studio-w100/)**
 
-**Studio W100: Goldstatus** ist ein rundenbasiertes **Gamedev-Rollenspiel & Tabletop-Aufbauspiel** rund um die Gründung und Leitung eines eigenen Videospielstudios. Ihr startet als kleines Indie-Studio, begleitet euer Team über zwölf nervenaufreibende Entwicklungsmonate vom ersten Pitch bis zum Release-Tag, würfelt kritische Entscheidungen mit einem **W100 (1–100)** aus, entwickelt eure **eigene Studio-Engine**, trefft auf **21 Branchen-Legenden** und kämpft bei den jährlichen **Game of the Year (GOTY) Awards** ums Überleben in der Spieleindustrie.
+**Studio W100: Goldstatus** ist ein rundenbasiertes **Gamedev-Rollenspiel & Tabletop-Aufbauspiel** rund um die Gründung und Leitung eines eigenen Videospielstudios. Ihr startet als kleines Indie-Studio, begleitet euer Team durch fünf Entwicklungsphasen in 13 Schritten vom ersten Pitch bis zum Release-Tag, würfelt kritische Entscheidungen mit einem **W100 (1–100)** aus, entwickelt eure **eigene Studio-Engine**, trefft auf **21 Branchen-Legenden** und kämpft bei den jährlichen **Game of the Year (GOTY) Awards** ums Überleben in der Spieleindustrie.
 
 ---
 
@@ -20,7 +20,7 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 
 ### 1. 🧭 4-Schritte-Projektassistent, Genres & Lizenzen
 - **Schritt 1 — Studio & Game Director:** Gründet euer Studio und baut euch im Charakter-Editor mit Vor- und Nachteilen euren eigenen Game Director — oder wählt eine bereits freigeschaltete Legende. Name und Director stehen ab der Gründung fest.
-- **Schritt 2 — Rahmen & Geschäftsmodell:** Wählt Produktionsklasse (*Indie*, *Double-A*, *Triple-A*), Marke (*Neue IP*, *Fortsetzung*, *Bekannte Reihe*, *Große Lizenz*) und Geschäftsmodell (*Kaufspiel*, *Abo-Modell*, *Free-to-Play*). Jedes neue Studio startet als **Indie** — Double-A und Triple-A schaltet ihr erst mit genug Studiokapital frei.
+- **Schritt 2 — Rahmen & Geschäftsmodell:** Wählt Produktionsklasse (*Indie*, *Double-A*, *Triple-A*), Entwicklungsdauer (*Kurz*, *Normal*, *Lang*: Indie 12/18/24, Double-A 24/36/48, Triple-A 60/72/84 Monate; länger = mehr Qualität möglich, aber teurer), Marke (*Neue IP*, *Fortsetzung*, *Bekannte Reihe*, *Große Lizenz*) und Geschäftsmodell (*Kaufspiel*, *Abo-Modell*, *Free-to-Play*). Jedes neue Studio startet als **Indie** — Double-A und Triple-A schaltet ihr erst mit genug Studiokapital frei.
 - **Schritt 3 — Genre, Sub-Genre & Modifikator:** Wählt eines von **10 Hauptgenres** (*Action & Shooter*, *Action-Adventure*, *Adventure*, *Rollenspiel*, *Strategie*, *Simulation*, *Sport & Rennen*, *Survival & Sandbox*, *Puzzle & Denkspiele*, *Plattformer*) und eines von **45 Sub-Genres** — vom *Soulslike* über *Factory & Colony Sim* bis zum *Sportmanager*. Optional kommt ein **genreübergreifender Modifikator** dazu (*Roguelike*, *Horror-Stimmung*, *Live Service*, *Party & Couch-Koop*, *VR*), der mit manchen Genres eine **Synergie** bildet und sich mit anderen beißt.
 - **Schritt 4 — Extras & Offizielle Lizenzen:** Erweitert euer Projekt um **⚽ Offizielle Sport- & Verbandslizenzen**, **🤝 Koop-/Multiplayer-Modus**, **☁️ Crossplay & Cloud-Saves**, **🎻 Orchester-Soundtrack & Stargast-Synchro**, **📦 Physische Collector’s Edition**, **🛡️ Kernel-Anti-Cheat**, **🛠️ Mod-Support** oder eine **🧪 Early-Access-Phase**.
 
@@ -46,7 +46,7 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 
 ### 5. 🎙️ Interviews & lebendige Zufallsereignisse
 - **Interviews:** Magazin, Podcast, Livestream, TV oder Messebühne wollen mit eurem Director sprechen. Drei Fragen, drei Antworten im Multiple-Choice — *sicher*, *ehrlich*, *mutig* oder *witzig*. Jede Antwort ist ein W100-Wurf und kann Hype, Moral und Wishlists bringen … oder ein öffentliches Versprechen, das euch später Wertungspunkte kostet.
-- **Rund 75 Zufallsereignisse** von Cloud-Ausfall bis Fan-Song, dazu Macken eures Directors. Jede Monatskarte und jedes Zufallsereignis hat **mehrere Textvarianten** — kein Durchlauf liest sich wie der andere.
+- **Rund 75 Zufallsereignisse** von Cloud-Ausfall bis Fan-Song, dazu Macken eures Directors. Jede Ereigniskarte und jedes Zufallsereignis hat **mehrere Textvarianten** — kein Durchlauf liest sich wie der andere.
 
 ### 6. 💀 Schwierigkeit, Fail-States & Karriere
 - **Newcomer-Skepsis:** Die Presse bewertet neue Studios etwas strenger (−12 beim ersten Spiel, danach −4 pro Spiel weniger). Die Wertung wirkt spürbar, aber nicht mehr kubisch auf die Verkäufe.

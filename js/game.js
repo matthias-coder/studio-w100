@@ -633,7 +633,7 @@ function cryptoInvest(pct,out){
   if(amt<=0){out.push(['note','Kein Geld zum Zocken da. Der Tech-Bro zieht weiter.']);return}
   S.res.budget-=amt;
   S.crypto={amt,due:S.round+1+(Math.random()<.5?1:2),done:false};
-  out.push(['budget',-amt],['note',`🪙 ${money(amt)} in $MOONCAT, Auflösung Ende Monat ${S.crypto.due}`]);
+  out.push(['budget',-amt],['note',`🪙 ${money(amt)} in $MOONCAT, Auflösung Ende von Schritt ${S.crypto.due}`]);
 }
 const CRYPTO_OUT=[
   {p:.50,m:0,t:'Totalverlust: Der Coin hieß in Wahrheit RugPullToken. Der Tech-Bro ist auf den Bahamas.',moral:-1},
@@ -722,7 +722,7 @@ function onSet(st,out,ok){
 function chip([k,v]){
   if(k==='note')return `<span class="chip">${v}</span>`;
   if(k==='payers')return `<span class="chip ${v>0?'p':'n'}">${fmt(v)} % zahlende Spieler</span>`;
-  if(k==='ea')return `<span class="chip p">Early Access ab Monat 8</span>`;
+  if(k==='ea')return `<span class="chip p">Early Access ab Alpha</span>`;
   if(k==='promise')return `<span class="chip ${v<0?'p':'n'}">${fmt(v)} offenes Versprechen</span>`;
   if(k==='recoup')return `<span class="chip">Vorschuss ${money(v)} wird später verrechnet</span>`;
   if(k==='wl')return `<span class="chip ${v>0?'p':'n'}">${v>0?'+':'−'}${nf(Math.abs(v),0)} Wishlists</span>`;
@@ -796,7 +796,7 @@ function choose(i){
     const ch=apply(o.safe);
     S.last={kind,ev,oi:i,safe:true,ch,pre,txt:o.sx,l:o.l};
     S.screen='result';
-    addLog(`<span>M${S.round+1}</span> ${curTitle(kind,ev)}: ${o.l}`);
+    addLog(`<span>${stepTag()}</span> ${curTitle(kind,ev)}: ${o.l}`);
     render();save();return;
   }
   S.preCh=pre;
@@ -899,7 +899,7 @@ function resolve(rolls){
   if(ok&&o.onOk){const x=o.onOk();if(x)txt+=' '+x}
   if(!ok&&o.onFail){const x=o.onFail();if(x)txt+=' '+x}
   S.last={...p,rolls,r,mod,mm,total,ok,crit,fumble,ch,pre,txt,dc:target,st:o.st,l:o.l};
-  addLog(`<span>M${Math.min(S.round+1,12)}</span> ${curTitle(p.kind,p.ev)}: ${o.l} · W100 ${rolls.join('/')} ${fmt(mod+mm)} = ${total} gegen SG ${target} → ${crit?'kritischer Erfolg':fumble?'Patzer':ok?'Erfolg':'Fehlschlag'}`);
+  addLog(`<span>${stepTag()}</span> ${curTitle(p.kind,p.ev)}: ${o.l} · W100 ${rolls.join('/')} ${fmt(mod+mm)} = ${total} gegen SG ${target} → ${crit?'kritischer Erfolg':fumble?'Patzer':ok?'Erfolg':'Fehlschlag'}`);
   S.pending=null;S.screen='result';render();save();
 }
 
@@ -1047,7 +1047,7 @@ function monthEnd(){
 
   S.round++;
   S.month={sum,pc,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
-  addLog(`<span>M${S.round}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
+  addLog(`<span>${stepTag(S.round-1)}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
 }
@@ -1074,7 +1074,7 @@ function afterMonth(){
     S.seenLegends.push(legKey);
     S.curLegend=legKey;
     S.screen='legend';
-    addLog(`<span>M${S.round}</span> 🌟 Legendäre Begegnung: ${DIRS[legKey].n} (${DIRS[legKey].tag}) schaut im Studio vorbei!`);
+    addLog(`<span>${stepTag(S.round-1)}</span> 🌟 Legendäre Begegnung: ${DIRS[legKey].n} (${DIRS[legKey].tag}) schaut im Studio vorbei!`);
     render();save();return;
   }
 
@@ -1089,7 +1089,7 @@ function afterMonth(){
   else if(pool.length&&Math.random()<.48)pick=pool[Math.floor(Math.random()*pool.length)];
   if(pick!==null){
     S.usedR.push(pick);S.rnd=pick;S.rndCh=null;
-    if(R[pick].eff){S.rndCh=apply(R[pick].eff);addLog(`<span>M${S.round}</span> Zufall: ${R[pick].t}`)}
+    if(R[pick].eff){S.rndCh=apply(R[pick].eff);addLog(`<span>${stepTag(S.round-1)}</span> Zufall: ${R[pick].t}`)}
     S.screen='random';render();save();return;
   }
   goMonth();
@@ -1125,7 +1125,7 @@ function startInterview(){
   S.ivCount=(S.ivCount||0)+1;
   S.iv={o:Math.floor(Math.random()*INTERVIEW_OUTLETS.length),qs,i:0,res:[]};
   S.screen='interview';
-  addLog(`<span>M${S.round}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
+  addLog(`<span>${stepTag(S.round-1)}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
   render();save();
   return true;
 }
@@ -1137,7 +1137,7 @@ function answerInterview(ai){
   const ch=apply(ok?a.s:a.f);
   S.iv.res.push({qi,ai,ok,r,pct,ch});
   S.iv.i++;
-  addLog(`<span>M${S.round}</span> Interview-Antwort „${esc(fillTxt(a.l))}“ (${IV_TONES[a.tone]||a.tone}, ${pct} %) · W100 ${r} → ${ok?'kommt gut an':'geht nach hinten los'}`);
+  addLog(`<span>${stepTag(S.round-1)}</span> Interview-Antwort „${esc(fillTxt(a.l))}“ (${IV_TONES[a.tone]||a.tone}, ${pct} %) · W100 ${r} → ${ok?'kommt gut an':'geht nach hinten los'}`);
   render();save();
 }
 function finishInterview(){
@@ -1196,7 +1196,7 @@ function chooseLegendAction(mode){
       l:`${leg.n} als Star-Lead verpflichtet`,
       txt:`${leg.n} (${leg.tag}) unterschreibt bei ${C.studio.name}, krempelt sofort die Ärmel hoch und steht euch ab jetzt dauerhaft in der Legenden-Auswahl zur Verfügung!`
     };
-    addLog(`<span>M${S.round}</span> 🌟 ${leg.n} (${leg.tag}) als Star-Lead eingestellt & dauerhaft freigeschaltet!`);
+    addLog(`<span>${stepTag(S.round-1)}</span> 🌟 ${leg.n} (${leg.tag}) als Star-Lead eingestellt & dauerhaft freigeschaltet!`);
     S.screen='result';
     render();save();
     return;
@@ -1218,7 +1218,7 @@ function chooseLegendAction(mode){
     l:leg.encPassLabel||'Autogramm & Kaffeepause',
     txt:`Ihr entscheidet euch für euren eigenen Weg im Gespräch mit ${leg.n}. Das Team zieht motiviert mit, und vielleicht kreuzen sich eure Wege bald wieder.`
   };
-  addLog(`<span>M${S.round}</span> Kaffeepause mit ${leg.n} (+1 Moral)`);
+  addLog(`<span>${stepTag(S.round-1)}</span> Kaffeepause mit ${leg.n} (+1 Moral)`);
   S.screen='result';
   render();save();
 }
@@ -1290,7 +1290,7 @@ function buy(id){
   const cost=shopCost(it);
   if(S.shop.includes(id)||S.res.budget<cost)return;
   S.res.budget-=cost;S.spend.invest=(S.spend.invest||0)+cost;S.shop.push(id);
-  addLog(`<span>M${S.round+1}</span> Shop: ${it.n} für ${money(cost)}`);
+  addLog(`<span>${stepTag()}</span> Shop: ${it.n} für ${money(cost)}`);
   if(it.id==='reise')C.studio.staff.forEach(st=>{st.loyalty=clamp((st.loyalty||6)+1,1,10)});
   if(it.id==='refactoring'&&C.studio.engine){
     C.studio.engine.techDebt=0;

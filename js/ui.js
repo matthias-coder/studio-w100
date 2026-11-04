@@ -116,7 +116,7 @@ function renderHud(){
   h.hidden=false;
   h.onclick=()=>h.classList.toggle('expanded');
   recalcQual();
-  const r=S.res,rw=runway(),left=12-S.round;
+  const r=S.res,rw=runway(),left=monthsLeft();
   const crit=rw<1,low=rw<=3&&rw<left;
   h.classList.toggle('alarm',crit||r.budget<0);
   const bar=(pct,col)=>`<div class="hud-bar"><i style="width:${clamp(pct,0,100)}%;background:${col}"></i></div>`;
@@ -124,14 +124,14 @@ function renderHud(){
   const moralCol=r.moral>=7?'var(--good)':r.moral>=4?'var(--gold)':'var(--bad)';
   const fc=reviewForecast();
   const snd=r.snd??Math.round((r.gp+r.gfx)/2);
-  h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(monthSum())}/Monat · ${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
+  h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(costPerMonth())}/Monat · nächster Schritt ${money(stepCost())} · ${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
    +cell('Moral',r.moral+'/10',r.moral<=2,`${fmt(moralMod())} auf Würfe`,bar(r.moral*10,moralCol))
    +cell('Hype',r.hype+'/10',false,S.trendHot?'🔥 Trend-Genre':S.trendCold?'❄️ Übersättigt':r.hype>=7?'wächst nur noch langsam':'',bar(r.hype*10,'var(--accent)'))
    +cell('Qualität',r.qual,false,`🎮 ${r.gp} · 🎨 ${r.gfx} · 🎵 ${snd}`,bar(r.qual,'var(--good)'),'hx')
    +cell('Bugs',r.bugs,r.bugs>=15,r.bugs>=15?'Kritisch hoch':'Bekannte Fehler',bar(Math.min(100,r.bugs*4),r.bugs>=15?'var(--bad)':'var(--warn)'),'hx')
    +cell('Prognose',fc==null?'–':'≈ '+fc,false,fc==null?'':metaLabel(fc),bar(fc||0,fc>=75?'var(--good)':fc>=50?'var(--gold)':'var(--bad)'),'hx')
    +cell('Wishlists',nf(r.wl,0),false,S.ea?'Early Access aktiv':'Vorbesteller-Interesse','','hx')
-   +cell('Zeit',r.zeit+' Mon.',r.zeit<0,S.round<12?'Monat '+(S.round+1)+'/12':'Release',bar((S.round/12)*100,'var(--c-pers)'))
+   +cell('Zeit',Math.round(r.zeit*S.dur/12)+' Mon.',r.zeit<0,S.round<STEPS.length?'Schritt '+(S.round+1)+'/'+STEPS.length:'Release',bar(S.round/STEPS.length*100,'var(--c-pers)'))
    +`<div class="hud-q" aria-label="Stand des Spiels"><span title="Gameplay">🎮 <b>${r.gp}</b></span><span title="Grafik">🎨 <b>${r.gfx}</b></span><span title="Sound">🎵 <b>${snd}</b></span><span title="Bugs" class="${r.bugs>=15?'neg':''}">🐞 <b>${r.bugs}</b></span><span title="Wertungsprognose" class="${fc>=75?'pos':fc<50?'neg':''}">🎯 <b>≈${fc??'–'}</b></span></div>`;
 }
 
@@ -139,18 +139,18 @@ function renderTrack(){
   const el=$('track');if(!el)return;
   if(!S){el.innerHTML='';return}
   const fin=['launch','sales','end'].includes(S.screen);
-  const ph=Math.floor(Math.min(S.round,11)/2);
+  const ph=curStep().ph;
   el.innerHTML=PHASES.map((p,i)=>`<div class="${fin||i<ph?'done':i===ph?'now':''}">${i+1}. ${p}</div>`).join('');
 }
 
 function budgetAlert(){
   if(!S||S.res.budget<0)return '';
-  const rw=runway(),left=12-S.round;
+  const rw=runway(),left=monthsLeft();
   if(rw>3||rw>=left)return '';
   const plan=Object.keys(PLAN).filter(k=>PLAN[k].cost[S.plan[k]]>0).map(k=>PLAN[k].n);
   const tip=plan.length?`Senke rechts im Budget-Dock ${plan.join(', ')}, nimm eine Auftragsarbeit an oder suche frisches Geld.`:'Der Budgetplan ist schon auf Minimum. Jetzt hilft eine Auftragsarbeit oder frisches Geld.';
   const btn=`<div class="row"><button class="btn small alt" id="finBtn">Jetzt Finanzierung suchen (+8 auf Würfe)</button></div>`;
-  if(rw<1)return `<div class="alert" role="alert"><b>Achtung: Pleite droht</b><span>Mit ${money(S.res.budget)} könnt ihr den nächsten Monat (${money(monthSum())}) nicht mehr bezahlen. Am Monatsende kommt die Notlage. ${tip}</span>${btn}</div>`;
+  if(rw<1)return `<div class="alert" role="alert"><b>Achtung: Pleite droht</b><span>Mit ${money(S.res.budget)} könnt ihr den nächsten Schritt (${money(stepCost())}) nicht mehr bezahlen. Am Ende des Schritts kommt die Notlage. ${tip}</span>${btn}</div>`;
   return `<div class="alert ${rw>1?'mid':''}" role="status"><b>Das Geld wird knapp</b><span>Das Budget reicht nur noch für ${rw} Monat${rw>1?'e':''}, bis zum Release sind es noch ${left}. ${tip}</span>${btn}</div>`;
 }
 function bindFin(){const b=$('finBtn');if(b)b.onclick=()=>openCrisis('event')}
@@ -158,7 +158,7 @@ function bindFin(){const b=$('finBtn');if(b)b.onclick=()=>openCrisis('event')}
 function spendBlock(){
   if(!S)return '';
   const tot=spendTotal();
-  if(!tot)return `<p class="note" style="margin:0">Noch nichts ausgegeben. Kosten werden am Ende jedes Monats gebucht.</p>`;
+  if(!tot)return `<p class="note" style="margin:0">Noch nichts ausgegeben. Kosten werden am Ende jedes Schritts gebucht.</p>`;
   const keys=Object.keys(CAT).filter(k=>S.spend[k]>0);
   return `<div class="stack">${keys.map(k=>`<i style="width:${S.spend[k]/tot*100}%;background:var(${CAT[k][1]})" title="${CAT[k][0]}"></i>`).join('')}</div>
    <div class="legend">${keys.map(k=>`<div><s style="background:var(${CAT[k][1]})"></s><span>${CAT[k][0]}</span><span>${money(S.spend[k])}</span></div>`).join('')}<div><s></s><b>Gesamt</b><span><b>${money(tot)}</b></span></div></div>`;
@@ -174,7 +174,7 @@ let shopCatFilter='all'; // 'all' | 'Marketing' | 'Qualität' | 'Studio' | 'Spek
 let legendFilter='unlocked'; // 'unlocked' | 'locked' | 'all'
 
 function engineBlock(){
-  if(!C||!C.studio.engine)return `<div class="blk"><span class="label">Eigene Studio-Engine</span><p class="note" style="margin:0">Noch keine eigene Engine (in Monat 2 baubar).</p></div>`;
+  if(!C||!C.studio.engine)return `<div class="blk"><span class="label">Eigene Studio-Engine</span><p class="note" style="margin:0">Noch keine eigene Engine (in der Pre-Production baubar).</p></div>`;
   const eng=C.studio.engine;
   const ageInfo=getEngineAgeInfo(eng.age||0);
   const sc=S?T().scale:(C.studio.tier?TIERS[C.studio.tier].scale:1);
@@ -282,7 +282,7 @@ function milestoneBlock(){
   return `<details class="fold">
     <summary>🎯 Meilenstein M${ms.month}: ${esc(ms.label)} ${ms.done?'(✓)':''}</summary>
     <div class="fold-body">
-      <div class="note">Ziel bis Ende Monat ${ms.month}: <b>${esc(ms.desc)}</b></div>
+      <div class="note">Ziel bis Ende „${STEPS[stepIndex(ms.at)].n}“: <b>${esc(ms.desc)}</b></div>
       <div class="mini"><div><span>Prämie</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div></div>
     </div>
   </details>`;
@@ -326,7 +326,7 @@ function qualPanel(){
 
 function cryptoBlock(){
   const c=S.crypto;if(!c)return '';
-  if(!c.done)return `<div class="alert mid"><b>🪙 Krypto-Position: ${money(c.amt)}</b><span>$MOONCAT · Auflösung am Ende von Monat ${c.due}</span></div>`;
+  if(!c.done)return `<div class="alert mid"><b>🪙 Krypto-Position: ${money(c.amt)}</b><span>$MOONCAT · Auflösung am Ende von Schritt ${c.due}</span></div>`;
   return `<div class="note">🪙 Krypto: ${money(c.amt)} eingesetzt → ${c.pay>0?money(c.pay)+' ausgezahlt (×'+nf(c.pay/c.amt,1)+')':'Totalverlust'}</div>`;
 }
 
@@ -340,14 +340,14 @@ function renderSheet(){
       sh.innerHTML=`
       ${studioBannerHTML()}
       <h2>So läuft Studio W100</h2>
-      <p class="note" style="margin:0">Gründet euer Studio, wählt einen Game Director und führt euer Projekt durch 12 Monate mit <b>W100-Proben</b> (Krit ab 96, Patzer 1–5).</p>
+      <p class="note" style="margin:0">Gründet euer Studio, wählt einen Game Director und führt euer Projekt durch fünf Phasen vom Konzept bis zum Release mit <b>W100-Proben</b> (Krit ab 96, Patzer 1–5).</p>
       <details class="fold" open>
         <summary>🌟 ${totCount} Branchen-Legenden (${unlCount}/${totCount})</summary>
         <div class="fold-body"><p class="note" style="margin:0">Zu Beginn ist keine Legende freigeschaltet. Die erste gibt es beim ersten <b>Top-Erfolg</b> (Wertung ab 80 oder Hit), eine weitere beim ersten <b>Double-A- oder Triple-A-Release</b>. Danach tauchen Legenden als <b>Zufallsbegegnung</b> auf und werden durch Anwerben dauerhaft freigeschaltet.</p></div>
       </details>
       <details class="fold">
         <summary>⚙️ Engine-Labor, Rivalen & GOTY</summary>
-        <div class="fold-body"><p class="note" style="margin:0">Baut ab Monat 2 eine eigene Engine mit 8 Modulen im Tech-Tree, lizenziert sie extern (Vorsicht vor Alterung!) und tretet bei den jährlichen <b>GOTY-Awards</b> gegen 5 KI-Rivalen an.</p></div>
+        <div class="fold-body"><p class="note" style="margin:0">Baut ab der Pre-Production eine eigene Engine mit 8 Modulen im Tech-Tree, lizenziert sie extern (Vorsicht vor Alterung!) und tretet bei den jährlichen <b>GOTY-Awards</b> gegen 5 KI-Rivalen an.</p></div>
       </details>`;
       return;
     }
@@ -436,7 +436,7 @@ function renderDock(){
     ${dockTab==='plan'?`
       ${S?`
         <div class="blk" style="padding-top:4px;border-top:0">
-          <div class="burn"><span>Monatliche Gesamtkosten</span><b>${money(monthSum())}/M</b></div>
+          <div class="burn"><span>Monatliche Gesamtkosten</span><b>${money(costPerMonth())}/Monat</b></div>
           <div class="plan">${Object.entries(PLAN).map(([k,p])=>`<div class="prow" title="${esc(p.d)}"><span class="pn">${p.n} <small class="note">(${money(p.cost[S.plan[k]]*t.scale,true)})</small></span><div class="seg" role="group" aria-label="${p.n}">${p.lv.map((l,i)=>`<button type="button" data-pk="${k}" data-pl="${i}" aria-pressed="${S.plan[k]===i}" ${editable?'':'disabled'}>${l}</button>`).join('')}</div></div>`).join('')}</div>
         </div>
         <details class="fold">
@@ -545,11 +545,11 @@ function renderWsNav(){
 
   nav.innerHTML=`
     <button type="button" class="ws-tab ${activeTab==='board'?'active':''}" data-wstab="board">
-      🃏 ${S?`Spieltisch (M${Math.min(S.round+1,12)})`:C?'Neues Projekt':'Studio gründen'}
+      🃏 ${S?`Spieltisch (${stepTag()})`:C?'Neues Projekt':'Studio gründen'}
     </button>
     ${S?(()=>{
       const canShop=['event','shop'].includes(S.screen);
-      const lock=canShop?'':` disabled title="Nur zu Beginn eines Monats verfügbar (bei der Monatskarte)"`;
+      const lock=canShop?'':` disabled title="Nur zu Beginn eines Schritts verfügbar"`;
       return `
       <button type="button" class="ws-tab ${activeTab==='shop'&&shopSubTab==='invest'?'active':''}" data-wstab="shop" data-sub="invest"${lock}>
         🛒 Investieren
@@ -651,7 +651,7 @@ function renderEngineLab(m){
   if(!eng){
     m.innerHTML=`<span class="stamp">⚙️ Engine-Labor</span>
       <h3>Noch keine eigene Studio-Engine</h3>
-      <p>Euer Studio nutzt aktuell externe Engines (Unreal, Unity oder Godot). Sobald ihr in <b>Monat 2 eines Projekts</b> die Grundsatzentscheidung <b>„Eigene Engine im Haus bauen“</b> wählt, entsteht hier euer permanentes Engine-Forschungslabor!</p>
+      <p>Euer Studio nutzt aktuell externe Engines (Unreal, Unity oder Godot). Sobald ihr in der <b>Pre-Production eines Projekts</b> (Schritt „Engine & Pipeline“) die Grundsatzentscheidung <b>„Eigene Engine im Haus bauen“</b> wählt, entsteht hier euer permanentes Engine-Forschungslabor!</p>
       <div class="alert mid">
         <b>Vorteile einer eigenen Studio-Engine</b>
         <span>• Schaltet bis zu <b>8 Spezial-Module</b> in 3 Technologie-Zweigen frei (Raytracing, KI-Sandbox, Rollback-Netcode, Auto-QA u.v.m.).<br>• Lizenziert eure Engine an andere Studios für monatliche Seat-Gebühren oder 5 % Umsatz-Royalties.<br>• Sammelt Genre-Routine (+5 Technik & +2 Gameplay für gemeisterte Genres).</span>
@@ -824,17 +824,17 @@ function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
   const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
-  return `<div class="monthnote" onclick="this.classList.toggle('open')">Monat ${M.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
+  return `<div class="monthnote" onclick="this.classList.toggle('open')">Monat ${STEPS[M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
-  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[c.p]}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
-  if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · Monat ${S.round+1}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
-  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende Monat ${S.round}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
+  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
+  if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
+  if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[S.round-1]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
     const leg=DIRS[ev]||{n:'Branchen-Legende',tag:'',encStory:''};
-    return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende Monat ${S.round}</span>
+    return banner+`<span class="stamp">🌟 Legendäre Begegnung · Ende ${STEPS[S.round-1]?.n||''}</span>
       <div class="legend-enc">
         ${charPortraitHTML(leg.img,leg.isScene,'lg',false,leg.n)}
         <div class="dir-info">
@@ -868,7 +868,7 @@ function renderInterview(m){
   if(done){
     const good=iv.res.filter(x=>x.ok).length;
     body=`<div class="alert ${good>=2?'good':'mid'}"><b>Interview beendet: ${good} von ${iv.res.length} Antworten kamen gut an</b><span>${good===3?'Das Interview wird überall geteilt.':good===0?'Der Clip mit euren Antworten macht als Meme die Runde.':'Ein solider Auftritt mit ein paar Wacklern.'}</span></div>
-      <button class="btn" id="ivDone">Weiter zu Monat ${S.round+1}</button>`;
+      <button class="btn" id="ivDone">Weiter zu „${curStep().n}“</button>`;
   }else{
     const q=INTERVIEW_QS[iv.qs[iv.i]];
     body=`<span class="label">Frage ${iv.i+1} von ${iv.qs.length}</span><h3>„${esc(fillTxt(q.q))}“</h3>
@@ -878,7 +878,7 @@ function renderInterview(m){
         <span class="d">Bei Erfolg: ${chips(previewSafe(a.s||{}))||'kaum Wirkung'} Bei Misserfolg: ${chips(previewSafe(a.f||{}))||'kaum Wirkung'}</span>
       </button>`).join('')}</div>`;
   }
-  m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende Monat ${S.round}</span>
+  m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende ${STEPS[S.round-1]?.n||''}</span>
     <h3>${esc(o.n)} will mit ${esc(C.dir.n)} über „${esc(S.title)}“ sprechen</h3>
     <p class="note" style="margin:0">Drei Fragen, jede Antwort ist ein W100-Wurf. Der Hype-Wert des Directors, der aktuelle Hype und das Format beeinflussen die Chancen.</p>
     ${past}${body}`;
@@ -968,8 +968,8 @@ function renderMain(){
       <span class="label">Diesen Monat außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
       <button class="btn tiny ghost" data-opensub="hire">👥 Personal${S.round===0?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
-      <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(Math.floor(S.round/2))?'(✓)':''}</button>
-    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">Monat ${S.round+1} von 12 · ${PHASES[ev.p]}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
+      <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(curPhase())?'(✓)':''}</button>
+    </div>`+eventBannerHTML('card',evIdx)+`<span class="label">${stepLabel()}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
     bindOpts(m);bindFin();
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
@@ -997,7 +997,7 @@ function renderMain(){
     const L=S.last;
     m.className='card'+(['rand','rescue','legend'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
-    const nx={card:'Monat abschließen',mand:'Weiter',rand:`Weiter zu Monat ${S.round+1}`,legend:`Weiter zu Monat ${S.round+1}`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage'}[L.kind];
+    const nx={card:'Schritt abschließen',mand:'Weiter',rand:`Weiter zu „${curStep().n}“`,legend:`Weiter zu „${curStep().n}“`,shop:'Zurück zum Shop',hire:'Zurück zum Shop',contract:'Zurück zum Shop',dlc:'Zurück zur Abrechnung',rescue:S.over?'Weiter':'Zurück zur Notlage'}[L.kind];
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;
     bindZoomTriggers(m);
     $('nx').onclick=()=>afterResult(L.kind);bindRR();
@@ -1007,7 +1007,7 @@ function renderMain(){
     m.className='card rnd';
     const rv=R[S.rnd];
     if(rv.eff){
-      m.innerHTML=budgetAlert()+headFor('rand',S.rnd)+chips(S.rndCh)+`<button class="btn" id="nx">Weiter zu Monat ${S.round+1}</button>`;
+      m.innerHTML=budgetAlert()+headFor('rand',S.rnd)+chips(S.rndCh)+`<button class="btn" id="nx">Weiter zu „${curStep().n}“</button>`;
       $('nx').onclick=afterRandom;bindFin();return;
     }
     const o=getOpt({kind:'rand',ev:S.rnd});
@@ -1025,7 +1025,7 @@ function renderMain(){
     recalcQual();
     m.innerHTML=eventBannerHTML('launch')+`<span class="label">Release-Tag</span><h3>„${esc(S.title)}“ ist fertig. Mehr oder weniger.</h3>
       ${qualPanel()}
-      <p>${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${-S.res.zeit} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
+      <p>${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${Math.round(-S.res.zeit*S.dur/12)} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
       <div class="tray" id="dice">${dieSVG('?')}</div>
       <button class="btn" id="go">W100 Review-Wurf</button>`;
     $('go').onclick=launch;
@@ -1062,15 +1062,15 @@ function renderLang(m){
     const c=langCost(sel);S.res.budget-=c;S.spend.lok=(S.spend.lok||0)+c;S.langs={...sel};S.langDone=true;
     const ch=[['budget',-c]];if(voiced)ch.push(...apply({gp:Math.min(4,voiced)}));if(sel.zh)ch.push(['note','China: Zulassung wird in der Gold-Phase beantragt']);
     S.last={kind:'mand',ev:'lang',safe:true,ch,pre:[],l:'Sprachen festgelegt',txt:'Das Spiel erscheint auf '+Object.keys(sel).filter(k=>sel[k]).map(k=>LANGS[k].n).join(', ')+'.'};
-    addLog(`<span>M${S.round+1}</span> Sprachen: ${Object.keys(sel).filter(k=>sel[k]).map(k=>LANGS[k].n+(sel[k]===2?' (vertont)':'')).join(', ')} für ${money(c)}`);
+    addLog(`<span>${stepTag()}</span> Sprachen: ${Object.keys(sel).filter(k=>sel[k]).map(k=>LANGS[k].n+(sel[k]===2?' (vertont)':'')).join(', ')} für ${money(c)}`);
     S.screen='result';render();save();
   };
 }
 
 function renderShop(m){
-  const sc=T().scale,ph=Math.floor(S.round/2);
+  const sc=T().scale,ph=curCP();
   const cats=['Marketing','Qualität','Studio','Spekulativ'];
-  const contractThisPhase=(S.contractsPh||[]).includes(ph);
+  const contractThisPhase=(S.contractsPh||[]).includes(curPhase());
   const shopItems=SHOP.filter(it=>(!it.tiers||it.tiers.includes(S.tier))&&(shopCatFilter==='all'||it.c===shopCatFilter));
 
   m.innerHTML=`
@@ -1100,7 +1100,7 @@ function renderShop(m){
           return `<button class="opt" data-buy="${it.id}" ${dis?'disabled':''}>
             <span class="t">${it.n}</span>
             <span class="check ${it.st?'':'safe'}">${bought?'Gekauft ✓':money(cost)}</span>
-            <span class="d"><small class="note">[${it.c}]</small> ${it.d}${it.st?` (${STATS[it.st]} SG ${target})`:''}${early?' · Ab Phase '+PHASES[it.min]:''}${noEng?' · Eigene Engine nötig':''}</span>
+            <span class="d"><small class="note">[${it.c}]</small> ${it.d}${it.st?` (${STATS[it.st]} SG ${target})`:''}${early?' · Ab Phase '+PHASES[CP_TO_PHASE[it.min]]:''}${noEng?' · Eigene Engine nötig':''}</span>
             ${!it.st&&it.eff?chips(previewSafe(it.eff)):''}
           </button>`;
         }).join('')}
@@ -1109,7 +1109,7 @@ function renderShop(m){
 
     <!-- TAB 2: PERSONAL ANWERBEN & PFLEGEN -->
     <div id="shopPanel-hire" ${shopSubTab==='hire'?'':'hidden'}>
-      <p class="note" style="margin:0 0 8px">${S.round>0?'<b>🔒 Neue Leads könnt ihr nur im ersten Entwicklungsmonat anwerben.</b> Entlassen geht jederzeit. ':''}Agenturgebühr beim Anwerben: <b>${money(hireFee())}</b> (Business-Wurf gegen SG 50). Eingestellte Leads steigen durch Projekterfolge und kritische Würfe im Level auf.</p>
+      <p class="note" style="margin:0 0 8px">${!stepFlag('hire')?'<b>🔒 Neue Leads könnt ihr nur in Planungsschritten anwerben.</b> Entlassen geht jederzeit. ':''}Agenturgebühr beim Anwerben: <b>${money(hireFee())}</b> (Business-Wurf gegen SG 50). Eingestellte Leads steigen durch Projekterfolge und kritische Würfe im Level auf.</p>
       <div class="opts-grid">
         ${Object.entries(STAFF).map(([k,s])=>{
           const st=getStaff(k);
@@ -1124,7 +1124,7 @@ function renderShop(m){
                 <button class="btn tiny alt" data-bonus="${k}" ${S.res.budget<bonusCost||st.loyalty>=10?'disabled':''}>Bonus ${money(bonusCost)} (+2 Loy.)</button>
                 <button class="btn tiny ghost" data-raise="${k}" ${st.loyalty>=10?'disabled':''}>Gehalt +20% (+3 Loy.)</button>
                 <button class="btn tiny ghost" data-fire="${k}">Entlassen</button>
-              `:`<button class="btn small alt" data-hire="${k}" ${S.round>0||S.res.budget<hireFee()?'disabled':''}>${S.round>0?'Nur in Monat 1':'Anwerben (SG 50)'}</button>`}
+              `:`<button class="btn small alt" data-hire="${k}" ${!stepFlag('hire')||S.res.budget<hireFee()?'disabled':''}>${!stepFlag('hire')?'Nur in Planungsschritten':'Anwerben (SG 50)'}</button>`}
             </div>
           </div>`;
         }).join('')}
@@ -1134,7 +1134,7 @@ function renderShop(m){
     <!-- TAB 3: GELD VERDIENEN (AUFTRÄGE & FINANZIERUNG) -->
     <div id="shopPanel-earn" ${shopSubTab==='earn'?'':'hidden'}>
       <div class="staff-top" style="margin-bottom:8px">
-        <span class="note">${contractThisPhase?'✅ Ihr habt in dieser Phase bereits eine Auftragsarbeit erledigt. Die nächste ist ab der nächsten Phase (alle 2 Monate) möglich.':'Ihr könnt 1 Auftragsarbeit pro Phase (alle 2 Monate) erledigen, um frisches Geld in die Kasse zu spülen.'}</span>
+        <span class="note">${contractThisPhase?'✅ Ihr habt in dieser Phase bereits eine Auftragsarbeit erledigt. Die nächste ist ab der nächsten Phase möglich.':'Ihr könnt 1 Auftragsarbeit pro Phase erledigen, um frisches Geld in die Kasse zu spülen.'}</span>
         <button type="button" class="btn tiny ghost" id="openFinFromShop">🏦 Weitere Finanzierung / Kredit prüfen</button>
       </div>
       <div class="opts-grid">
@@ -1227,7 +1227,7 @@ function renderRetirement(m){
 
 function renderOver(m){
   const t={budget:['Insolvenz','Das Konto ist leer. Der Insolvenzverwalter verkauft die Rechte, das Spiel erscheint nie.'],haus:['Alles verloren','Die Bank hat abgelehnt. Studio und Haus sind weg.'],moral:['Das Team ist weg','Die Moral ist auf null. Am Montag liegen die Kündigungen auf dem Tisch.']}[S.over]||['Ende',''];
-  m.innerHTML=`<span class="label">Ende Monat ${S.round}</span><h3>${t[0]}</h3><p>${t[1]}</p><p class="note">Bei einer Neugründung startet der Studio-Fame bei null und das Personal ist weg. Die eigene Engine und alle freigeschalteten Legenden bleiben erhalten.</p>
+  m.innerHTML=`<span class="label">Ende ${STEPS[S.round-1]?.n||''}</span><h3>${t[0]}</h3><p>${t[1]}</p><p class="note">Bei einer Neugründung startet der Studio-Fame bei null und das Personal ist weg. Die eigene Engine und alle freigeschalteten Legenden bleiben erhalten.</p>
    <div class="ledger">${ledger(null)}</div>${brokeChoiceHTML()}`;
   bindBrokeChoice();
 }
@@ -1361,6 +1361,7 @@ function ensureSetupDraft(){
     title:randTitle(),
     tier:'indie',
     ip:'neu',
+    dur:'normal',
     model:'kauf',
     genre:'rpg',
     subGenre:defaultSub('rpg'),
@@ -1406,6 +1407,7 @@ function launchSetupProject(){
     subGenre:subGenreOf(setupDraft.genre,setupDraft.subGenre)?setupDraft.subGenre:defaultSub(setupDraft.genre),
     gmod:GENRE_MODS[setupDraft.gmod]?setupDraft.gmod:null,
     tier:(first&&setupDraft.tier!=='indie')||(!first&&C.studio.kasse<TIERS[setupDraft.tier].min)?'indie':setupDraft.tier,
+    dur:setupDraft.dur,
     model:setupDraft.model,
     ip:setupDraft.ip,
     extras:[...setupDraft.extras],
@@ -1642,8 +1644,12 @@ function renderSetup(m){
         <div class="choices compact">${Object.entries(TIERS).map(([k,t])=>{
           // Neue Studios starten immer als Indie; größere Klassen erst mit genug Studiokapital
           const ok=first?k==='indie':kasse>=t.min;
-          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${ok?'':'🔒 '}${t.n}</b><code>${first?(ok?'Start '+money(220*t.scale)+' · ':'erst mit '+money(t.min)+' Studiokapital · '):'mind. '+money(t.min)+' · '}${t.team} Leute · ~${money(13*t.scale)}/M</code><span class="more">${t.d} · Preise: ${t.prices.map(p=>nf(p,2)).join(' / ')} € · ${t.note}</span></label>`;
+          return `<label class="choice"><input type="radio" name="t" id="t-${k}" value="${k}" ${setupDraft.tier===k?'checked':''} ${ok?'':'disabled'}><b>${ok?'':'🔒 '}${t.n}</b><code>${first?(ok?'Start '+money(220*t.scale)+' · ':'erst mit '+money(t.min)+' Studiokapital · '):'mind. '+money(t.min)+' · '}${t.team} Leute · ~${money(13*t.scale*12/t.dur[1])}/Monat</code><span class="more">${t.d} · Preise: ${t.prices.map(p=>nf(p,2)).join(' / ')} € · ${t.note}</span></label>`;
         }).join('')}</div>
+      </div>
+      <div class="field">
+        <span class="label">Entwicklungsdauer</span>
+        <div class="choices compact">${DUR_KEYS.map((k,i)=>{const mo=(TIERS[setupDraft.tier]||TIERS.indie).dur[i];return `<label class="choice"><input type="radio" name="dur" id="dur-${k}" value="${k}" ${setupDraft.dur===k?'checked':''}><b>${DUR_LABELS[k]}</b><code>${mo>=24?nf(mo/12,1)+' Jahre':mo+' Monate'}</code><span>Länger = mehr Qualität möglich, aber teurer</span></label>`}).join('')}</div>
       </div>
       <div class="field">
         <span class="label">Marke (IP)</span>
@@ -1764,7 +1770,9 @@ function renderSetup(m){
       </div>`;
   }
 
-  m.innerHTML=towelResultHTML()+engProjResultHTML()+setupModeBar()+stepsBar+bodyHTML;
+  let noticeHTML="";
+  if(C&&C.notice){noticeHTML=`<div class="alert mid" role="status">${esc(C.notice)}</div>`;delete C.notice;save()}
+  m.innerHTML=noticeHTML+towelResultHTML()+engProjResultHTML()+setupModeBar()+stepsBar+bodyHTML;
   bindZoomTriggers(m);
   bindSetupMode(m);
 
@@ -1797,7 +1805,7 @@ function renderSetup(m){
   const ttR=$('ttR');
   if(ttR)ttR.onclick=()=>{setupDraft.title=randTitle();if($('tt'))$('tt').value=setupDraft.title};
 
-  m.querySelectorAll('input[name=t]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.tier=r.value});
+  m.querySelectorAll('input[name=t]').forEach(r=>r.onchange=()=>{if(r.checked){setupDraft.tier=r.value;renderMain()}});
   m.querySelectorAll('input[name=ip]').forEach(r=>r.onchange=()=>{
     if(r.checked){
       setupDraft.ip=r.value;
@@ -1809,6 +1817,7 @@ function renderSetup(m){
       }
     }
   });
+  m.querySelectorAll('input[name=dur]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.dur=r.value});
   m.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.model=r.value});
 
   m.querySelectorAll('input[name=g]').forEach(r=>r.onchange=()=>{
@@ -1915,7 +1924,7 @@ function renderProfileModal(tab='profiles',msg=''){
           return `<div class="slot-row ${isAct?'active':''}">
             <div>
               <b>${esc(p.userName)}</b> ${isAct?'<span class="chip p">Aktiv</span>':''}
-              <div class="slot-meta">${esc(stName)} · ${games} Spiele · Kasse: ${kasse}${p.S?` · Laufend: „${esc(p.S.title)}“ (M${p.S.round+1})`:''}</div>
+              <div class="slot-meta">${esc(stName)} · ${games} Spiele · Kasse: ${kasse}${p.C?` · Jahr ${Math.floor((p.C.months||0)/12)+1}`:''}${p.S?` · Laufend: „${esc(p.S.title)}“ (${stepTag(p.S.round)})`:''}</div>
             </div>
             <div class="row">
               ${!isAct?`<button class="btn tiny alt" data-switch="${p.id}">Laden</button>`:''}
