@@ -1,5 +1,5 @@
 /* ===================== Grundsatzentscheidungen (mit Engine-Alterung, Grafik & Gameplay) ===================== */
-const MAND_AT={0:['engine','world'],4:['cast','license'],6:['platform'],8:['lang','age'],10:['price','china']};
+const MAND_AT={con_lock:['world'],pit_mix:['license'],pre_tech:['engine'],prod_plan:['cast','platform'],prod_beta:['lang','age'],pol_ship:['price','china']};
 
 function getMand(id){
   const p=T()?T().prices.map(x=>nf(x,2)+' €'):['','',''];

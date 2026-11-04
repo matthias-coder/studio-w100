@@ -1,0 +1,18 @@
+const test=require('node:test'),assert=require('node:assert');
+const {load,newProject}=require('./harness');
+test('new project uses step model',()=>{const {run}=load();newProject(run,{dur:'long'});
+  assert.equal(run('S.v'),2);assert.equal(run('S.dur'),24);assert.equal(run('S.durKey'),'long');
+  assert.equal(run('S.round'),0);
+  assert.ok(Math.abs(run('S.res.zeit')-(run('totalW(S)')+2))<1e-9);});
+test('deck has one valid card per step matching its content phase',()=>{const {run}=load();newProject(run);
+  assert.equal(run('S.deck.length'),run('STEPS.length'));
+  assert.ok(run('S.deck.every(i=>Number.isInteger(i)&&E[i])'));});
+test('thin pools never yield undefined (f2p, aaa)',()=>{const {run}=load();
+  for(let k=0;k<20;k++){newProject(run,{model:'f2p',tier:'aaa'});
+    assert.ok(run('S.deck.every(i=>Number.isInteger(i)&&E[i])'));}});
+test('mandatory cards keyed by step',()=>{const {run}=load();newProject(run);
+  assert.deepEqual([...run('mandFor(0)')],[]);
+  assert.deepEqual([...run(`mandFor(stepIndex('pre_tech'))`)],['engine']);
+  assert.deepEqual([...run(`mandFor(stepIndex('prod_plan'))`)],['cast','platform']);});
+test('missing dur defaults to normal',()=>{const {run}=load();newProject(run,{dur:undefined,tier:'indie'});
+  assert.equal(run('S.dur'),18);});

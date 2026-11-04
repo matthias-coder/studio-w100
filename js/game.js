@@ -378,7 +378,7 @@ const fameBonus=()=>C?Math.floor(((C.studio.fame||0)+(C.dir.fame||0))/15):0;
 const fits=c=>(!c.tiers||c.tiers.includes(S.tier))&&(!c.models||c.models.includes(S.model))&&(!c.ip||c.ip.includes(S.ip))&&(!c.mods||S.mods)&&(!c.noEA||!S.ea)&&(!c.ea||S.ea)&&(!c.cond||c.cond(S))&&(!c.flaw||hasF(c.flaw));
 const optOk=o=>(!o.g||o.g.includes(S.genre)||o.g.includes(S.genre+'.'+S.subGenre))&&(!o.ng||!o.ng.includes(S.genre))&&(!o.cond||o.cond(S));
 function addLog(t){if(!S)return;S.log.unshift(t);if(S.log.length>90)S.log.pop()}
-function mandFor(r){return (MAND_AT[r]||[]).filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
+function mandFor(i){return (MAND_AT[STEPS[i]?.id]||[]).filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
 
 /* ===================== Spielstart ===================== */
 function startGame(o){
@@ -407,7 +407,7 @@ function startGame(o){
     snd:20+Math.round(((t.gp??t.qual)+(t.gfx??t.qual))/2),
     qual:20+t.qual,
     bugs:5,
-    zeit:14,
+    zeit:0,
     wl:0
   };
   for(const k in g.b){
@@ -475,7 +475,8 @@ function startGame(o){
   res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,6);res.bugs=Math.max(0,res.bugs);
   const plan={};for(const k in PLAN)plan[k]=PLAN[k].def;
 
-  S={screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,gmod,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
+  const durKey=DUR_KEYS.includes(o.dur)?o.dur:'normal';
+  S={v:2,durKey,dur:durMonths(o.tier,durKey),screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,gmod,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
      mods:extras.includes('mods'),ea:extras.includes('ea'),
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
@@ -483,10 +484,18 @@ function startGame(o){
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9)};
 
+  S.res.zeit=totalW(S)+2;
   recalcQual();
   const fee=(IPS[ip].fee*t.scale)+upfrontExtraCost;
   if(fee){S.res.budget-=fee;S.spend.projekt=fee}
-  for(let p=0;p<6;p++){const pool=E.map((e,i)=>i).filter(i=>E[i].p===p&&fits(E[i]));pool.sort(()=>Math.random()-.5);S.deck.push(pool[0],pool[1]??pool[0])}
+  // Ein Ereignis pro Schritt: bevorzugt unbenutzt aus der Inhaltsphase, sonst Wiederholung, sonst Nachbarphase
+  const poolOf=p=>E.map((e,i)=>i).filter(i=>E[i].p===p&&fits(E[i]));
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  STEPS.forEach(st=>{
+    const all=poolOf(st.cp),fresh=all.filter(i=>!S.deck.includes(i));
+    const pool=fresh.length?fresh:all.length?all:poolOf(st.cp+1).length?poolOf(st.cp+1):poolOf(st.cp-1);
+    S.deck.push(pick(pool));
+  });
   C.gameNo++;
   const exLabels=extras.map(k=>PROJECT_EXTRAS[k]?.n).filter(Boolean);
   addLog(`<span>Start</span> ${esc(C.studio.name)} beginnt „${esc(S.title)}“: ${t.n}, ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}, ${IPS[ip].n}${seq?' von „'+esc(seq.title)+'“':''}, ${MODELS[o.model].n}${exLabels.length?' · Extras: '+exLabels.join(', '):''}, Director ${esc(dir.n)}, ${money(budget)} Budget`);
