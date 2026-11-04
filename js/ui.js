@@ -120,15 +120,19 @@ function renderHud(){
   const crit=rw<1,low=rw<=3&&rw<left;
   h.classList.toggle('alarm',crit||r.budget<0);
   const bar=(pct,col)=>`<div class="hud-bar"><i style="width:${clamp(pct,0,100)}%;background:${col}"></i></div>`;
-  const cell=(l,v,w,sub,barHtml='')=>`<div class="${w?'warn':''}"><span class="label">${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}${barHtml}</div>`;
+  const cell=(l,v,w,sub,barHtml='',cls='')=>`<div class="${w?'warn':''} ${cls}"><span class="label">${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}${barHtml}</div>`;
   const moralCol=r.moral>=7?'var(--good)':r.moral>=4?'var(--gold)':'var(--bad)';
+  const fc=reviewForecast();
+  const snd=r.snd??Math.round((r.gp+r.gfx)/2);
   h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(monthSum())}/Monat · ${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
    +cell('Moral',r.moral+'/10',r.moral<=2,`${fmt(moralMod())} auf Würfe`,bar(r.moral*10,moralCol))
-   +cell('Hype',r.hype+'/10',false,S.trendHot?'🔥 Trend-Genre':S.trendCold?'❄️ Übersättigt':'',bar(r.hype*10,'var(--accent)'))
-   +cell('Qualität',r.qual,false,`GP ${r.gp} · GFX ${r.gfx}`,bar(r.qual,'var(--good)'))
-   +cell('Bugs',r.bugs,r.bugs>=15,r.bugs>=15?'Kritisch hoch':'Bekannte Fehler',bar(Math.min(100,r.bugs*4),r.bugs>=15?'var(--bad)':'var(--warn)'))
-   +cell('Wishlists',nf(r.wl,0),false,S.ea?'Early Access aktiv':'Vorbesteller-Interesse')
-   +cell('Zeit',r.zeit+' Mon.',r.zeit<0,S.round<12?'Monat '+(S.round+1)+'/12':'Release',bar((S.round/12)*100,'var(--c-pers)'));
+   +cell('Hype',r.hype+'/10',false,S.trendHot?'🔥 Trend-Genre':S.trendCold?'❄️ Übersättigt':r.hype>=7?'wächst nur noch langsam':'',bar(r.hype*10,'var(--accent)'))
+   +cell('Qualität',r.qual,false,`🎮 ${r.gp} · 🎨 ${r.gfx} · 🎵 ${snd}`,bar(r.qual,'var(--good)'),'hx')
+   +cell('Bugs',r.bugs,r.bugs>=15,r.bugs>=15?'Kritisch hoch':'Bekannte Fehler',bar(Math.min(100,r.bugs*4),r.bugs>=15?'var(--bad)':'var(--warn)'),'hx')
+   +cell('Prognose',fc==null?'–':'≈ '+fc,false,fc==null?'':metaLabel(fc),bar(fc||0,fc>=75?'var(--good)':fc>=50?'var(--gold)':'var(--bad)'),'hx')
+   +cell('Wishlists',nf(r.wl,0),false,S.ea?'Early Access aktiv':'Vorbesteller-Interesse','','hx')
+   +cell('Zeit',r.zeit+' Mon.',r.zeit<0,S.round<12?'Monat '+(S.round+1)+'/12':'Release',bar((S.round/12)*100,'var(--c-pers)'))
+   +`<div class="hud-q" aria-label="Stand des Spiels"><span title="Gameplay">🎮 <b>${r.gp}</b></span><span title="Grafik">🎨 <b>${r.gfx}</b></span><span title="Sound">🎵 <b>${snd}</b></span><span title="Bugs" class="${r.bugs>=15?'neg':''}">🐞 <b>${r.bugs}</b></span><span title="Wertungsprognose" class="${fc>=75?'pos':fc<50?'neg':''}">🎯 <b>≈${fc??'–'}</b></span></div>`;
 }
 
 function renderTrack(){
@@ -305,6 +309,21 @@ function bindSheetEvents(sh){
   bindZoomTriggers(sh);
 }
 
+// Stand des Spiels: drei Teilwertungen, Gewichte, Abzüge und Prognose
+function qualPanel(){
+  const qb=qualBreakdown(),r=S.res,fc=reviewForecast();
+  const row=(ic,n,v,sub,col,pct)=>`<div class="qp-row"><span>${ic} ${n}</span><div class="hud-bar"><i style="width:${clamp(pct??v,2,100)}%;background:${col}"></i></div><b>${v}</b><small>${sub}</small></div>`;
+  const adj=[qb.gpGap?`schwaches Gameplay −${qb.gpGap}`:'',qb.loGap?`Schwachstelle −${qb.loGap}`:'',qb.harmony?`rundes Paket +${qb.harmony}`:''].filter(Boolean);
+  return `<div class="qual-panel">
+    <div class="qp-head"><span class="label">Stand des Spiels</span><span class="mc ${metaCls(fc)}" title="Wertungsprognose bei durchschnittlichem Review-Wurf">≈ ${fc}</span></div>
+    ${row('🎮','Gameplay',r.gp,Math.round(qb.w.gp*100)+' %','var(--c-pers)')}
+    ${row('🎨','Grafik',r.gfx,Math.round(qb.w.gfx*100)+' %','var(--c-tools)')}
+    ${row('🎵','Sound',r.snd??qb.avg,Math.round(qb.w.snd*100)+' %','var(--accent)')}
+    ${row('🐞','Bugs',r.bugs,S.works?'zählen nicht':'−'+Math.round(r.bugs*1.2)+' Wertung',r.bugs>=15?'var(--bad)':'var(--warn)',r.bugs*4)}
+    <div class="note">Qualität <b>${r.qual}</b> = gewichteter Schnitt ${qb.avg}${adj.length?' · '+adj.join(' · '):''}. Prognose: ${metaLabel(fc)}.</div>
+  </div>`;
+}
+
 function renderSheet(){
   const sh=$('sheet');
   if(!sh)return;
@@ -347,8 +366,6 @@ function renderSheet(){
 
   recalcQual();
   const t=T();
-  const wGfx=Math.round(gfxWeight()*100);
-  const wGp=100-wGfx;
   sh.innerHTML=`
     ${studioBannerHTML()}
     <div>
@@ -357,17 +374,7 @@ function renderSheet(){
       <div class="note">${esc(C.studio.name)} · ${genreName(S)} · ${t.team} Leute${C.studio.staff.length?' + '+C.studio.staff.length+' Leads':''}${(S.extras&&S.extras.length)?' · '+S.extras.map(k=>PROJECT_EXTRAS[k]?.n.replace(/^[^\s]+\s/,'')).filter(Boolean).join(', '):(S.mods?' · Mod-Support':'')+(S.ea?' · Early Access':'')}${S.model==='f2p'?` · ${clamp(4+S.payers,1,12)} % Zahlende`:''}</div>
       <div class="note">${[S.engine&&'Engine: '+(S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short),S.world&&'Welt: '+{open:'Open World',hub:'Hubs',level:'Level',schlauch:'Schlauch'}[S.world],S.plat&&'Plattform: '+{pc:'PC',konsole:'PC + Konsolen',exklusiv:'PlayStatus exklusiv',alle:'Überall'}[S.plat],S.age!=null&&'USK '+S.age].filter(Boolean).join(' · ')}</div>
     </div>
-    <div class="qual-split">
-      <div class="qual-split-head">
-        <span style="color:var(--c-pers)">🎮 Gameplay: ${S.res.gp} (${wGp} %)</span>
-        <span>Ø ${S.res.qual}</span>
-        <span style="color:var(--c-tools)">🎨 Grafik: ${S.res.gfx} (${wGfx} %)</span>
-      </div>
-      <div class="qual-split-bar">
-        <i class="gp" style="width:${clamp(S.res.gp,5,100)}%"></i>
-        <i class="gfx" style="width:${clamp(S.res.gfx,5,100)}%"></i>
-      </div>
-    </div>
+    ${qualPanel()}
     <div class="stats">${Object.keys(STATS).map(k=>`<div class="stat"><b>${fmt(modFor(k)).replace('±','+')}</b><span>${STATS[k]}</span></div>`).join('')}</div>
     <div class="insp"><span class="label">Inspiration</span>${[0,1,2].map(i=>`<span class="pip ${i<S.insp?'on':''}"></span>`).join('')}<span class="note">Moral ${fmt(moralMod())}</span></div>
     ${trendBlock()}
@@ -765,7 +772,7 @@ function bindOpts(m){
 function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
-  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',bugs:'Bugs',zeit:'Zeit'};
+  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
   return `<div class="monthnote">Monat ${M.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
@@ -965,9 +972,9 @@ function renderMain(){
   if(sc==='over'){renderOver(m);return}
   if(sc==='launch'){
     recalcQual();
-    const wGfx=Math.round(gfxWeight()*100);
     m.innerHTML=eventBannerHTML('launch')+`<span class="label">Release-Tag</span><h3>„${esc(S.title)}“ ist fertig. Mehr oder weniger.</h3>
-      <p>Gesamt-Qualität <b>${S.res.qual}</b> (Gameplay <b>${S.res.gp}</b> [${100-wGfx} %] · Grafik <b>${S.res.gfx}</b> [${wGfx} %]), ${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${-S.res.zeit} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
+      ${qualPanel()}
+      <p>${S.res.bugs} bekannte Bugs, Hype ${S.res.hype}/10, ${nf(S.res.wl,0)} Wishlists${S.res.zeit<0?`, und ihr seid ${-S.res.zeit} Monat(e) über dem Zeitplan`:''}. Jetzt entscheiden die Kritiker per W100.${S.promises?` Offene Versprechen: ${S.promises} (−${2*S.promises} Wertung).`:''}${S.works?' It just works: Die Bugs zählen diesmal nicht.':''}${S.engine==='eigen'&&C.studio.engine&&(S.engAgeAtStart||0)>=2?` Achtung: Eure Engine galt bei Projektstart als „${getEngineAgeInfo(S.engAgeAtStart).label}“.`:''}</p>
       <div class="tray" id="dice">${dieSVG('?')}</div>
       <button class="btn" id="go">W100 Review-Wurf</button>`;
     $('go').onclick=launch;
@@ -976,12 +983,7 @@ function renderMain(){
   if(sc==='sales'){
     const e=S.end;
     m.innerHTML=eventBannerHTML('sales')+`<span class="label">Die Reviews & GOTY-Nominierungen sind da</span>
-      <div class="score">
-        <div><span class="label">Wertungsschnitt</span><b>${e.meta}</b></div>
-        <div><span class="label">Gameplay</span><b>${e.gp??S.res.gp}</b></div>
-        <div><span class="label">Grafik</span><b>${e.gfx??S.res.gfx}</b></div>
-        <div><span class="label">Wishlists</span><b>${nf(S.res.wl,0)}</b></div>
-      </div>
+      ${metaBlock(e)}
       <p>${e.late}${e.meta>=85?'Die Presse überschlägt sich vor Begeisterung — ihr landet auf dem Cover der PIXEL WORLD!':e.meta>=70?'Gute bis sehr gute Kritiken.':e.meta>=50?'Gemischte Kritiken. „Mit Patches könnte das noch was werden.“':'Verrisse. Ein YouTuber macht ein 40-minütiges Video über eure Technik.'}</p>
       ${(e.awards||[]).some(a=>typeof a==='object')?`<div class="award-box">
         <span class="label">🏆 Game of the Year (GOTY) Verleihung</span>
@@ -1210,7 +1212,21 @@ function ledger(e){
     }
     R2('Studiokasse für das nächste Projekt',`<span class="${e.kasseNew>=0?'pos':'neg'}">${money(e.kasseNew)}</span>`,'sum');
   }else R2('Ausgaben gesamt',money(-spendTotal()),'sum');
-  return '<table>'+rows.map(r=>r[0]==='head'?`<tr class="head"><td colspan="2">${r[1]}</td></tr>`:`<tr class="${r[0]}"><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')+'</table>';
+  return '<table>'+rows.map(r=>r[0]==='head'?`<tr class="head"><td colspan="2">${r[1]}</td></tr>`:`<tr class="${r[0]}${String(r[2]).replace(/<[^>]+>/g,'').length>16?' long':''}"><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')+'</table>';
+}
+
+const uScore=u=>Number(u).toFixed(1).replace('.',',');
+function metaBlock(e){
+  const crit=e.critics||[];
+  return `<div class="meta-box">
+    <div class="meta-top">
+      <div class="meta-main"><b class="mc big ${metaCls(e.meta)}">${e.meta}</b><div><span class="label">Metakritik · Metascore</span><strong>${metaLabel(e.meta)}</strong><span class="note">${crit.length?crit.length+' Kritiken':'Wertungsschnitt'}</span></div></div>
+      ${e.user!=null?`<div class="meta-main"><b class="mc big round ${userCls(e.user)}">${uScore(e.user)}</b><div><span class="label">Nutzerwertung</span><strong>${metaLabel(e.user*10)}</strong></div></div>`:''}
+    </div>
+    <div class="meta-sub"><span>🎮 Gameplay <b>${e.gp??S.res.gp}</b></span><span>🎨 Grafik <b>${e.gfx??S.res.gfx}</b></span>${e.snd!=null?`<span>🎵 Sound <b>${e.snd}</b></span>`:''}<span>❤️ Wishlists <b>${nf(S.res.wl,0)}</b></span></div>
+    ${(e.mcNotes||[]).length?`<div class="note">${e.mcNotes.map(esc).join(' ')}</div>`:''}
+    ${crit.length?`<details class="fold"><summary>📰 Alle Kritiken lesen</summary><div class="fold-body crit-list">${crit.map(c=>`<div class="crit"><b class="mc ${metaCls(c.v)}">${c.v}</b><div><strong>${esc(c.n)}</strong><span>„${esc(c.q)}“</span></div></div>`).join('')}</div></details>`:''}
+  </div>`;
 }
 
 function renderEnd(m){
@@ -1221,9 +1237,11 @@ function renderEnd(m){
   const wonAwards=(e.awards||[]).filter(a=>a.won);
   m.innerHTML=eventBannerHTML('end')+`<span class="label">Abrechnung „${esc(S.title)}“</span><h3>${e.v[0]}</h3>
    <div class="score">
-     <div><span class="label">Wertung</span><b>${e.meta}</b></div>
+     <div><span class="label">Metascore</span><b class="mc ${metaCls(e.meta)}">${e.meta}</b></div>
+     ${e.user!=null?`<div><span class="label">Nutzer</span><b class="mc ${userCls(e.user)}">${uScore(e.user)}</b></div>`:''}
      <div><span class="label">Gameplay</span><b>${e.gp??S.res.gp}</b></div>
      <div><span class="label">Grafik</span><b>${e.gfx??S.res.gfx}</b></div>
+     ${e.snd!=null?`<div><span class="label">Sound</span><b>${e.snd}</b></div>`:''}
      <div><span class="label">${S.model==='f2p'?'Spieler':'Käufer'}</span><b>${nf(e.units,0)}</b></div>
      <div><span class="label">Ergebnis</span><b class="${e.erg>=0?'pos':'neg'}">${money(e.erg,true)}</b></div>
    </div>

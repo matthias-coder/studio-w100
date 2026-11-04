@@ -150,6 +150,27 @@ const GENRE_MODS={
     syn:['actadv','sim.job','puzzle.physics','sports.simracer','adventure.narrative'],clash:['strategy','sim.factory','puzzle.cards']}
 };
 const MOD_SYN={gp:4,hype:1},MOD_CLASH={gp:-4,bugs:3};
+
+// Metakritik: fiktive Testmagazine mit Schwerpunkt (gp/gfx/snd) und Strenge (b)
+const OUTLETS=[
+  {n:'IGM',f:'gfx',b:1},{n:'GameSprot',f:'gp',b:-2},{n:'Polygone',f:'gp',b:0},{n:'PC Gamma',f:'gfx',b:-1},
+  {n:'Eurogamez',f:'gp',b:-3},{n:'Spieleheld',f:'gp',b:2},{n:'Pixel World',f:'gfx',b:3},{n:'Kotakuh',f:'snd',b:-2},
+  {n:'Ohrwurm Magazin',f:'snd',b:1},{n:'5Spieler',f:'gp',b:-4},{n:'Gamestern',f:'gfx',b:0},{n:'Retro Gamer Zone',f:'snd',b:2}
+];
+const REVIEW_QUOTES={
+  gp:{hi:['Spielt sich wie aus einem Guss.','Die Steuerung ist butterweich.','Wir kamen nicht mehr vom Controller los.'],
+      lo:['Das Spieldesign wirkt unfertig.','Nach zwei Stunden wiederholt sich alles.','Die Steuerung kämpft gegen uns.']},
+  gfx:{hi:['Optisch eine Wucht.','Jeder Screenshot ein Hintergrundbild.','Der Artstyle ist unverwechselbar.'],
+       lo:['Die Texturen laden gefühlt nie.','Technisch eine Generation zurück.','Hässlich, aber mit Charme. Meistens.']},
+  snd:{hi:['Der Soundtrack bleibt im Ohr.','Das Sounddesign ist eine Klasse für sich.','Kopfhörer auf, Gänsehaut an.'],
+       lo:['Die Musik nervt nach zehn Minuten.','Die Soundeffekte klingen wie aus einer Gratis-Bibliothek.','Wir haben den Ton irgendwann ausgemacht.']}
+};
+const REVIEW_VERDICT=[
+  ['Finger weg.','Ein Fall für den Grabbeltisch.','Leider ein Totalausfall.'],
+  ['Nur für Fans des Genres.','Mit Patches könnte das was werden.','Solide, aber vergessenswert.'],
+  ['Klare Empfehlung.','Ein starkes Spiel.','Kaufen, wenn das Genre passt.'],
+  ['Ein Meilenstein.','Pflichtkauf.','Das Spiel des Jahres?']
+];
 // 'syn', 'clash' oder null für die Kombination aus Genre, Sub-Genre und Modifikator
 function modFit(g,sub,mod){
   const m=GENRE_MODS[mod];if(!m)return null;
@@ -367,7 +388,8 @@ const SHOP=[
   {id:'tv',c:'Marketing',n:'TV-Spot zur Primetime',d:'Dreißig Sekunden vor dem Samstagabend-Krimi.',cost:40,tiers:['aaa'],eff:{hype:3,wl:5},sx:'Sogar eure Eltern haben es gesehen.'},
   {id:'fokus',c:'Qualität',n:'Fokusgruppen-Playtest',d:'Echte Spieler testen das Gameplay, ihr schaut durch die Scheibe.',cost:5,st:'design',dc:10,s:{gp:7},sx:'Die Tester finden genau die Stellen im Spielfluss, die euch nie aufgefallen sind.',f:{gp:3},fx:'Die Gruppe will vor allem mehr Pausen.'},
   {id:'extqa',c:'Qualität',n:'Externe QA-Firma',d:'Fünfzig Tester für einen Monat.',cost:8,eff:{bugs:-6},sx:'Hunderte Tickets, sauber sortiert.'},
-  {id:'orchester',c:'Qualität',n:'Orchesteraufnahme',d:'Ein echtes Orchester spielt euren Soundtrack ein.',cost:15,eff:{gfx:4,gp:3,hype:1},sx:'Gänsehaut beim Titelthema.'},
+  {id:'orchester',c:'Qualität',n:'Orchesteraufnahme',d:'Ein echtes Orchester spielt euren Soundtrack ein.',cost:15,eff:{snd:12,gp:1,hype:1},sx:'Gänsehaut beim Titelthema.'},
+  {id:'foley',c:'Qualität',n:'Foley- & Sounddesign-Studio',d:'Schritte, Schwerter, Regen: Jeder Klang wird echt aufgenommen.',cost:6,eff:{snd:7},sx:'Selbst das Menü klingt jetzt satt.'},
   {id:'mocap',c:'Qualität',n:'Motion-Capture-Studio',d:'Echte Schauspieler-Bewegungen statt Handanimation.',cost:12,eff:{gfx:7,gp:2},sx:'Die Figuren bewegen sich endlich wie echte Menschen.'},
   {id:'a11y',c:'Qualität',n:'Barrierefreiheits-Audit',d:'Untertitel, Farbmodi, frei belegbare Tasten.',cost:5,eff:{gp:3},sx:'Mehr Menschen können euer Spiel spielen. Wertung +2 beim Release.'},
   {id:'hardware',c:'Studio',n:'Neue Workstations',d:'Schnellere Builds, weniger Abstürze.',cost:6,eff:{gfx:2},sx:'Ab jetzt −0,25 Bugs pro Monat und flüssigere Grafik-Tests.'},
@@ -856,8 +878,8 @@ const PROJECT_EXTRAS={
   soundtrack:{
     n:'🎻 Orchester-Soundtrack & Stargast-Synchro',
     d:'Ein echtes Symphonieorchester und prominente Synchronsprecher sorgen schon im ersten Trailer für Gänsehaut.',
-    code:'Vorab 10× Klasse · +4 Grafik/Präsentation · +3 Gameplay · +1 Hype · +2 Kritikerwertung',
-    upfront:10,monthly:0,eff:{gfx:4,gp:3,hype:1},reviewBonus:2
+    code:'Vorab 10× Klasse · +12 Sound · +2 Grafik/Präsentation · +1 Hype · +2 Kritikerwertung',
+    upfront:10,monthly:0,eff:{snd:12,gfx:2,hype:1},reviewBonus:2
   },
   collectors:{
     n:'📦 Physische Collector’s Edition',

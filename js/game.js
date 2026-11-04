@@ -60,12 +60,43 @@ function gfxWeight(){
   return clamp(base+tierAdj,0.25,0.65);
 }
 
+// Anteil von Sound & Musik an der Gesamtwertung, je nach Genre
+const SND_W={'adventure':.2,'adventure.vn':.24,'adventure.narrative':.24,'adventure.interactive':.22,'actadv.horror':.26,'action.mphorror':.24,'sports.extreme':.2,'puzzle':.1,'strategy':.1,'sim':.1};
+function sndWeight(){
+  if(!S)return .15;
+  let w=SND_W[S.genre+'.'+S.subGenre]??SND_W[S.genre]??.15;
+  if(S.gmod==='horror')w+=.05;
+  return clamp(w,.08,.3);
+}
+// Gewichte der drei Teilwertungen (Summe 1)
+function qualWeights(){
+  const s=sndWeight(),g=gfxWeight();
+  return {gp:(1-g)*(1-s),gfx:g*(1-s),snd:s};
+}
+// Kritiker-Logik: gewichteter Schnitt, aber schwaches Gameplay und Ausreißer nach unten fallen stärker auf
+function qualBreakdown(){
+  const r=S.res,w=qualWeights();
+  const gp=r.gp??20,gfx=r.gfx??20,snd=r.snd??Math.round((gp+gfx)/2);
+  const avg=gp*w.gp+gfx*w.gfx+snd*w.snd;
+  const gpGap=Math.max(0,avg-gp)*.3;
+  // Schwachstelle zählt nur bei Bereichen, die im Genre wirklich Gewicht haben
+  const lo=Math.min(gp,gfx,w.snd>=.2?snd:gp);
+  const loGap=Math.max(0,avg-10-lo)*.2;
+  const harmony=lo>=60&&Math.max(gp,gfx,snd)-lo<=15?3:0;
+  return {w,avg:Math.round(avg),gpGap:Math.round(gpGap),loGap:Math.round(loGap),harmony,total:clamp(Math.round(avg-gpGap-loGap+harmony),0,100)};
+}
 function recalcQual(){
   if(!S||!S.res)return;
   if(S.res.gp===undefined)S.res.gp=S.res.qual||20;
   if(S.res.gfx===undefined)S.res.gfx=S.res.qual||20;
-  const w=gfxWeight();
-  S.res.qual=clamp(Math.round(S.res.gp*(1-w)+S.res.gfx*w),0,100);
+  if(S.res.snd===undefined)S.res.snd=Math.round((S.res.gp+S.res.gfx)/2);
+  S.res.qual=qualBreakdown().total;
+}
+// Multiplayer-Spiele (für Ereignisse wie Feature Creep)
+const MP_SUBS=['br','mmorpg','moba','mphorror','fighting','fps'];
+function isMultiplayer(s){
+  s=s||S;if(!s)return false;
+  return !!s.mp||MP_SUBS.includes(s.subGenre)||['live','party'].includes(s.gmod)||(s.extras||[]).some(k=>k==='coopMode'||k==='crossplay');
 }
 
 /* ===================== Branchen-Trends & Rivalen ===================== */
@@ -133,7 +164,7 @@ const moduleCost=()=>costK(8*T().scale);
 const legendHireCost=()=>Math.round(40*T().scale*careerCost());
 const staffSalMult=()=>1+0.08*(C?.dir?.games||0);
 // Presse-Skepsis gegenüber Newcomern: erste Spiele kommen kaum über 50 Punkte
-const rookiePenalty=()=>Math.max(0,30-6*(C?.dir?.games||0));
+const rookiePenalty=()=>Math.max(0,12-4*(C?.dir?.games||0));
 
 // Namen der gewonnenen Awards (alte Spielstände speichern Strings statt Objekten)
 function wonAwardNames(e){
@@ -373,19 +404,20 @@ function startGame(o){
     hype:2+t.hype,
     gp:20+(t.gp??t.qual),
     gfx:20+(t.gfx??t.qual),
+    snd:20+Math.round(((t.gp??t.qual)+(t.gfx??t.qual))/2),
     qual:20+t.qual,
     bugs:5,
     zeit:14,
     wl:0
   };
   for(const k in g.b){
-    if(k==='qual'){res.gp+=g.b[k];res.gfx+=g.b[k]}
+    if(k==='qual'){res.gp+=g.b[k];res.gfx+=g.b[k];res.snd+=g.b[k]}
     else res[k]=(res[k]||0)+g.b[k];
   }
   if(subG){
     for(const k in subG.b){
       const half=Math.round(subG.b[k]*0.5);
-      if(k==='qual'){res.gp+=half;res.gfx+=half}
+      if(k==='qual'){res.gp+=half;res.gfx+=half;res.snd+=half}
       else res[k]=(res[k]||0)+half;
     }
   }
@@ -439,7 +471,8 @@ function startGame(o){
     }
   });
 
-  res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,10);res.bugs=Math.max(0,res.bugs);
+  // Start-Hype gedeckelt: Hype soll man sich im Projekt erarbeiten
+  res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,6);res.bugs=Math.max(0,res.bugs);
   const plan={};for(const k in PLAN)plan[k]=PLAN[k].def;
 
   S={screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,gmod,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
@@ -533,10 +566,18 @@ function apply(eff){
     if(k==='qual'){
       S.res.gp=(S.res.gp||20)+v;
       S.res.gfx=(S.res.gfx||20)+v;
-      out.push(['gp',v],['gfx',v]);
+      S.res.snd=(S.res.snd??20)+v;
+      out.push(['gp',v],['gfx',v],['snd',v]);
       continue;
     }
-    if(k==='gp'||k==='gfx'){
+    // Hype steigt umso langsamer, je höher er schon ist (Rest wird angespart)
+    if(k==='hype'&&v>0){
+      S.acc=S.acc||{};
+      S.acc.hypeG=(S.acc.hypeG||0)+v*Math.max(.15,Math.pow(1-S.res.hype/11,1.5));
+      v=Math.floor(S.acc.hypeG);S.acc.hypeG-=v;
+      if(!v)continue;
+    }
+    if(k==='gp'||k==='gfx'||k==='snd'){
       S.res[k]=(S.res[k]||20)+v;
       out.push([k,v]);
       continue;
@@ -551,6 +592,7 @@ function normRes(){
   S.res.hype=clamp(S.res.hype,0,10);
   S.res.gp=clamp(Math.round(S.res.gp??S.res.qual??20),0,100);
   S.res.gfx=clamp(Math.round(S.res.gfx??S.res.qual??20),0,100);
+  S.res.snd=clamp(Math.round(S.res.snd??(S.res.gp+S.res.gfx)/2),0,100);
   recalcQual();
   S.res.bugs=Math.max(0,S.res.bugs);
   S.res.wl=Math.max(0,S.res.wl);
@@ -644,7 +686,7 @@ function chip([k,v]){
   if(k==='recoup')return `<span class="chip">Vorschuss ${money(v)} wird später verrechnet</span>`;
   if(k==='wl')return `<span class="chip ${v>0?'p':'n'}">${v>0?'+':'−'}${nf(Math.abs(v),0)} Wishlists</span>`;
   if(k==='budget')return `<span class="chip ${v>0?'p':'n'}">${money(v,true)}</span>`;
-  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',bugs:'Bugs',zeit:'Zeit'};
+  const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
   const good=k==='bugs'?v<0:v>0;
   return `<span class="chip ${good?'p':'n'}">${fmt(v)} ${L[k]||k}</span>`;
 }
@@ -866,6 +908,7 @@ function monthEnd(){
       const agePen=(S.engine==='eigen'&&eng&&(eng.age||0)>=3)?0.75:1;
       acc('content_gp',v*0.6*agePen,x=>add('gp',x));
       acc('content_gfx',v*0.5*agePen,x=>add('gfx',x));
+      acc('content_snd',v*0.5,x=>add('snd',x));
     }
     else acc(k,v,x=>add(P.key,x));
   }
@@ -876,6 +919,9 @@ function monthEnd(){
 
   acc('pol_gp',d.s.polish*.35+engDrag,x=>add('gp',x));
   acc('pol_gfx',d.s.polish*.30+artGfx+engDrag,x=>add('gfx',x));
+  acc('pol_snd',.6+d.s.polish*.3+artGfx*.5,x=>add('snd',x));
+  // Hype verfliegt langsam, wenn er hoch ist und nichts nachkommt
+  if(S.res.hype>=6)acc('hype_decay',-(S.res.hype-5)*.2,x=>add('hype',x));
 
   const qaBug=[0,-0.5,-0.8,-1.2,-1.6,-2.2][staffLevel('qalead')]||0;
   const senBug=staffLevel('senior')>=5?-1.0:staffLevel('senior')>=3?-0.5:staffLevel('senior')===2?-0.3:0;
@@ -885,7 +931,7 @@ function monthEnd(){
 
   const mNo=S.round+1;
   if(hasF('diva')&&mNo%3===0)add('moral',-1);
-  if(hasF('perfekt')&&mNo%4===0){add('zeit',-1);add('gp',2);add('gfx',2)}
+  if(hasF('perfekt')&&mNo%4===0){add('zeit',-1);add('gp',2);add('gfx',2);add('snd',2)}
 
   if(C.studio.staff.length){
     C.studio.staff.forEach(st=>{
@@ -950,7 +996,7 @@ function monthEnd(){
   }
 
   S.month={sum,pc,n:S.round,ea:eaInc,lic:licInc,wl:wlg,notes};
-  addLog(`<span>M${S.round}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
+  addLog(`<span>M${S.round}</span> Monatsabschluss: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
 }
@@ -1299,6 +1345,59 @@ function ageFactor(){return ({0:1.1,6:1.1,12:1.05,16:1,18:.85}[S.age]??1)*(S.loo
 function licFactor(){return {auto:1.25,liga:1.4,ttrpg:1.2,musik:1.05}[S.lic]||1}
 function ipSales(){return S.seq?1.3+(S.seq.meta-70)/100:IPS[S.ip].sales}
 
+// Kritikerwertung für einen W100-Wurf r (r=50 → Prognose)
+function reviewScore(r,certPen=0){
+  recalcQual();
+  const pr=S.model==='f2p'?0:[2,0,-1][S.price??1];
+  const qaRevBonus=staffLevel('qalead')>=5?3:staffLevel('qalead')===4?2:staffLevel('qalead')===3?1:0;
+  const rtBonus=(S.engine==='eigen'&&C.studio.engine?.modules.includes('raytracing'))?2:0;
+  const engAgeRev=(S.engine==='eigen'&&C.studio.engine)?getEngineAgeInfo(S.engAgeAtStart||0).rev:0;
+  const extraRevBonus=(S.extras||[]).reduce((acc,ek)=>acc+(PROJECT_EXTRAS[ek]?.reviewBonus||0),0);
+  return clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()-certPen),15,98);
+}
+// Prognose während der Entwicklung: Wertung bei mittlerem Wurf, inkl. absehbarem Verzug
+function reviewForecast(){
+  if(!S||!S.res)return null;
+  const b=S.res.bugs,late=S.res.zeit<0?-S.res.zeit*3:0;
+  S.res.bugs=b+late;
+  const v=reviewScore(50);
+  S.res.bugs=b;
+  return v;
+}
+
+/* ===================== Metakritik: Einzelkritiken & Nutzerwertung ===================== */
+function metaLabel(v){return v>=90?'Universeller Beifall':v>=75?'Überwiegend positiv':v>=50?'Gemischt':v>=20?'Überwiegend negativ':'Vernichtend'}
+function metaCls(v){return v>=75?'mc-g':v>=50?'mc-y':'mc-r'}
+function userCls(v){return v>=7.5?'mc-g':v>=5?'mc-y':'mc-r'}
+function buildMetaReviews(meta){
+  const r=S.res,q=r.qual||meta;
+  const dims={gp:r.gp,gfx:r.gfx,snd:r.snd??q};
+  const pool=[...OUTLETS].sort(()=>Math.random()-.5).slice(0,7);
+  let list=pool.map(o=>({n:o.n,f:o.f,v:meta+o.b+(dims[o.f]-q)*.35+(Math.random()*12-6)}));
+  const shift=meta-list.reduce((a,c)=>a+c.v,0)/list.length;
+  list=list.map(c=>{
+    const v=clamp(Math.round(c.v+shift),10,100);
+    const band=v>=85?3:v>=70?2:v>=50?1:0;
+    const hi=dims[c.f]>=60,good=band>=2;
+    const pool=REVIEW_QUOTES[c.f][hi?'hi':'lo'];
+    const join=hi===good?' ':hi?' Unterm Strich aber: ':' Trotzdem: ';
+    return {n:c.n,v,q:pool[Math.floor(Math.random()*pool.length)]+join+REVIEW_VERDICT[band][Math.floor(Math.random()*REVIEW_VERDICT[band].length)]};
+  }).sort((a,b)=>b.v-a.v);
+  const metascore=Math.round(list.reduce((a,c)=>a+c.v,0)/list.length);
+  // Nutzerwertung: Spieler strafen Bugs, Lootboxen und enttäuschten Hype härter ab als die Presse
+  const bugs=S.works?0:r.bugs;
+  const overhype=Math.max(0,r.hype*10-meta);
+  let user=meta/10-bugs*.05-overhype*.03+(S.mods?.3:0)-(S.lootbox?.8:0)-(S.model!=='f2p'&&S.price===2?.3:0)+((r.snd??0)>=70?.2:0)+(Math.random()*.8-.4);
+  user=Math.round(clamp(user,.5,9.7)*10)/10;
+  const notes=[];
+  if(overhype>=15)notes.push('Enttäuschte Erwartungen: Der Hype war größer als das Spiel.');
+  if(bugs>=15)notes.push('Bug-Videos dominieren die Nutzerkritiken.');
+  if(S.lootbox)notes.push('Lootboxen sorgen für Review-Bombing.');
+  if(user*10>=meta+8)notes.push('Die Spieler mögen das Spiel mehr als die Presse.');
+  return {metascore,critics:list,user,notes};
+}
+const userSalesMult=u=>.94+(u??5)*.012;
+
 function launch(){
   if(rolling)return;
   const r=d100();
@@ -1318,15 +1417,11 @@ function launch(){
       late+=`Die Plattform-Zertifizierung ist durchgefallen: Notfall-Patches, verschobene Konsolenfassung und Spott in den Foren (−${certPen} Wertung, −2 Hype). `;
     }
     recalcQual();
-    const pr=S.model==='f2p'?0:[2,0,-1][S.price];
-    const qaRevBonus=staffLevel('qalead')>=5?3:staffLevel('qalead')===4?2:staffLevel('qalead')===3?1:0;
-    const rtBonus=(S.engine==='eigen'&&C.studio.engine?.modules.includes('raytracing'))?2:0;
     const engAgeRev=(S.engine==='eigen'&&C.studio.engine)?getEngineAgeInfo(S.engAgeAtStart||0).rev:0;
     if(engAgeRev<0){
       late+=`Die Tester bemängeln die angestaubte Technik eurer Engine (${fmt(engAgeRev)} Wertung). `;
     }
-    const extraRevBonus=(S.extras||[]).reduce((acc,ek)=>acc+(PROJECT_EXTRAS[ek]?.reviewBonus||0),0);
-    const meta=clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()-certPen),15,98);
+    const meta=reviewScore(r,certPen);
     if(rookiePenalty()>0)late+=`Die Presse kennt euch kaum und bewertet streng (Newcomer-Skepsis −${rookiePenalty()}). `;
     const rivalGames=simulateRivalReleases();
     // GOTY-Awards Auswertung gegen die Konkurrenz!
@@ -1337,10 +1432,11 @@ function launch(){
     });
     C.lastAwards=awards;
 
-    S.end={r,meta,gp:S.res.gp,gfx:S.res.gfx,late,rivalGames,awards};
+    const mc=buildMetaReviews(meta);
+    S.end={r,meta,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,late,rivalGames,awards,critics:mc.critics,user:mc.user,mcNotes:mc.notes,qb:qualBreakdown()};
     S.screen='sales';
     const won=wonAwardNames(S.end);
-    addLog(`<span>Release</span> Review-Wurf W100 ${r} → Wertungsschnitt ${meta} (GP ${S.res.gp} · GFX ${S.res.gfx})${won.length?' · 🏆 '+won.join(', '):''}`);
+    addLog(`<span>Release</span> Review-Wurf W100 ${r} → Metascore ${meta}, Nutzer ${nf(mc.user)} (GP ${S.res.gp} · GFX ${S.res.gfx} · Sound ${S.res.snd})${won.length?' · 🏆 '+won.join(', '):''}`);
     render();save();
   },true);
 }
@@ -1352,8 +1448,10 @@ function sales(){
     const t=T(),e=S.end,pi=S.price??1,price=t.prices[pi];
     const b=S.res.hype*2;
     const roll20=Math.max(2,Math.round((r+b)/5));
-    const organic=Math.pow(e.meta/10,3)*(S.res.hype+2)*(roll20+5)*.45*t.sales;
-    const conv=clamp(.06+(e.meta-50)/250+[.06,.03,0][pi],.02,.4);
+    // Wertung wirkt spürbar, aber nicht mehr kubisch (Wertung 40 vs. 80: ×4,6 statt ×8)
+    const organic=Math.pow(e.meta/10,2.2)*4.7*(S.res.hype+2)*(roll20+5)*.45*t.sales;
+    const conv=clamp(.07+(e.meta-50)/400+[.06,.03,0][pi],.03,.4);
+    const uMult=userSalesMult(e.user);
     const trendMult=S.trendHot?1.15:S.trendCold?0.90:1;
     const awardMult=1+wonAwardNames(e).length*0.08;
     const exList=S.extras||[];
@@ -1363,7 +1461,7 @@ function sales(){
       *(exList.includes('crossplay')?1.10:1)
       *(exList.includes('collectors')?(S.model!=='f2p'?1.15:1.05):1)
       *(exList.includes('antiCheat')?1.10:1);
-    const mult=marketFactor()*platFactor()*ageFactor()*licFactor()*ipSales()*trendMult*awardMult*extraSalesMult*(S.mods?(S.model==='f2p'?1.15:1.25):1)*(S.ea?.85:1)*(S.shop.includes('awards')&&e.meta>=80?1.1:1);
+    const mult=uMult*marketFactor()*platFactor()*ageFactor()*licFactor()*ipSales()*trendMult*awardMult*extraSalesMult*(S.mods?(S.model==='f2p'?1.15:1.25):1)*(S.ea?.85:1)*(S.shop.includes('awards')&&e.meta>=80?1.1:1);
     const units=Math.round((organic*[1.5,1,.7][pi]+S.res.wl*conv)*mult);
     let rev=0,detail=[];
     detail.push(['Wishlists beim Release',nf(S.res.wl,0)+' ('+nf(conv*100,0)+' % kaufen sofort)']);
@@ -1380,6 +1478,7 @@ function sales(){
       detail.push(['Spieler im ersten Jahr',nf(players,0)],['Davon zahlend',rate+' %'],['Shop-Umsatz netto',money(rev)]);
     }
     const mods=[];
+    if(e.user!=null)mods.push('Nutzerwertung ×'+nf(uMult,2));
     if(S.langs)mods.push('Sprachen ×'+nf(marketFactor(),2));
     if(S.plat)mods.push('Plattformen ×'+nf(platFactor(),2));
     if(S.lic&&S.lic!=='none')mods.push('Lizenzen ×'+nf(licFactor(),2));
@@ -1536,7 +1635,7 @@ function finishGame(){
   C.studio.kasse=e.kasseNew;
   C.studio.tier=S.tier;
   const engLabel=S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short||'';
-  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),tier:t.n,engine:engLabel,meta:e.meta,gp:S.res.gp,gfx:S.res.gfx,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
+  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),tier:t.n,engine:engLabel,meta:e.meta,user:e.user,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
   rollMarketTrend(); // Neuer Markttrend für das Folgejahr!
   addLog(`<span>Release</span> ${MODELS[S.model].sales} W100 ${e.sr} +${e.sb} → ${nf(e.units,0)} ${S.model==='f2p'?'Spieler':'Käufer'}, Ergebnis ${money(e.erg,true)}`);
   S.screen='end';render();save();

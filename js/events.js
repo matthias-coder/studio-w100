@@ -79,14 +79,14 @@ function getMand(id){
       {l:'Linearer Schlauch',safe:{bugs:-2,gfx:3},set:{world:'schlauch'},sd:'Eng geführt, cineastisch inszeniert und leicht zu polieren.',sx:'Jede Szene sitzt, jede Kamerafahrt ist geplant.'}]},
     cast:{t:'Wer spricht die Hauptrolle?',x:'Die Stimme eurer Hauptfigur prägt Trailer, Cover und Presse.',o:[
       {l:'Hollywood-Star',safe:{budget:-40,hype:3,gfx:3,gp:1},set:{cast:'star'},sd:'Gesicht, Stimme und Motion Capture. Sehr teuer.',sx:'Der Name steht groß auf dem Cover.'},
-      {l:'Bekannte deutsche Synchronstimme',safe:{budget:-8,hype:1,gp:1},set:{cast:'synchro'},sd:'Die Stimme eines Actionstars. Mit deutscher Vertonung ein Verkaufsargument im deutschsprachigen Raum.',sx:'Beim ersten Satz bekommt das ganze Studio Gänsehaut.'},
+      {l:'Bekannte deutsche Synchronstimme',safe:{budget:-8,hype:1,snd:5},set:{cast:'synchro'},sd:'Die Stimme eines Actionstars. Mit deutscher Vertonung ein Verkaufsargument im deutschsprachigen Raum.',sx:'Beim ersten Satz bekommt das ganze Studio Gänsehaut.'},
       {l:'Streamer als Gastrolle',st:'business',dc:11,set:{cast:'streamer'},sd:'Bringt junge Spieler und Wishlists, wenn es klappt.',s:{hype:2,wl:3},sx:'Sein Clip aus dem Tonstudio geht viral.',f:{hype:-1},fx:'Er liest den Text ab, als wäre es ein Werbespot.'},
       {l:'Das Team spricht selbst',st:'team',dc:10,set:{cast:'team'},sd:'Kostet nichts. Kann charmant oder peinlich werden.',s:{moral:1,gp:3},sx:'Der Buchhalter ist ein verborgenes Talent.',f:{hype:-1},fx:'Ein Streamer schneidet die schlimmsten Zeilen zusammen.'}]},
     license:{t:'Offizielle Lizenzen',x:'Echte Marken machen ein Spiel glaubwürdiger. Und teurer.',o:[
       {l:'Echte Automarken',g:['sports.arcaderacer','sports.simracer'],safe:{budget:-25,hype:2,gfx:3},set:{lic:'auto'},sd:'Originalgetreue Autos von zwölf Herstellern. Verkäufe +25 %, aber die Hersteller reden mit.',sx:'Die Fahrzeugliste liest sich wie ein Autosalon.'},
       {l:'Offizielle Liga mit echten Vereinen',g:['sports.sim','sports.manager'],safe:{budget:-35,hype:3,gp:2},set:{lic:'liga'},sd:'Echte Vereine, Trikots und Spielernamen. Verkäufe +40 %, aber 10 % Umsatzabgabe.',sx:'Der Lieblingsverein jedes Spielers ist dabei.'},
       {l:'Bekannte Pen-&-Paper-Regelwerk-Lizenz',g:['rpg','adventure'],safe:{budget:-20,hype:2,gp:5},set:{lic:'ttrpg'},sd:'Kult-Universum mit tiefem Regelwerk. Verkäufe +20 %, aber 8 % Lizenzabgabe.',sx:'Die Rollenspiel-Community feiert euch ab Tag eins.'},
-      {l:'Charthits im Soundtrack',safe:{budget:-15,hype:1,gfx:2,gp:2},set:{lic:'musik'},sd:'Zehn bekannte Songs. Fühlt sich groß an, Streamer müssen aber stumm schalten.',sx:'Der Trailer mit dem Sommerhit läuft überall.'},
+      {l:'Charthits im Soundtrack',safe:{budget:-15,hype:1,snd:8,gp:1},set:{lic:'musik'},sd:'Zehn bekannte Songs. Fühlt sich groß an, Streamer müssen aber stumm schalten.',sx:'Der Trailer mit dem Sommerhit läuft überall.'},
       {l:'Keine Lizenzen',safe:{},set:{lic:'none'},sd:'Erfundene Marken, erfundene Songs. Spart Geld.',sx:'Der „Volksflitzer GT“ sieht verdächtig bekannt aus.'}]},
     platform:{t:'Auf welchen Plattformen erscheint ihr?',x:'Jede Plattform bringt Käufer, aber auch Ports, Zertifizierungen und Ärger.',o:[
       {l:'Nur PC',safe:{gfx:2},set:{plat:'pc'},sd:'Ein Store, eine Plattform, wenig Aufwand.',sx:'Fokus auf das Wesentliche.'},
@@ -155,8 +155,8 @@ const E=[
   {l:'Polierten 15-Minuten-Abschnitt bauen',st:'design',dc:12,s:{hype:2,wl:3,gfx:4,gp:2},sx:'Die Titelstory im Heft gehört euch!',f:{zeit:-1,bugs:2},fx:'Die Kulisse sah toll aus, hat euch aber einen Monat vom echten Spiel gekostet.'},
   {l:'Noch unter Verschluss halten',safe:{gp:3},sx:'Ihr steckt die Zeit lieber in das echte Fundament.'}]},
 
- {p:2,t:'Feature Creep',x:'Jemand Wichtiges findet: Ohne Multiplayer kauft das heute keiner mehr.',o:[
-  {l:'Multiplayer einbauen',st:'technik',dc:16,s:{hype:2,gp:10,budget:-20},sx:'Netcode läuft. Ihr wisst selbst nicht genau, wie.',f:{bugs:8,zeit:-2,budget:-25},fx:'Desync. Überall Desync.'},
+ {p:2,t:'Feature Creep',x:'Jemand Wichtiges findet: Ohne Multiplayer kauft das heute keiner mehr.',cond:s=>!isMultiplayer(s),o:[
+  {l:'Multiplayer einbauen',st:'technik',dc:16,sset:{mp:true},s:{hype:2,gp:10,budget:-20},sx:'Netcode läuft. Ihr wisst selbst nicht genau, wie.',f:{bugs:8,zeit:-2,budget:-25},fx:'Desync. Überall Desync.'},
   {l:'Freundlich ablehnen',st:'business',dc:11,s:{moral:1,gp:2},sx:'Gute Argumente, der Fokus bleibt.',f:{hype:-1,budget:-10},fx:'Dann gibt es eben weniger Marketingbudget.'}]},
  {p:2,t:'Hinter dem Zeitplan',x:'Laut Plan seid ihr sechs Wochen im Verzug. Der Plan lügt selten.',o:[
   {l:'Crunch anordnen',st:'team',dc:14,s:{zeit:2,gp:3,gfx:3,moral:-2},sx:'Ihr holt auf, aber alle sehen müde aus.',f:{zeit:1,moral:-4,bugs:4},fx:'Übermüdete Leute schreiben übermüdeten Code.'},
@@ -169,8 +169,8 @@ const E=[
   {l:'Selbst reparieren',st:'technik',dc:12,s:{moral:1},sx:'Neues Netzteil, Backup eingerichtet, Held des Tages.',f:{zeit:-1,bugs:3},fx:'Zwei Wochen Arbeit sind weg und müssen neu gebaut werden.'},
   {l:'Neue Hardware kaufen',safe:{budget:-15,gfx:2},sx:'Teuer, aber morgen läuft wieder alles.'}]},
  {p:2,t:'Der Soundtrack',x:'Die Musik ist bisher ein Platzhalter aus einer Gratis-Bibliothek.',o:[
-  {l:'Live-Orchester aufnehmen',safe:{budget:-20,gfx:4,gp:4,hype:1},sx:'Gänsehaut beim Titelthema.'},
-  {l:'Komponistin aus dem Netz',st:'design',dc:11,s:{gp:4,gfx:3},sx:'Sie trifft genau den Ton. Und ist bezahlbar.',f:{gp:1},fx:'Klingt wie ein Handy-Klingelton von 2006.'}]},
+  {l:'Live-Orchester aufnehmen',safe:{budget:-20,snd:14,gp:2,hype:1},sx:'Gänsehaut beim Titelthema.'},
+  {l:'Komponistin aus dem Netz',st:'design',dc:11,s:{snd:9,gp:1},sx:'Sie trifft genau den Ton. Und ist bezahlbar.',f:{snd:2},fx:'Klingt wie ein Handy-Klingelton von 2006.'}]},
  {p:2,t:'Monetarisierung',x:'Womit verdient ihr Geld, wenn das Spiel nichts kostet?',models:['f2p'],o:[
   {l:'Nur Kosmetik',st:'design',dc:12,s:{payers:1,hype:1,gfx:2},sx:'Hübsche Skins, faire Preise. Die Community lobt euch.',f:{payers:0},fx:'Die Skins sehen aus wie Standardausrüstung in anderer Farbe.'},
   {l:'Booster und Lootboxen',st:'business',dc:10,set:{lootbox:true},s:{payers:2,hype:-1,gp:-2},sx:'Die Kasse klingelt, das Forum schäumt.',f:{payers:1,hype:-2,gp:-4},fx:'Ein Video „Pay-to-Win-Abzocke“ geht viral.'}]},
@@ -288,7 +288,7 @@ const R=[
  {t:'Fans des Vorgängers',x:'Der erste Teil ist plötzlich in einem großen Abo-Dienst.',eff:{hype:2,wl:3},ip:['franchise'],min:2},
  {t:'Kein Schadensmodell',x:'Ein Autohersteller verbietet, dass seine Wagen Beulen bekommen.',st:'business',dc:13,s:{},sx:'Ihr einigt euch auf Kratzer statt Beulen.',f:{gfx:-3,gp:-2},fx:'Alle Autos bleiben makellos. Die Community spottet.',cond:s=>s.lic==='auto',min:2},
  {t:'Abstieg',x:'Ein Traditionsverein von eurem Cover steigt ab.',st:'business',dc:12,s:{hype:1},sx:'Ihr tauscht das Cover rechtzeitig.',f:{hype:-1,budget:-5},fx:'Das Cover muss neu gedruckt werden.',cond:s=>s.lic==='liga',min:2},
- {t:'Song-Lizenz läuft aus',x:'Ein Label will für einen eurer Songs plötzlich das Doppelte.',st:'business',dc:12,s:{},sx:'Nachverhandelt, der Song bleibt.',f:{budget:-6,gp:-2},fx:'Ihr zahlt zähneknirschend.',cond:s=>s.lic==='musik',min:2},
+ {t:'Song-Lizenz läuft aus',x:'Ein Label will für einen eurer Songs plötzlich das Doppelte.',st:'business',dc:12,s:{},sx:'Nachverhandelt, der Song bleibt.',f:{budget:-6,snd:-3},fx:'Ihr zahlt zähneknirschend.',cond:s=>s.lic==='musik',min:2},
  {t:'Die Karte ist leer',x:'Tester beschweren sich: Die riesige Welt hat zu wenig zu tun.',st:'design',dc:13,s:{gp:4},sx:'Ihr streut Nebenquests und Geheimnisse über die Karte.',f:{gp:-4,hype:-1},fx:'„Hübsch, aber leer“ wird zum geflügelten Wort.',cond:s=>s.world==='open',min:2},
  {t:'Nur sechs Stunden?',x:'Ein Leak verrät die Spielzeit.',st:'business',dc:12,s:{},sx:'Ihr erklärt überzeugend, warum sechs gute Stunden besser sind als sechzig leere.',f:{hype:-2},fx:'Das Forum rechnet Euro pro Spielstunde.',cond:s=>s.world==='schlauch',min:3},
  {t:'Der Hund frisst das Dev-Kit',x:'Pixel hat das Kabel des Entwicklungsgeräts durchgekaut.',eff:{budget:-3,moral:1},cond:s=>s.shop.includes('hund')},

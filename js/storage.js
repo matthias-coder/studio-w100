@@ -128,6 +128,7 @@ function normalizeProject(s){
   if(!s||!s.res)return s;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
+  if(s.res.snd===undefined)s.res.snd=Math.round((s.res.gp+s.res.gfx)/2);
   // Laufendes Projekt mit altem Genre verwerfen
   if(!subGenreOf(s.genre,s.subGenre))return null;
   return s;
@@ -320,7 +321,7 @@ function generateChronicleText(){
     lines.push('');
     lines.push(`## 🚧 Aktuelles Projekt in Entwicklung: „${S.title}“`);
     lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Monat:** ${Math.min(S.round+1,12)}/12`);
-    lines.push(`- **Status:** Budget ${money(S.res.budget)} | Gesamt-Qualität ${S.res.qual} (Gameplay ${S.res.gp} · Grafik ${S.res.gfx}) | Bugs ${S.res.bugs} | Hype ${S.res.hype}/10 | Moral ${S.res.moral}/10 | Wishlists ${nf(S.res.wl,0)}`);
+    lines.push(`- **Status:** Budget ${money(S.res.budget)} | Gesamt-Qualität ${S.res.qual} (Gameplay ${S.res.gp} · Grafik ${S.res.gfx} · Sound ${S.res.snd??'–'}) | Bugs ${S.res.bugs} | Hype ${S.res.hype}/10 | Moral ${S.res.moral}/10 | Wishlists ${nf(S.res.wl,0)}`);
   }
   return lines.join('\n');
 }

@@ -33,7 +33,10 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 ### 3. 🎯 W100-Würfelsystem (1–100) & Gameplay/Grafik-Split
 - **Prozentgenaue W100-Proben:** Jede riskante Entscheidung zeigt vor dem Klick den Schwierigkeitsgrad (**SG**) und die exakte prozentuale Erfolgschance (`z. B. SG 60 · 72 %`).
 - **Kritische Würfe & Inspiration:** `96–100` ist ein kritischer Erfolg (+Gameplay, +Grafik, +Moral, +1 Inspiration & Lead-XP); `1–5` ist ein kritischer Patzer. Mit **Inspiration** würfelt ihr `2× W100` und nehmt das bessere Ergebnis.
-- **Gameplay (`gp`) vs. Grafik (`gfx`):** Beide Qualitätswerte werden getrennt entwickelt und je nach Genre, Sub-Genre und Produktionsklasse unterschiedlich stark für die Endwertung gewichtet.
+- **Gameplay (`gp`), Grafik (`gfx`) & Sound (`snd`):** Drei getrennt entwickelte Qualitätswerte, je nach Genre, Sub-Genre und Produktionsklasse unterschiedlich gewichtet. Kritiker strafen schwaches Gameplay und deutliche Schwachstellen zusätzlich ab, ein rundes Gesamtpaket gibt einen Bonus.
+- **Stand des Spiels & Prognose:** HUD und Charakterbogen zeigen jederzeit Gameplay, Grafik, Sound, Bugs und eine Wertungsprognose — auf dem Handy als feste Leiste unter dem HUD.
+- **Metakritik:** Zum Release bewerten sieben fiktive Testmagazine mit eigenem Schwerpunkt; daraus ergibt sich der Metascore. Dazu kommt eine Nutzerwertung (0–10), die Bugs, Lootboxen und enttäuschten Hype härter abstraft und die Verkäufe leicht beeinflusst.
+- **Hype:** Steigt umso langsamer, je höher er schon ist, und verfliegt ab 6 langsam wieder.
 
 ### 4. ⚙️ Eigene Studio-Engine: Tech-Tree, Engine-Projekte & Lizenzierung
 - **Permanenter Eigenbau:** Baut zu Projektbeginn eure eigene Engine und erforscht im **⚙️ Engine-Labor** bis zu **8 Spezial-Module** (*Echtzeit-Raytracing*, *KI- & Physik-Sandbox*, *Rollback-Netcode*, *Multi-Plattform-Compiler* u. v. m.). Jedes Modul kostet Forschungspunkte, Geld und Nerven.
@@ -46,7 +49,7 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 - **Rund 75 Zufallsereignisse** von Cloud-Ausfall bis Fan-Song, dazu Macken eures Directors. Jede Monatskarte und jedes Zufallsereignis hat **mehrere Textvarianten** — kein Durchlauf liest sich wie der andere.
 
 ### 6. 💀 Schwierigkeit, Fail-States & Karriere
-- **Newcomer-Skepsis:** Die Presse bewertet neue Studios streng — Wertungen über 50 sind am Anfang eine echte Leistung.
+- **Newcomer-Skepsis:** Die Presse bewertet neue Studios etwas strenger (−12 beim ersten Spiel, danach −4 pro Spiel weniger). Die Wertung wirkt spürbar, aber nicht mehr kubisch auf die Verkäufe.
 - **Steigende Kosten:** Shop, Anwerben, Forschung und Gehälter werden mit jedem Spiel, jedem Lead und wachsendem Ruhm teurer. Neue Leads gibt es nur im ersten Entwicklungsmonat.
 - **Dinge gehen schief:** Verzögerungen, ein Publisher, der bei verfehlten Meilensteinen kündigt, eine durchgefallene Plattform-Zertifizierung bei zu vielen Bugs — und nur wenige, knappe Geldquellen.
 - **Handtuch werfen oder Ruhestand:** Verkauft euer Studio und gründet mit dem Privatvermögen des Directors ein neues. Geht ihr pleite, entscheidet ihr: mit dem Restkapital neu anfangen oder sich mit einer Karriere-Bilanz zur Ruhe setzen.

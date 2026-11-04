@@ -66,7 +66,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 .hud{
   background:var(--sheet);border:1.5px solid var(--ink);border-radius:8px;padding:10px 14px;
-  display:grid;grid-template-columns:minmax(180px,1.5fr) repeat(6,minmax(0,1fr));gap:8px 14px;
+  display:grid;grid-template-columns:minmax(170px,1.5fr) repeat(7,minmax(0,1fr));gap:8px 12px;
   box-shadow:0 6px 16px rgba(0,0,0,.10);
 }
 .hud div{min-width:0}
@@ -107,7 +107,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .center-col{grid-column:1;grid-row:1;order:-1}
   .sheet{grid-column:1;grid-row:2}
   .dock{grid-column:1;grid-row:3}
-  .hud{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hud{grid-template-columns:repeat(4,minmax(0,1fr))}
   .hud .money{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 }
 
@@ -281,6 +281,41 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .ledger td{padding:6px 0;border-bottom:1px solid var(--line)}
 .ledger td:last-child{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:12px}
 .ledger tr.sum td{font-weight:700;border-bottom:2px solid var(--ink)}
+.ledger tr.long td:last-child{white-space:normal}
+@media (max-width:640px){
+  .ledger{overflow-x:visible}
+  .ledger table{min-width:0;font-size:13px}
+  .ledger td:first-child{overflow-wrap:anywhere}
+  .ledger tr.long td{display:block;border-bottom:0;padding:6px 0 0}
+  .ledger tr.long td:last-child{text-align:left;padding:2px 0 6px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+}
+
+/* Stand des Spiels (Charakterbogen & Release) */
+.hud-q{display:none;grid-column:1/-1;justify-content:space-between;gap:6px;font:500 13px var(--f-mono);border-top:1px dashed var(--line);padding-top:6px}
+.hud-q b{display:inline;font-size:14px}
+.qual-panel{display:grid;gap:6px;padding:10px 12px;background:var(--paper);border:1.5px solid var(--line);border-radius:6px}
+.qp-head{display:flex;justify-content:space-between;align-items:center}
+.qp-row{display:grid;grid-template-columns:96px 1fr 30px 76px;align-items:center;gap:8px;font-size:13px}
+.qp-row .hud-bar{margin:0;height:7px}
+.qp-row b{font:500 14px var(--f-mono);text-align:right}
+.qp-row small{font:500 11px var(--f-mono);color:var(--ink-soft);text-align:right}
+
+/* Metakritik */
+.mc{display:inline-grid;place-items:center;min-width:34px;padding:2px 6px;border-radius:5px;font:700 15px var(--f-mono);color:#fff;font-variant-numeric:tabular-nums}
+.mc.big{min-width:64px;height:64px;font-size:30px;border-radius:8px}
+.mc.round{border-radius:50%}
+.mc-g{background:#2f9e44}.mc-y{background:#e8a400;color:#1b1b1b}.mc-r{background:#d9342b}
+.score b.mc{font-size:26px;padding:2px 10px}
+.meta-box{display:grid;gap:10px;padding:12px;background:var(--paper);border:1.5px solid var(--line);border-radius:6px}
+.meta-top{display:flex;gap:20px;flex-wrap:wrap}
+.meta-main{display:flex;gap:12px;align-items:center}
+.meta-main>div{display:grid}
+.meta-sub{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
+.meta-sub b{font-family:var(--f-mono)}
+.crit-list{display:grid;gap:8px}
+.crit{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:14px}
+.crit>div{display:grid}
+.crit span{color:var(--ink-soft)}
 .ledger tr.head td{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);padding-top:12px}
 .pos{color:var(--good)} .neg{color:var(--bad)} .wrn{color:var(--warn)}
 
@@ -565,8 +600,9 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
   .hud b{font-size:16px}
   .hud small{display:none}
   .hud .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
-  .hud>div:nth-child(4),.hud>div:nth-child(5),.hud>div:nth-child(6){display:none}
-  .hud.expanded>div:nth-child(4),.hud.expanded>div:nth-child(5),.hud.expanded>div:nth-child(6){display:block}
+  .hud>.hx{display:none}
+  .hud.expanded>.hx{display:block}
+  .hud .hud-q{display:flex}
   .hud.expanded small{display:block}
   .hud::after{content:"▾";position:absolute;right:8px;bottom:2px;font-size:11px;color:var(--ink-soft)}
   .hud.expanded::after{content:"▴"}
