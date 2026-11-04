@@ -479,7 +479,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],milestone:null,msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1};
+     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[]};
 
   S.res.zeit=totalW(S)+2;
   recalcQual();

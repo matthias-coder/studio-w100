@@ -1,7 +1,7 @@
 // Service Worker: macht das Spiel installierbar und offline spielbar.
 // Code (HTML/JS/CSS) kommt zuerst aus dem Netz, damit Updates sofort ankommen;
 // Bilder und Schriften kommen zuerst aus dem Cache.
-const CACHE = 'w100-v5';
+const CACHE = 'w100-v6';
 const CORE = [
   './',
   'index.html',
@@ -11,6 +11,7 @@ const CORE = [
   'js/schedule.js',
   'js/sprint.js',
   'js/milestones.js',
+  'js/funding.js',
   'js/events.js',
   'js/content-extra.js',
   'js/game.js',
