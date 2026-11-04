@@ -67,7 +67,8 @@ test('pending offer shows accept disabled without money',()=>{const {run}=load({
   run(`S.res.budget=1e9;askInfluencer('blech',50);S.res.budget=0;S.inf.pending.price=5`);
   assert.match(run('infShopHTML()'),/id="infAccept"[^>]*disabled/);});
 test('manual mode shows a roll input',()=>{const {run}=load({ui:true});newProject(run);
-  run('manual=true');assert.match(run('infShopHTML()'),/id="infR"/);});
+  run('manual=true');const h=run('infShopHTML()');assert.ok((h.match(/data-infask=/g)||[]).length>=2);
+  assert.equal((h.match(/id="infR"/g)||[]).length,1);});
 test('press album lists streamers and journalists',()=>{const {run}=load({ui:true});newProject(run);
   run(`revealInf('zockrange')`);const h=run('pressAlbumHTML()');
   assert.match(h,/Erik Zockrange/);assert.match(h,/André Peschkeller/);assert.match(h,/Survival/);});

@@ -721,7 +721,6 @@ function infShopHTML(){
         <div class="note">Reichweite: ${'★'.repeat(d.reach)} · ${money(infPrice(id))}</div>
         <div class="note">${_prefLine(d,infKnown(id))}</div>
         <div class="row" style="gap:6px;align-items:center">
-          ${manual?'<input type="number" min="1" max="100" id="infR" placeholder="W100" style="width:70px">':''}
           <button type="button" class="btn tiny alt" data-infask="${id}" ${can?'':'disabled'}>Anfragen</button>
         </div>
       </div>
@@ -742,6 +741,7 @@ function infShopHTML(){
   return `<div class="infshop" style="margin-bottom:12px">
     <div class="stamp" style="margin-bottom:6px">📣 Influencer anfragen</div>
     ${pend}
+    ${manual?'<div class="row" style="gap:6px;align-items:center;margin-bottom:6px"><label class="note" for="infR">Wurf (W100):</label><input type="number" min="1" max="100" id="infR" placeholder="1-100" style="width:80px"></div>':''}
     <div class="legend-grid">${offers.map(card).join('')}</div>
     <p class="note" style="margin:6px 0 0">Angeheuert: ${S.inf.hired.length} / ${INF.maxHired}</p>
   </div>`;
