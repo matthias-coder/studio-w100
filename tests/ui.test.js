@@ -6,7 +6,7 @@ test('crunch button disabled at moral 1',()=>{const {run}=load({ui:true});newPro
   run('S.res.moral=1');assert.match(run('sprintBar()'),/data-crunch[^>]*disabled/);});
 test('crunch button disabled on a contract step',()=>{const {run}=load({ui:true});newProject(run);
   run('S.res.moral=8;S.contractStep=S.round');const h=run('sprintBar()');
-  assert.match(h,/data-crunch[^>]*disabled/);assert.match(h,/Auftragsarbeit/);});
+  assert.doesNotMatch(h,/data-crunch/);assert.match(h,/Auftragsarbeit/);});
 test('milestone screen lists Ist and Soll',()=>{const {run}=load({ui:true});newProject(run);
   run(`S.msResult=msCheck('vs');S.msResult.notes=['x'];S.screen='milestone'`);
   const h=run(`(()=>{const m={innerHTML:'',className:''};renderMilestone(m);return m.innerHTML})()`);
@@ -20,3 +20,14 @@ test('fine-tune step sets custom focus and clamps',()=>{const {run}=load({ui:tru
   const a=run('sprintAlloc().gp'),b=run('S.sprint.custom.gp');assert.ok(b>=0&&b<=100);assert.ok(a>=0);
   run(`for(let i=0;i<40;i++)sprintTune('gp',5)`);assert.equal(run('S.sprint.custom.gp'),100);
   run(`for(let i=0;i<40;i++)sprintTune('gp',-5)`);assert.equal(run('S.sprint.custom.gp'),0);});
+test('fine-tune moves exactly 5 and keeps sum 100',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.sprint.focus='custom';S.sprint.custom={gp:30,gfx:25,snd:15,bug:15,mkt:15}`);
+  run(`sprintTune('gp',5)`);const a=run('sprintAlloc()');
+  assert.equal(a.gp,35);assert.equal(a.gp+a.gfx+a.snd+a.bug+a.mkt,100);
+  run(`S.sprint.custom={gp:0,gfx:40,snd:20,bug:20,mkt:20}`);run(`sprintTune('gp',-5)`);
+  const b=run('sprintAlloc()');assert.equal(b.gp,0);assert.equal(b.gp+b.gfx+b.snd+b.bug+b.mkt,100);});
+test('renderMilestone with null msResult does not throw',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.msResult=null;S.screen='milestone'`);
+  run(`renderMilestone({innerHTML:'',className:''})`);assert.notEqual(run('S.screen'),'milestone');});
+test('Ist column shows plain numbers',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.res.gp=29`);assert.doesNotMatch(run('msBlock()'),/\+29/);});

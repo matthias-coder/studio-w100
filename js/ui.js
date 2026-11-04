@@ -277,28 +277,45 @@ function dirBlock(){
 
 let sprintFineOpen=false;
 function sprintTune(k,step){
-  const sp=S.sprint;
-  if(sp.focus!=='custom')sp.custom={...sprintAlloc()};
-  sp.custom[k]=clamp((+sp.custom[k]||0)+step,0,100);
-  sp.focus='custom';
+  const sp=S.sprint,a=sprintAlloc();
+  const others=AREA_KEYS.filter(j=>j!==k),O=others.reduce((t,j)=>t+a[j],0);
+  const x=step>=0?Math.min(step,100-a[k],others.length?100:0):-Math.min(-step,a[k]);
+  // x>0: take x from others (proportional); x<0: give -x to others
+  const take=x>0,amt=Math.abs(x),n={...a};
+  n[k]=a[k]+x;
+  if(amt>0){
+    const w=others.map(j=>take?a[j]:(O>0?a[j]:1)),W=w.reduce((t,v)=>t+v,0);
+    const raw=w.map(v=>v*amt/W),fl=raw.map((r,i)=>take?Math.min(Math.floor(r),a[others[i]]):Math.floor(r));
+    let left=amt-fl.reduce((t,v)=>t+v,0);
+    const ord=raw.map((r,i)=>[r-Math.floor(r),i]).sort((p,q)=>q[0]-p[0]||p[1]-q[1]);
+    for(let g=0;left>0&&g<10;g++)for(const [,i] of ord){if(left<=0)break;if(!take||fl[i]<a[others[i]]){fl[i]++;left--}}
+    others.forEach((j,i)=>n[j]=a[j]+(take?-fl[i]:fl[i]));
+  }
+  sp.custom=n;sp.focus='custom';
 }
+let sprintBarOpen=false;
+function sprintPhone(){return typeof matchMedia==='function'&&matchMedia('(max-width:860px)').matches}
 function sprintBar(){
   if(!S)return '';
   if(!S.sprint)S.sprint=defaultSprint();
   const sp=S.sprint;
-  if(S.contractStep===S.round)return `<div class="sprintbar"><div class="sprint-head"><b>Sprint · 0 Punkte</b><button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="false" disabled title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button></div><div class="note">Auftragsarbeit: Das Team ist diesen Schritt ausgebucht.</div></div>`;
+  if(S.contractStep===S.round)return `<div class="sprintbar"><div class="sprint-head"><b>Sprint · 0 Punkte</b></div><div class="note">Auftragsarbeit: Das Team ist diesen Schritt ausgebucht.</div></div>`;
   const d=sprintDelta(),al=sprintAlloc();
   const r=v=>Math.round(v*10)/10;
   const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)]].filter(([,v])=>v!==0);
   const cr=crunchOn(S),can=canCrunch();
   const foc=Object.keys(FOCUS).filter(k=>k!=='custom').map(k=>`<button type="button" data-focus="${k}" aria-pressed="${sp.focus===k}">${FOCUS[k].n}</button>`).join('');
   const fine=AREA_KEYS.map(k=>`<div class="fine-row"><span>${AREAS[k].ic} ${AREAS[k].n}</span><button type="button" class="btn tiny ghost" data-area="${k}" data-step="-5" aria-label="${AREAS[k].n} weniger">−5</button><b>${al[k]} %</b><button type="button" class="btn tiny ghost" data-area="${k}" data-step="5" aria-label="${AREAS[k].n} mehr">+5</button></div>`).join('');
+  const crb=`<button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="${cr}" ${can?'':'disabled'} title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button>`;
+  const effRow=eff.length?`<div class="sprint-eff"><span class="label">Erwartet</span>${chips(eff)}</div>`:'';
+  const fineD=`<details class="fold sprint-fine"${sprintFineOpen?' open':''}><summary>Feintuning${sp.focus==='custom'?' (eigene Verteilung)':''}</summary><div class="fold-body">${fine}</div></details>`;
+  if(sprintPhone()){
+    return `<details class="sprintbar sprint-phone" id="sprintMain"${sprintBarOpen?' open':''}><summary><b>Sprint · ${esc(FOCUS[sp.focus]?.n||'')} · ${d.pts} Punkte</b>${eff.length?chips(eff):''}</summary>
+    <div class="sprint-head">${crb}</div><div class="seg sprint-focus">${foc}</div>${fineD}</details>`;
+  }
   return `<div class="sprintbar">
-    <div class="sprint-head"><b>Sprint · ${d.pts} Punkte</b>
-      <button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="${cr}" ${can?'':'disabled'} title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button></div>
-    <div class="seg sprint-focus">${foc}</div>
-    <div class="sprint-eff"><span class="label">Erwartet</span>${chips(eff)}</div>
-    <details class="fold sprint-fine"${sprintFineOpen?' open':''}><summary>Feintuning${sp.focus==='custom'?' (eigene Verteilung)':''}</summary><div class="fold-body">${fine}</div></details>
+    <div class="sprint-head"><b>Sprint · ${d.pts} Punkte</b>${crb}</div>
+    <div class="seg sprint-focus">${foc}</div>${effRow}${fineD}
   </div>`;
 }
 function bindSprint(m){
@@ -306,6 +323,7 @@ function bindSprint(m){
   m.querySelectorAll('[data-focus]').forEach(b=>b.onclick=()=>{S.sprint.focus=b.dataset.focus;redraw()});
   m.querySelectorAll('[data-crunch]').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.sprint.crunch=!S.sprint.crunch;redraw()});
   m.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{sprintTune(b.dataset.area,+b.dataset.step);redraw()});
+  m.querySelectorAll('.sprint-phone').forEach(d=>d.addEventListener('toggle',()=>{sprintBarOpen=d.open}));
   m.querySelectorAll('.sprint-fine').forEach(d=>d.addEventListener('toggle',()=>{sprintFineOpen=d.open}));
 }
 function lastSprintNote(){
@@ -316,7 +334,7 @@ function lastSprintNote(){
   return `<div class="sprint-last"><span class="label">Sprint-Beitrag (${s.pts} Punkte)</span>${chips(l)}</div>`;
 }
 function msRowsHTML(rows){
-  return `<table class="mstable"><thead><tr><th></th><th>Ist</th><th>Soll</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.ok?'pos':'neg'}"><td>${r.n}</td><td>${fmt(r.ist)}</td><td>${r.k==='bugs'?'≤ ':'≥ '}${r.soll}</td><td>${r.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table>`;
+  return `<table class="mstable"><thead><tr><th></th><th>Ist</th><th>Soll</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.ok?'pos':'neg'}"><td>${r.n}</td><td>${r.ist}</td><td>${r.k==='bugs'?'≤ ':'≥ '}${r.soll}</td><td>${r.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table>`;
 }
 function msBlock(){
   if(!S)return '';
@@ -334,6 +352,7 @@ function msBlock(){
 }
 function renderMilestone(m){
   const r=S.msResult;
+  if(!r){closeMilestone();return}
   const o={met:['Erreicht','pos'],near:['Knapp verfehlt','wrn'],miss:['Verfehlt','neg']}[r.outcome];
   m.className='card';
   m.innerHTML=`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}<button class="btn" id="msNext">Weiter</button>`;
