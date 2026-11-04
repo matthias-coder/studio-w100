@@ -98,3 +98,22 @@ test('shown chance of the live option includes the bonus',()=>{const {run}=load(
   const pct=()=>run(`optsHTML(streamCard('blech'))`).match(/\((\d+) %\)/)[1];
   run('S.res.hype=0;C.studio.fame=0');const a=+pct();
   run('S.res.hype=10');const b=+pct();assert.ok(b>a,`${a} -> ${b}`);});
+
+test('three of seven critics are journalists',()=>{const {run}=load();newProject(run);
+  run('recalcQual()');const r=run('buildMetaReviews(70)');
+  assert.equal(r.critics.length,7);assert.equal([...r.critics].filter(c=>c.j).length,3);
+  const names=[...r.critics].map(c=>c.n);assert.equal(new Set(names).size,7);});
+test('preferences move the metascore by at most 3',()=>{const {run}=load();newProject(run,{genre:'strategy'});
+  run('recalcQual()');for(let i=0;i<40;i++){const m=run('buildMetaReviews(70).metascore');assert.ok(Math.abs(m-70)<=3,String(m));}});
+test('tone hit adds ten and old interviews still work',()=>{const {run}=load();newProject(run);
+  run(`INTERVIEW_OUTLETS[0].bias={};S.iv={o:0,qs:[],i:0,res:[],j:'heiko'}`);const a={p:50,tone:'honest'};
+  const d=run(`ivChance(${JSON.stringify(a)})-ivChance(${JSON.stringify({...a,tone:'x'})})`);
+  assert.equal(d,10);run('delete S.iv.j');assert.equal(run(`ivChance(${JSON.stringify(a)})`),run(`ivChance(${JSON.stringify({...a,tone:'x'})})`));});
+test('startInterview picks a journalist',()=>{const {run}=load();newProject(run);
+  run('startInterview()');assert.ok(run('JOUR_KEYS.includes(S.iv.j)'));});
+test('interview reveals the tone, release reveals prefs',()=>{const {run}=load();newProject(run);
+  run(`S.iv={o:0,qs:[],i:0,res:[],j:'heiko'};Math.random=()=>0.999;finishInterview()`);
+  assert.ok(run(`jourKnown('heiko','tone')`));
+  run('recalcQual()');run('S.end={critics:buildMetaReviews(70).critics};revealCritics(S.end.critics)');
+  const js=[...run('S.end.critics')].filter(c=>c.j).map(c=>c.j);assert.equal(js.length,3);
+  for(const j of js)assert.ok(run(`jourKnown('${j}','pref')`),j);});

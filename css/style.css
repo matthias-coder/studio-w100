@@ -433,6 +433,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .char-crop.is-scene img{
   left:-22%;top:-31.5%;width:155%;height:193.4%;
 }
+.char-crop.xs{width:28px;height:28px;display:inline-block;vertical-align:middle}
 .char-crop.sm{width:50px;height:50px}
 .char-crop.md{width:68px;height:68px}
 .char-crop.lg{width:108px;height:108px}

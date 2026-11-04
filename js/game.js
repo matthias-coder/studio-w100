@@ -1119,7 +1119,7 @@ function fillTxt(s){
 const ivAvail=()=>typeof INTERVIEW_QS!=='undefined'&&INTERVIEW_QS.length>0;
 function ivChance(a){
   const o=INTERVIEW_OUTLETS[S.iv.o];
-  return clamp(a.p+(D().s.hype-1)*6+(o.bias[a.tone]||0)+(S.res.hype>=6?5:0)-(S.res.bugs>=20?5:0),5,95);
+  return clamp(a.p+(D().s.hype-1)*6+(o.bias[a.tone]||0)+(S.res.hype>=6?5:0)-(S.res.bugs>=20?5:0)+(S.iv.j&&JOURNALISTS[S.iv.j]&&a.tone===JOURNALISTS[S.iv.j].tone?PRESS.toneHit:0),5,95);
 }
 function startInterview(){
   S.ivUsed=S.ivUsed||[];
@@ -1129,7 +1129,7 @@ function startInterview(){
   const qs=pool.slice(0,3);
   S.ivUsed.push(...qs);
   S.ivCount=(S.ivCount||0)+1;
-  S.iv={o:Math.floor(Math.random()*INTERVIEW_OUTLETS.length),qs,i:0,res:[]};
+  S.iv={o:Math.floor(Math.random()*INTERVIEW_OUTLETS.length),qs,i:0,res:[],j:JOUR_KEYS[Math.floor(Math.random()*JOUR_KEYS.length)]};
   S.screen='interview';
   addLog(`<span>${stepTag(lastStep())}</span> 🎙️ Interview: ${INTERVIEW_OUTLETS[S.iv.o].n} (${INTERVIEW_OUTLETS[S.iv.o].k})`);
   render();save();
@@ -1148,6 +1148,7 @@ function answerInterview(ai){
 }
 function finishInterview(){
   if(!S)return;
+  if(S.iv&&S.iv.j)revealJour(S.iv.j,'tone');
   S.iv=null;
   afterRandom();
 }
@@ -1461,16 +1462,21 @@ function userCls(v){return v>=7.5?'mc-g':v>=5?'mc-y':'mc-r'}
 function buildMetaReviews(meta){
   const r=S.res,q=r.qual||meta;
   const dims={gp:r.gp,gfx:r.gfx,snd:r.snd??q};
-  const pool=[...OUTLETS].sort(()=>Math.random()-.5).slice(0,7);
-  let list=pool.map(o=>({n:o.n,f:o.f,v:meta+o.b+(dims[o.f]-q)*.35+(Math.random()*12-6)}));
+  const jours=[...JOUR_KEYS].sort(()=>Math.random()-.5).slice(0,PRESS.reviewN);
+  const taken=jours.map(id=>JOURNALISTS[id].outlet);
+  const pool=[...OUTLETS.filter(o=>!taken.includes(o.n)).sort(()=>Math.random()-.5).slice(0,7-jours.length),
+    ...jours.map(id=>{const J=JOURNALISTS[id];return {n:J.outlet,f:J.f,b:OUTLETS.find(o=>o.n===J.outlet)?.b||0,j:id}})].sort(()=>Math.random()-.5);
+  let list=pool.map(o=>({n:o.n,f:o.f,j:o.j,v:meta+o.b+(dims[o.f]-q)*.35+(Math.random()*12-6)}));
   const shift=meta-list.reduce((a,c)=>a+c.v,0)/list.length;
   list=list.map(c=>{
-    const v=clamp(Math.round(c.v+shift),10,100);
+    const v=clamp(Math.round(c.v+shift+(c.j?jourLikes(c.j)*PRESS.prefShift:0)),10,100);
     const band=v>=85?3:v>=70?2:v>=50?1:0;
     const hi=dims[c.f]>=60,good=band>=2;
     const pool=REVIEW_QUOTES[c.f][hi?'hi':'lo'];
     const join=hi===good?' ':hi?' Unterm Strich aber: ':' Trotzdem: ';
-    return {n:c.n,v,q:pool[Math.floor(Math.random()*pool.length)]+join+REVIEW_VERDICT[band][Math.floor(Math.random()*REVIEW_VERDICT[band].length)]};
+    const e={n:c.n,v,q:pool[Math.floor(Math.random()*pool.length)]+join+REVIEW_VERDICT[band][Math.floor(Math.random()*REVIEW_VERDICT[band].length)]};
+    if(c.j)e.j=c.j;
+    return e;
   }).sort((a,b)=>b.v-a.v);
   const metascore=Math.round(list.reduce((a,c)=>a+c.v,0)/list.length);
   // Nutzerwertung: Spieler strafen Bugs, Lootboxen und enttäuschten Hype härter ab als die Presse
@@ -1485,6 +1491,7 @@ function buildMetaReviews(meta){
   if(user*10>=meta+8)notes.push('Die Spieler mögen das Spiel mehr als die Presse.');
   return {metascore,critics:list,user,notes};
 }
+function revealCritics(critics){(critics||[]).forEach(c=>{if(c.j)revealJour(c.j,'pref')})}
 const userSalesMult=u=>.94+(u??5)*.012;
 
 function launch(){
@@ -1523,6 +1530,7 @@ function launch(){
 
     const mc=buildMetaReviews(meta);
     S.end={r,meta,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,late,rivalGames,awards,critics:mc.critics,user:mc.user,mcNotes:mc.notes,qb:qualBreakdown()};
+    revealCritics(S.end.critics);
     S.screen='sales';
     const won=wonAwardNames(S.end);
     addLog(`<span>Release</span> Review-Wurf W100 ${r} → Metascore ${meta}, Nutzer ${nf(mc.user)} (GP ${S.res.gp} · GFX ${S.res.gfx} · Sound ${S.res.snd})${won.length?' · 🏆 '+won.join(', '):''}`);

@@ -1088,6 +1088,7 @@ function renderInterview(m){
   }
   m.innerHTML=`<span class="stamp">🎙️ Interview · ${esc(o.k)} · Ende ${STEPS[lastStep()]?.n||''}</span>
     <h3>${esc(o.n)} will mit ${esc(C.dir.n)} über „${esc(S.title)}“ sprechen</h3>
+    ${iv.j&&JOURNALISTS[iv.j]?`<div class="note" style="display:flex;align-items:center;gap:10px">${charPortraitHTML(JOURNALISTS[iv.j].img,false,'sm',false,JOURNALISTS[iv.j].n)}<span>im Gespräch mit ${esc(JOURNALISTS[iv.j].n)} (${esc(o.n)})</span></div>`:''}
     <p class="note" style="margin:0">Drei Fragen, jede Antwort ist ein W100-Wurf. Der Hype-Wert des Directors, der aktuelle Hype und das Format beeinflussen die Chancen.</p>
     ${past}${body}`;
   m.querySelectorAll('[data-iva]').forEach(b=>b.onclick=()=>answerInterview(+b.dataset.iva));
@@ -1507,7 +1508,7 @@ function metaBlock(e){
     </div>
     <div class="meta-sub"><span>🎮 Gameplay <b>${e.gp??S.res.gp}</b></span><span>🎨 Grafik <b>${e.gfx??S.res.gfx}</b></span>${e.snd!=null?`<span>🎵 Sound <b>${e.snd}</b></span>`:''}<span>❤️ Wishlists <b>${nf(S.res.wl,0)}</b></span></div>
     ${(e.mcNotes||[]).length?`<div class="note">${e.mcNotes.map(esc).join(' ')}</div>`:''}
-    ${crit.length?`<details class="fold"><summary>📰 Alle Kritiken lesen</summary><div class="fold-body crit-list">${crit.map(c=>`<div class="crit"><b class="mc ${metaCls(c.v)}">${c.v}</b><div><strong>${esc(c.n)}</strong><span>„${esc(c.q)}“</span></div></div>`).join('')}</div></details>`:''}
+    ${crit.length?`<details class="fold"><summary>📰 Alle Kritiken lesen</summary><div class="fold-body crit-list">${crit.map(c=>`<div class="crit"><b class="mc ${metaCls(c.v)}">${c.v}</b><div><strong>${c.j&&JOURNALISTS[c.j]?`${charPortraitHTML(JOURNALISTS[c.j].img,false,'xs',false,JOURNALISTS[c.j].n)} ${esc(JOURNALISTS[c.j].n)} · ${esc(c.n)}`:esc(c.n)}</strong><span>„${esc(c.q)}“</span></div></div>`).join('')}</div></details>`:''}
   </div>`;
 }
 
