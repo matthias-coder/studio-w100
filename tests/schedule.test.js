@@ -1,0 +1,23 @@
+const test=require('node:test'),assert=require('node:assert');
+const {load}=require('./harness');
+test('step table: 13 steps, 5 phases, shares sum 100',()=>{const {run}=load();
+  assert.equal(run('STEPS.length'),13);assert.equal(run('PHASES.length'),5);
+  assert.equal(run('STEPS.reduce((a,s)=>a+s.share,0)'),100);
+  assert.equal(run('new Set(STEPS.map(s=>s.id)).size'),13);});
+test('weights sum to 12 at normal duration for every tier',()=>{const {run}=load();
+  for(const t of ['indie','aa','aaa']){
+    assert.ok(Math.abs(run(`totalW({tier:'${t}',dur:durMonths('${t}','normal'),round:0})`)-12)<1e-9);}});
+test('long duration scales weights proportionally',()=>{const {run}=load();
+  assert.ok(Math.abs(run(`totalW({tier:'aaa',dur:84,round:0})`)-14)<1e-9);});
+test('indie short: all weights > 0, short steps labelled in weeks',()=>{const {run}=load();
+  run(`S={tier:'indie',dur:durMonths('indie','short'),round:0}`);
+  assert.equal(run('S.dur'),12);
+  assert.ok(run('STEPS.every((s,i)=>stepW(i)>0)'));
+  assert.match(run('fmtSpan(stepMonths(2))'),/Wochen/);
+  assert.doesNotMatch(run('STEPS.map((s,i)=>fmtSpan(stepMonths(i))).join("|")'),/\b0 Monate/);});
+test('stepIndex and flags',()=>{const {run}=load();
+  assert.equal(run(`stepIndex('prod_fp')`),8);assert.equal(run(`stepIndex('nope')`),-1);
+  assert.equal(run(`stepFlag('ea',stepIndex('prod_alpha'))`),true);
+  assert.equal(run(`stepFlag('ea',stepIndex('pol_ship'))`),false);});
+test('durMonths falls back to normal',()=>{const {run}=load();
+  assert.equal(run(`durMonths('aa','bogus')`),36);});

@@ -1,6 +1,5 @@
 /* ===================== Grunddaten & Definitionen (W100-System) ===================== */
 const STATS={design:'Design',technik:'Technik',team:'Team',business:'Business'};
-const PHASES=['Konzept','Prototyp','Produktion','Marketing','Beta & QA','Gold'];
 const CAT={
   personal:['Gehälter & Inflation','--c1'],
   staff:['Lead-Personal','--c1'],
@@ -44,9 +43,9 @@ const EVENT_IMAGES={
 };
 
 const TIERS={
-  indie:{n:'Indie',d:'Fünf Leute, eine Vision, kein Sicherheitsnetz.',scale:1,team:5,prices:[9.99,19.99,29.99],sales:1,hype:0,qual:0,gp:2,gfx:0,review:2,teamMod:4,min:0,note:'Team-Würfe +4, Kritiker milder, Gameplay zählt stärker als Grafik'},
-  aa:{n:'Double-A',d:'Mittelgroßes Studio mit Publisher im Rücken.',scale:10,team:35,prices:[19.99,39.99,59.99],sales:3,hype:1,qual:5,gp:5,gfx:5,review:0,teamMod:0,min:1500,note:'Ausgewogen, mehr Geld, höhere Erwartung an Grafik & Gameplay'},
-  aaa:{n:'Triple-A',d:'Hunderte Leute, Aktionäre, riesige Erwartungen.',scale:100,team:300,prices:[29.99,49.99,79.99],sales:25,hype:3,qual:10,gp:8,gfx:12,review:-5,teamMod:-4,min:15000,note:'Team-Würfe −4, Kritiker strenger, Grafik & Präsentation extrem wichtig'}
+  indie:{n:'Indie',d:'Fünf Leute, eine Vision, kein Sicherheitsnetz.',dur:[12,18,24],scale:1,team:5,prices:[9.99,19.99,29.99],sales:1,hype:0,qual:0,gp:2,gfx:0,review:2,teamMod:4,min:0,note:'Team-Würfe +4, Kritiker milder, Gameplay zählt stärker als Grafik'},
+  aa:{n:'Double-A',d:'Mittelgroßes Studio mit Publisher im Rücken.',dur:[24,36,48],scale:10,team:35,prices:[19.99,39.99,59.99],sales:3,hype:1,qual:5,gp:5,gfx:5,review:0,teamMod:0,min:1500,note:'Ausgewogen, mehr Geld, höhere Erwartung an Grafik & Gameplay'},
+  aaa:{n:'Triple-A',d:'Hunderte Leute, Aktionäre, riesige Erwartungen.',dur:[60,72,84],scale:100,team:300,prices:[29.99,49.99,79.99],sales:25,hype:3,qual:10,gp:8,gfx:12,review:-5,teamMod:-4,min:15000,note:'Team-Würfe −4, Kritiker strenger, Grafik & Präsentation extrem wichtig'}
 };
 
 const MODELS={
