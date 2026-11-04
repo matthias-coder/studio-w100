@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual','milestone'];
+const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual','milestone','pitch'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -342,18 +342,64 @@ function msBlock(){
   if(!nx)return '';
   const n=stepIndex(nx.at)-S.round;
   const when=n<=0?'nach diesem Schritt':`in ${n} Schritt${n===1?'':'en'}`;
+  const stake=((S.fund&&S.fund.deals)||[]).filter(d=>d.status==='active'&&d.rates&&d.rates[nx.id]).map(d=>`<p class="note">${FUNDERS[d.id].ic} ${esc(FUNDERS[d.id].n)}-Rate +${money(d.rates[nx.id])}${d.id==='inv'?' · Hype ≥ '+FUND.invHype:''}</p>`).join('');
   return `<details class="fold">
     <summary>🎯 Nächster Meilenstein: ${esc(nx.n)} · ${when}</summary>
-    <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}</div>
+    <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}${stake}</div>
   </details>`;
 }
 function renderMilestone(m){
   const r=S.msResult;
   if(!r){closeMilestone();return}
   const o={met:['Erreicht','pos'],near:['Knapp verfehlt','wrn'],miss:['Verfehlt','neg']}[r.outcome];
+  const F=S.fund||{};
+  const lines=(r.deals||[]).map(d=>`<p class="note">${FUNDERS[d.id].ic} ${esc(d.n)}: ${esc(d.txt)}</p>`).join('');
+  let ctl='';
+  if(F.renego){
+    const ch=winChance(FUND.renegoDc,optMod({st:'business'})+fameBonus()+moralMod());
+    ctl=`<div class="alert mid"><b>Rate auf der Kippe</b><span>Verhandelt ihr nach, bekommt ihr die volle Rate – scheitert der Wurf, nur die halbe.</span></div><div class="row"><button class="btn" id="renegoGo">Nachverhandeln (Business SG ${dc100(FUND.renegoDc)} · ${ch} %)</button><button class="btn ghost" id="renegoAccept">Halbe Rate akzeptieren</button></div>`;
+  }
+  if(F.cutPending){
+    ctl+=`<div class="alert mid"><b>Der Publisher verlangt eine Streichung</b><span>Jede Kürzung kostet ${FUND.cutZeit} Zeit.</span></div><div class="opts">${cutOptions().map(c=>`<button class="opt" data-cut="${esc(c.id)}"><span class="t">${esc(c.n)}</span><span class="d">${c.id==='scope'?`Gameplay −${FUND.cutGp}`:'Feature wird gestrichen, seine Kosten und Boni entfallen'}</span></button>`).join('')}</div>`;
+  }
+  const pend=!!(F.renego||F.cutPending);
   m.className='card';
-  m.innerHTML=`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}<button class="btn" id="msNext">Weiter</button>`;
+  m.innerHTML=`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}${lines}${ctl}<button class="btn" id="msNext"${pend?' disabled':''}>Weiter</button>`;
   const b=$('msNext');if(b)b.onclick=closeMilestone;
+  const g=$('renegoGo');if(g)g.onclick=startRenego;
+  const a=$('renegoAccept');if(a)a.onclick=()=>{resolveRenego(false);renderMain();save()};
+  m.querySelectorAll?.('[data-cut]').forEach(x=>x.onclick=()=>{
+    const notes=cutFeature(x.dataset.cut);
+    if(S.msResult)S.msResult.notes=(S.msResult.notes||[]).concat(notes);
+    renderMain();save();
+  });
+}
+
+/* ===================== Pitch & Finanzierung ===================== */
+let pitchDraft={sel:[],amb:false};
+function renderPitch(m){
+  m.className='card';
+  const ids=Object.keys(FUNDERS).filter(id=>funderAvail(id));
+  const amb=pitchDraft.amb;
+  const mod=pitchMod();
+  const opts=ids.map(id=>{
+    const f=FUNDERS[id],on=pitchDraft.sel.includes(id);
+    const dc=f.dc+(amb?FUND.ambDc:0);
+    return `<button type="button" class="opt" data-fd="${id}" aria-pressed="${on}"><span class="t">${f.ic} ${esc(f.n)} · ${money(funderOffer(id,amb))}</span><span class="check">SG ${dc100(dc)} (${winChance(dc,mod)} %)</span><span class="d">${esc(planText(id))} ${esc(f.d)}</span></button>`;
+  }).join('');
+  m.innerHTML=`<span class="stamp">Pitch &amp; Finanzierung · ${stepLabel()}</span><h3>Wer bezahlt das Spiel?</h3>
+    <p class="note">Geschätzte Projektkosten ${money(projCost())} · Budget ${money(S.res.budget)}</p>
+    <div class="opts">${opts}</div>
+    <label class="check"><input type="checkbox" id="pitchAmb"${amb?' checked':''}> Ambitionierter Pitch: +30 % Geld von Publisher und Investoren, SG +2, Meilenstein-Soll +3</label>
+    <div class="row"><button class="btn" id="pitchGo"${pitchDraft.sel.length?'':' disabled'}>🎤 Pitch halten (1 Wurf)</button><button class="btn ghost" id="pitchSelf">Nur Eigenkapital</button></div>`;
+  m.querySelectorAll?.('[data-fd]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.fd,i=pitchDraft.sel.indexOf(id);
+    if(i>=0)pitchDraft.sel.splice(i,1);else pitchDraft.sel.push(id);
+    renderPitch(m);
+  });
+  const a=$('pitchAmb');if(a)a.onchange=()=>{pitchDraft.amb=a.checked;renderPitch(m)};
+  const go=$('pitchGo');if(go)go.onclick=()=>{const d=pitchDraft;pitchDraft={sel:[],amb:false};startPitch(d.sel,d.amb)};
+  const sf=$('pitchSelf');if(sf)sf.onclick=()=>{pitchDraft={sel:[],amb:false};selfFund()};
 }
 
 function trendBlock(){
@@ -520,6 +566,7 @@ function renderDock(){
             ${S.income?`<div class="burn"><span>Vorab-/Auftrags-Einnahmen</span><span class="pos">${money(S.income,true)}</span></div>`:''}
             ${S.loan?`<div class="burn"><span>Kredit offen</span><span class="neg">${money(S.loan)}</span></div>`:''}
             ${S.recoup?`<div class="burn"><span>Vorschüsse (Recoup)</span><span>${money(S.recoup)}</span></div>`:''}
+            ${((S.fund&&S.fund.deals)||[]).map(d=>`<div class="burn"><span>${FUNDERS[d.id].ic} ${esc(FUNDERS[d.id].n)}${d.status==='cancelled'?' · gekündigt':d.status==='exited'?' · ausgestiegen':''}</span><span>${money(d.paid)} / ${money(d.total)}</span></div>`).join('')}
           </div>
         </details>
       `:`
@@ -911,6 +958,8 @@ function headFor(kind,ev){
         </div>
       </div>`;
   }
+  if(kind==='pitch')return `<span class="stamp">Pitch &amp; Finanzierung</span><h3>Der Pitch</h3><p>${(S.pitchSel||[]).filter(id=>FUNDERS[id]).map(id=>FUNDERS[id].ic+' '+esc(FUNDERS[id].n)).join(' · ')}</p>`;
+  if(kind==='renego')return `<span class="stamp">Meilenstein</span><h3>Nachverhandeln</h3><p>Ihr sitzt noch einmal mit dem Geldgeber am Tisch.</p>`;
   if(kind==='shop'){const it=SHOP.find(x=>x.id===ev);return `<span class="stamp">Studio-Shop</span><h3>${it.n}</h3><p>${it.d}</p>`}
   if(kind==='hire'){const s=STAFF[ev];return `<span class="stamp">Personal</span><h3>${s.n}</h3><p>${s.d}</p>`}
   if(kind==='contract'){const ct=CONTRACTS.find(x=>x.id===ev)||{n:'Auftragsarbeit',d:''};return `<span class="stamp">Auftragsarbeit</span><h3>${ct.n}</h3><p>${ct.d}</p>`}
@@ -1046,6 +1095,7 @@ function renderMain(){
     return;
   }
   if(sc==='milestone'){renderMilestone(m);return}
+  if(sc==='pitch'){renderPitch(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
@@ -1317,11 +1367,20 @@ function ledger(e){
   if(S.einlage)R2('Privatgeld des Directors',money(S.einlage,true));
   if(S.investIn)R2('Investorengeld',money(S.investIn,true));
   if(S.loan)R2('Kredit aufgenommen',money(S.loan,true));
-  if(S.income)R2('Vorab-, Auftrags- & Lizenz-Einnahmen'+(S.crypto?.pay?' (inkl. Krypto)':''),money(S.income,true));
+  const fd=id=>(S.fund?.deals||[]).find(d=>d.id===id);
+  const repays=(S.fund?.deals||[]).filter(d=>d.status==='cancelled'&&(d.id==='pub'||d.id==='grant')).map(d=>({id:d.id,x:r1(d.paid*FUND.repay)}));
+  const grantRepay=repays.filter(q=>q.id==='grant').reduce((a,q)=>a+q.x,0);
+  const incomeRest=S.income-(fd('grant')?.paid||0)-(fd('crowd')?.paid||0)+grantRepay;
+  if(fd('pub')?.paid)R2('Publisher-Raten',money(fd('pub').paid,true));
+  if(fd('grant')?.paid)R2('Förderung',money(fd('grant').paid,true));
+  if(fd('crowd')?.paid)R2('Crowdfunding',money(fd('crowd').paid,true));
+  if(repays.length)R2('Rückzahlungen an Geldgeber',money(-repays.reduce((a,q)=>a+q.x,0)));
+  if(Math.abs(incomeRest)>0.05)R2('Vorab-, Auftrags- & Lizenz-Einnahmen'+(S.crypto?.pay?' (inkl. Krypto)':''),money(incomeRest,true));
   if(S.crypto)R2('🪙 Krypto-Einsatz $MOONCAT',money(-S.crypto.amt));
   Object.keys(CAT).forEach(k=>{if(S.spend[k]>0)R2(CAT[k][0]+(k==='server'&&e&&e.live?' (inkl. erstem Live-Jahr)':''),money(-S.spend[k]))});
   if(e){
     if(S.loan)R2('Kredit-Rückzahlung',money(-S.loan));
+    if(e.lawsuit>0)R2('Sammelklage der Backer',money(-e.lawsuit));
     R2('Kasse nach dem ersten Jahr',money(e.kasseEnd),'sum');
     R2('Ergebnis (Kasse minus eingesetztes Kapital)',`<span class="${e.erg>=0?'pos':'neg'}">${money(e.erg,true)}</span>`,'sum');
     if(e.dist){

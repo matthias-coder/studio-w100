@@ -34,3 +34,17 @@ test('Ist column shows plain numbers',()=>{const {run}=load({ui:true});newProjec
 test('monthNote names the finished step after a skip',()=>{const {run}=load({ui:true});newProject(run);
   run(`Math.random=()=>0.999;S.res.budget=1e9;S.skip=['pit_mix'];S.round=stepIndex('pit_meet')`);run('monthEnd()');
   const n=run('monthNote()');assert.match(n,/Pitch-Termine/);assert.doesNotMatch(n,/Finanzierung steht/);});
+const html=(run,fn)=>run(`(()=>{const m={innerHTML:'',className:''};${fn}(m);return m.innerHTML})()`);
+test('pitch screen lists funders and both buttons',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.round=stepIndex('pit_meet');S.screen='pitch'`);const h=html(run,'renderPitch');
+  assert.match(h,/data-fd="pub"/);assert.match(h,/data-fd="crowd"/);assert.match(h,/id="pitchSelf"/);assert.match(h,/id="pitchGo"[^>]*disabled/);});
+test('AAA pitch hides grant and crowd',()=>{const {run}=load({ui:true});newProject(run,{tier:'aaa'});
+  run(`S.round=stepIndex('pit_meet');S.screen='pitch'`);assert.doesNotMatch(html(run,'renderPitch'),/data-fd="grant"/);});
+test('pitch is an active screen',()=>{const {run}=load({ui:true});assert.ok(run(`ACTIVE.includes('pitch')`));});
+test('milestone screen blocks Weiter during renegotiation',()=>{const {run}=load({ui:true});newProject(run);
+  run(`signDeal('pub',100);S.msResult=msCheck('vs');applyMsOutcome(S.msResult);S.fund.renego=true;S.screen='milestone'`);
+  const h=html(run,'renderMilestone');assert.match(h,/id="renegoGo"/);assert.match(h,/id="msNext"[^>]*disabled/);});
+test('cut buttons appear when a cut is pending',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.msResult=msCheck('vs');S.msResult.notes=[];S.fund.cutPending=true;S.screen='milestone'`);assert.match(html(run,'renderMilestone'),/data-cut="scope"/);});
+test('next-milestone panel shows the rate at stake',()=>{const {run}=load({ui:true});newProject(run);
+  run(`signDeal('pub',100)`);assert.match(run('msBlock()'),/Publisher/);});
