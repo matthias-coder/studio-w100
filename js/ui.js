@@ -117,14 +117,14 @@ function renderHud(){
   h.onclick=()=>h.classList.toggle('expanded');
   recalcQual();
   const r=S.res,rw=runway(),left=monthsLeft();
-  const crit=rw<1,low=rw<=3&&rw<left;
+  const atEnd=S.round>=STEPS.length,sc0=stepCost(),crit=!atEnd&&r.budget<sc0,low=!atEnd&&r.budget<sc0+stepCost(S.round+1);
   h.classList.toggle('alarm',crit||r.budget<0);
   const bar=(pct,col)=>`<div class="hud-bar"><i style="width:${clamp(pct,0,100)}%;background:${col}"></i></div>`;
   const cell=(l,v,w,sub,barHtml='',cls='')=>`<div class="${w?'warn':''} ${cls}"><span class="label">${l}</span><b>${v}</b>${sub?`<small>${sub}</small>`:''}${barHtml}</div>`;
   const moralCol=r.moral>=7?'var(--good)':r.moral>=4?'var(--gold)':'var(--bad)';
   const fc=reviewForecast();
   const snd=r.snd??Math.round((r.gp+r.gfx)/2);
-  h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(costPerMonth())}/Monat · nächster Schritt ${money(stepCost())} · ${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
+  h.innerHTML=`<div class="money ${crit||low||r.budget<0?'warn':''}"><span class="label">Restbudget</span><b>${money(r.budget)}</b><small>${money(costPerMonth())}/Monat · ${atEnd?'':`nächster Schritt ${money(sc0)} · `}${r.budget<0?'im Minus':rw>=left?'reicht bis Release':rw<1?'reicht < 1 Monat':'reicht '+rw+' Mon.'}</small></div>`
    +cell('Moral',r.moral+'/10',r.moral<=2,`${fmt(moralMod())} auf Würfe`,bar(r.moral*10,moralCol))
    +cell('Hype',r.hype+'/10',false,S.trendHot?'🔥 Trend-Genre':S.trendCold?'❄️ Übersättigt':r.hype>=7?'wächst nur noch langsam':'',bar(r.hype*10,'var(--accent)'))
    +cell('Qualität',r.qual,false,`🎮 ${r.gp} · 🎨 ${r.gfx} · 🎵 ${snd}`,bar(r.qual,'var(--good)'),'hx')
@@ -144,14 +144,15 @@ function renderTrack(){
 }
 
 function budgetAlert(){
-  if(!S||S.res.budget<0)return '';
+  if(!S||S.res.budget<0||S.round>=STEPS.length)return '';
   const rw=runway(),left=monthsLeft();
-  if(rw>3||rw>=left)return '';
+  const crit=S.res.budget<stepCost();
+  if(!crit&&S.res.budget>=stepCost()+stepCost(S.round+1))return '';
   const plan=Object.keys(PLAN).filter(k=>PLAN[k].cost[S.plan[k]]>0).map(k=>PLAN[k].n);
   const tip=plan.length?`Senke rechts im Budget-Dock ${plan.join(', ')}, nimm eine Auftragsarbeit an oder suche frisches Geld.`:'Der Budgetplan ist schon auf Minimum. Jetzt hilft eine Auftragsarbeit oder frisches Geld.';
   const btn=`<div class="row"><button class="btn small alt" id="finBtn">Jetzt Finanzierung suchen (+8 auf Würfe)</button></div>`;
-  if(rw<1)return `<div class="alert" role="alert"><b>Achtung: Pleite droht</b><span>Mit ${money(S.res.budget)} könnt ihr den nächsten Schritt (${money(stepCost())}) nicht mehr bezahlen. Am Ende des Schritts kommt die Notlage. ${tip}</span>${btn}</div>`;
-  return `<div class="alert ${rw>1?'mid':''}" role="status"><b>Das Geld wird knapp</b><span>Das Budget reicht nur noch für ${rw} Monat${rw>1?'e':''}, bis zum Release sind es noch ${left}. ${tip}</span>${btn}</div>`;
+  if(crit)return `<div class="alert" role="alert"><b>Achtung: Pleite droht</b><span>Mit ${money(S.res.budget)} könnt ihr den nächsten Schritt (${money(stepCost())}) nicht mehr bezahlen. Am Ende des Schritts kommt die Notlage. ${tip}</span>${btn}</div>`;
+  return `<div class="alert ${rw>1?'mid':''}" role="status"><b>Das Geld wird knapp</b><span>Das Budget reicht nur noch für ${rw} Monat${rw>1?'e':''}, bis zum Release sind es noch ${fmtSpan(left)}. ${tip}</span>${btn}</div>`;
 }
 function bindFin(){const b=$('finBtn');if(b)b.onclick=()=>openCrisis('event')}
 
@@ -201,7 +202,7 @@ function engineBlock(){
           <div class="field">
             <label class="label" for="engLicSel">Externe Lizenzierung</label>
             <select id="engLicSel">
-              ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10)}/M)`:''}</option>`).join('')}
+              ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(perMonth(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10))}/Monat)`:''}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -235,7 +236,7 @@ function staffBlock(){
                 <b>${st.isLegend?'🌟 ':''}${esc(st.personName)}</b>
                 <span class="staff-lvl">St.${lv}</span>
               </div>
-              <div class="note">${def.n} · ${def.effDesc(lv)} · ${money(st.sal*sc*staffSalMult())}/M</div>
+              <div class="note">${def.n} · ${def.effDesc(lv)} · ${money(perMonth(st.sal*sc*staffSalMult()))}/Monat</div>
             </div>
           </div>
           <div class="loy-bar" title="Loyalität ${loy}/10 · XP ${st.xp||0}/${nextXp||'Max'}"><i style="width:${loy*10}%;background:${loyColor}"></i></div>
@@ -711,7 +712,7 @@ function renderEngineLab(m){
       <span class="label">Externe Lizenzierung & B2B-Geschäft</span>
       <div class="field">
         <select id="labLicSel">
-          ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10)}/Monat)`:''}</option>`).join('')}
+          ${Object.entries(ENGINE_LIC_MODES).map(([k,v])=>`<option value="${k}" ${eng.licenseMode===k?'selected':''}>${v.n}${v.inc?` (+${money(perMonth(Math.round(v.inc*eng.version*sc*ageInfo.licMult*10)/10))}/Monat)`:''}</option>`).join('')}
         </select>
         <span class="note">${ENGINE_LIC_MODES[eng.licenseMode]?.d||''}</span>
       </div>
@@ -966,7 +967,7 @@ function renderMain(){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
     m.innerHTML=monthNote()+budgetAlert()+`<div class="studio-actions">
-      <span class="label">Diesen Monat außerdem</span>
+      <span class="label">In diesem Schritt außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
       <button class="btn tiny ghost" data-opensub="hire">👥 Personal${stepFlag('hire')?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(curPhase())?'(✓)':''}</button>
@@ -1056,7 +1057,7 @@ function renderLang(m){
   const voiced=Object.keys(sel).filter(k=>k!=='en'&&sel[k]===2).length;
   m.innerHTML=headFor('mand','lang')+`<div>${Object.entries(LANGS).map(([k,L])=>`<div class="lrow"><b>${L.n}</b>${k==='en'?'<span class="check safe">immer dabei, vertont</span>':`<div class="seg" role="group" aria-label="${L.n}">${['Keine','Text','Vertont'].map((x,i)=>`<button type="button" data-lg="${k}" data-lv="${i}" aria-pressed="${(sel[k]||0)===i}">${x}</button>`).join('')}</div>`}<span class="note">${Math.round(L.m*100)} % des Weltmarkts${k==='zh'?' · nur mit Partner-Publisher (bekommt die Hälfte) und Zulassung in der Gold-Phase':''}${k==='de'&&S.cast==='synchro'?' · eure Synchronstimme wirkt nur vertont':''}</span></div>`).join('')}</div>
    <div class="mini"><div><span>Kosten Übersetzung und Vertonung</span><span>${money(cost)}</span></div><div><span>Marktgröße</span><span>×${nf(marketFactor(sel,true),2)}</span></div><div><span>Gameplay & Atmosphäre durch Vertonung</span><span>+${Math.min(4,voiced)}</span></div></div>
-   ${S.res.budget<cost?'<p class="err">Das kostet mehr, als ihr gerade habt. Am Monatsende droht die Notlage.</p>':''}
+   ${S.res.budget<cost?'<p class="err">Das kostet mehr, als ihr gerade habt. Am Schrittende droht die Notlage.</p>':''}
    <button class="btn" id="go">Sprachen festlegen</button>`;
   m.querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{sel[b.dataset.lg]=+b.dataset.lv;renderLang(m);save()});
   $('go').onclick=()=>{
@@ -1077,7 +1078,7 @@ function renderShop(m){
   m.innerHTML=`
     <div class="staff-top">
       <span class="stamp">${shopSubTab==='invest'?'🛒 Studio-Investitionen':shopSubTab==='hire'?'👥 Lead-Personal & Team':'💼 Auftragsarbeiten & Finanzierung'}</span>
-      <button class="btn small ghost" id="back">← Zurück zur Monatskarte</button>
+      <button class="btn small ghost" id="back">← Zurück zur Schrittkarte</button>
     </div>
     <div class="sub-tabs" role="tablist" aria-label="Bereich wählen">
       <button type="button" class="sub-tab ${shopSubTab==='invest'?'active':''}" data-stsub="invest">🛒 Investieren (${S.shop.length}/${SHOP.length})</button>
@@ -1118,7 +1119,7 @@ function renderShop(m){
           const bonusCost=has?Math.round(st.sal*1.5*sc*10)/10:0;
           return `<div class="opt" style="cursor:default">
             <span class="t">${has?`${st.isLegend?'🌟 ':''}${esc(st.personName)} (St.${st.level})`:s.n}</span>
-            <span class="check ${has?'':'safe'}">${has?`Loy. ${st.loyalty}/10 · ${money(st.sal*sc*staffSalMult())}/M`:money(s.sal*sc*staffSalMult())+'/M'}</span>
+            <span class="check ${has?'':'safe'}">${has?`Loy. ${st.loyalty}/10 · ${money(perMonth(st.sal*sc*staffSalMult()))}/Monat`:money(perMonth(s.sal*sc*staffSalMult()))+'/Monat'}</span>
             <span class="d"><b>${s.n}:</b> ${s.effDesc(has?st.level:1)}.</span>
             <div class="row" style="grid-column:1/-1;margin-top:4px">
               ${has?`
@@ -1745,7 +1746,7 @@ function renderSetup(m){
             return `<label class="choice">
               <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}>
               <b>${ex.n}</b>
-              <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`−${money(mCost)}/M · `:''}${ex.code}</code>
+              <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`−${money(perMonth(mCost,{tier:setupDraft.tier}))}/Monat · `:''}${ex.code}</code>
               <span class="more">${ex.d}</span>
               ${sportHint}
             </label>`;
@@ -1760,7 +1761,7 @@ function renderSetup(m){
           <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subGenreOf(setupDraft.genre,setupDraft.subGenre)?' · '+subGenreOf(setupDraft.genre,setupDraft.subGenre).n:''}${GENRE_MODS[setupDraft.gmod]?' + '+GENRE_MODS[setupDraft.gmod].n:''}</b></span></div>
           <div><span>Startkapital / Kasse</span><span>${money(startBudget)}</span></div>
           ${(ipFee+extraUpfront)>0?`<div><span>Abzgl. Vorabkosten (Lizenz & Extras)</span><span class="neg">−${money(ipFee+extraUpfront)}</span></div>`:''}
-          <div><span><b>Verfügbares Budget im ersten Schritt</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(extraMonthly)}/M für Extras)`:''}</span></div>
+          <div><span><b>Verfügbares Budget im ersten Schritt</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(perMonth(extraMonthly,{tier:setupDraft.tier}))}/Monat für Extras)`:''}</span></div>
         </div>
         ${netStartBudget<35*sc?`<div class="alert"><b>Warnung: Sehr knappes Startbudget!</b><span>Nach Abzug der Vorabkosten bleiben nur ${money(netStartBudget)}. Wählt im Zweifel ein teures Extra weniger!</span></div>`:''}
       </div>
@@ -1925,7 +1926,7 @@ function renderProfileModal(tab='profiles',msg=''){
           return `<div class="slot-row ${isAct?'active':''}">
             <div>
               <b>${esc(p.userName)}</b> ${isAct?'<span class="chip p">Aktiv</span>':''}
-              <div class="slot-meta">${esc(stName)} · ${games} Spiele · Kasse: ${kasse}${p.C?` · Jahr ${Math.floor((p.C.months||0)/12)+1}`:''}${p.S?` · Laufend: „${esc(p.S.title)}“ (${stepTag(p.S.round)})`:''}</div>
+              <div class="slot-meta">${esc(stName)} · ${games} Spiele · Kasse: ${kasse}${p.C?` · Jahr ${Math.floor((p.C.months||0)/12)+1}`:''}${p.S?` · Laufend: „${esc(p.S.title)}“ (${p.S.round>=STEPS.length?'Release':stepTag(p.S.round)})`:''}</div>
             </div>
             <div class="row">
               ${!isAct?`<button class="btn tiny alt" data-switch="${p.id}">Laden</button>`:''}

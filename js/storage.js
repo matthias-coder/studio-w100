@@ -126,6 +126,12 @@ function dropUnknownGenres(c){
 
 function normalizeProject(s,c){
   // Laufendes Projekt aus der Zeit vor dem Schrittmodell: abbrechen, Restbudget erstatten
+  if(s&&s.v!==2&&(s.end||['sales','end','over','launch'].includes(s.screen))){
+    // Abgeschlossenes Altprojekt: nichts erstatten (Budget ist bereits in der Kasse), nur minimal migrieren
+    s.v=2;s.durKey='normal';s.dur=refMonths(s.tier||'indie');
+    if(s.round>=12)s.round=STEPS.length;
+    return s;
+  }
   if(s&&s.v!==2){
     const refund=Math.max(0,s.res?.budget||0);
     if(c?.studio)c.studio.kasse=(c.studio.kasse||0)+refund;
@@ -133,6 +139,7 @@ function normalizeProject(s,c){
     return null;
   }
   if(!s||!s.res)return s;
+  if(s.milestone&&!s.milestone.at)s.milestone.at=s.milestone.month<=6?'prod_fp':'prod_beta';
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
   if(s.res.snd===undefined)s.res.snd=Math.round((s.res.gp+s.res.gfx)/2);
@@ -287,7 +294,7 @@ function generateChronicleText(){
   lines.push(`- **Studio-Fame:** ${st.fame}/100`);
   lines.push(`- **Studiokasse:** ${money(st.kasse)}`);
   lines.push(`- **Veröffentlichte Spiele:** ${C.hall.length}`);
-  lines.push(`- **Gehaltsinflation:** +${Math.round((st.salaryDrift||0)*100)} % | **Infrastruktur-Stufe:** +${nf(st.overheadDrift||0,1)}/Monat`);
+  lines.push(`- **Gehaltsinflation:** +${Math.round((st.salaryDrift||0)*100)} % | **Infrastruktur-Stufe:** +${nf(perMonth(st.overheadDrift||0,S||{tier:'indie'}),1)}/Monat`);
   lines.push('');
   lines.push(`## 🎬 Game Director: ${d.n} (${d.tag})`);
   lines.push(`- **Werte:** ${dirStatLine(d.s)}`);
@@ -329,7 +336,7 @@ function generateChronicleText(){
   if(S){
     lines.push('');
     lines.push(`## 🚧 Aktuelles Projekt in Entwicklung: „${S.title}“`);
-    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Schritt:** ${S.round+1}/${STEPS.length} (${PHASES[curStep(S).ph]})`);
+    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Schritt:** ${Math.min(S.round+1,STEPS.length)}/${STEPS.length} (${S.round>=STEPS.length?'Release':PHASES[curStep(S).ph]})`);
     lines.push(`- **Status:** Budget ${money(S.res.budget)} | Gesamt-Qualität ${S.res.qual} (Gameplay ${S.res.gp} · Grafik ${S.res.gfx} · Sound ${S.res.snd??'–'}) | Bugs ${S.res.bugs} | Hype ${S.res.hype}/10 | Moral ${S.res.moral}/10 | Wishlists ${nf(S.res.wl,0)}`);
   }
   return lines.join('\n');

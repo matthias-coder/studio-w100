@@ -156,8 +156,8 @@ const E=[
   {l:'Noch unter Verschluss halten',safe:{gp:3},sx:'Ihr steckt die Zeit lieber in das echte Fundament.'}]},
 
  {p:2,t:'Der Tech-Bro',x:'Ein Typ in Patagonia-Weste steht plötzlich im Büro. „Bro, euer Budget liegt einfach rum? Steckt es in $MOONCAT. Das geht x100, garantiert.“',cond:s=>!s.crypto,o:[
-  {l:'Ein bisschen zocken (10 % des Budgets)',safe:{},set:{cryptoPct:.1},sd:'Das Geld ist sofort weg. In ein bis zwei Monaten zeigt sich, was draus wird.',sx:'Ihr kauft $MOONCAT. Der Tech-Bro macht ein Foto mit euch für LinkedIn.'},
-  {l:'Ordentlich rein (25 % des Budgets)',safe:{},set:{cryptoPct:.25},sd:'Hohes Risiko. Auflösung in ein bis zwei Monaten.',sx:'Der Chart zeigt nach oben. Noch.'},
+  {l:'Ein bisschen zocken (10 % des Budgets)',safe:{},set:{cryptoPct:.1},sd:'Das Geld ist sofort weg. In ein bis zwei Schritten zeigt sich, was draus wird.',sx:'Ihr kauft $MOONCAT. Der Tech-Bro macht ein Foto mit euch für LinkedIn.'},
+  {l:'Ordentlich rein (25 % des Budgets)',safe:{},set:{cryptoPct:.25},sd:'Hohes Risiko. Auflösung in ein bis zwei Schritten.',sx:'Der Chart zeigt nach oben. Noch.'},
   {l:'Diamond Hands (50 % des Budgets)',safe:{},set:{cryptoPct:.5},sd:'Die halbe Kasse auf einen Coin. Was soll schon schiefgehen?',sx:'Das Team schaut euch schweigend an, während ihr „to the moon“ murmelt.'},
   {l:'Freundlich rauswerfen',safe:{moral:1},sx:'Das Team applaudiert, als die Tür hinter ihm zufällt.'}]},
 

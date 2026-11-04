@@ -4,7 +4,7 @@ const FILES=['js/data.js','js/schedule.js','js/events.js','js/content-extra.js',
 function el(){return {hidden:false,textContent:'',innerHTML:'',value:'',style:{},dataset:{},
   classList:{add(){},remove(){},toggle(){},contains(){return false}},addEventListener(){},
   querySelectorAll:()=>[],querySelector:()=>null,appendChild(){},setAttribute(){}}}
-function load(){
+function load(o={}){
   const store={};
   const ctx={console,setTimeout,clearTimeout,Buffer,
     localStorage:{getItem:k=>k in store?store[k]:null,setItem:(k,v)=>{store[k]=String(v)},removeItem:k=>{delete store[k]}},
@@ -13,7 +13,8 @@ function load(){
     btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary')};
   ctx.window=ctx;vm.createContext(ctx);
   vm.runInContext('var render=()=>{},renderMain=()=>{},updateProfileButton=()=>{};',ctx);
-  for(const f of FILES)vm.runInContext(fs.readFileSync(path.join(ROOT,f),'utf8'),ctx,{filename:f});
+  for(const f of (o.ui?FILES.concat('js/ui.js'):FILES))vm.runInContext(fs.readFileSync(path.join(ROOT,f),'utf8'),ctx,{filename:f});
+  if(o.ui)vm.runInContext('render=()=>{};',ctx);
   const run=code=>vm.runInContext(code,ctx);
   return {ctx,run,store};
 }

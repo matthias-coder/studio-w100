@@ -21,13 +21,13 @@ const STEPS=[
 function stepIndex(id){return STEPS.findIndex(s=>s.id===id)}
 function durMonths(tier,durKey){const d=TIERS[tier].dur,i=DUR_KEYS.indexOf(durKey);return d[i<0?1:i]}
 function refMonths(tier){return TIERS[tier].dur[1]}
-function stepMonths(i,s=S){return s.dur*STEPS[i].share/100}
-function stepW(i=S.round,s=S){return 12*STEPS[i].share/100*s.dur/refMonths(s.tier)}
+function stepMonths(i,s=S){return i>=STEPS.length?0:s.dur*STEPS[i].share/100}
+function stepW(i=S.round,s=S){return i>=STEPS.length?0:12*STEPS[i].share/100*s.dur/refMonths(s.tier)}
 function totalW(s=S){return STEPS.reduce((a,_,i)=>a+stepW(i,s),0)}
 function curStep(s=S){return STEPS[Math.min(s.round,STEPS.length-1)]}
 function stepFlag(flag,i=S.round){return !!STEPS[i]?.[flag]}
 function costPerMonth(){return monthSum()*12/refMonths(S.tier)}
-function stepCost(i=S.round){return monthSum()*stepW(i)}
+function stepCost(i=S.round){return i>=STEPS.length?0:monthSum()*stepW(i)}
 function perMonth(v,s=S){return v*12/refMonths(s.tier)}
 function monthsDone(s=S){let m=0;for(let i=0;i<Math.min(s.round,STEPS.length);i++)m+=stepMonths(i,s);return m}
 function monthsLeft(s=S){let m=0;for(let i=Math.max(0,s.round);i<STEPS.length;i++)m+=stepMonths(i,s);return m}
@@ -37,4 +37,4 @@ function fmtSpan(m){
   return t==='1'?'1 Monat':`${t} Monate`;
 }
 function stepTag(i=S.round){return `R${i+1}`}
-function stepLabel(i=S.round){const st=STEPS[i];return `${PHASES[st.ph]} · ${st.n} · Schritt ${i+1}/${STEPS.length} · ${fmtSpan(stepMonths(i))}`}
+function stepLabel(i=S.round){if(i>=STEPS.length)return 'Release';const st=STEPS[i];return `${PHASES[st.ph]} · ${st.n} · Schritt ${i+1}/${STEPS.length} · ${fmtSpan(stepMonths(i))}`}

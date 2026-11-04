@@ -570,7 +570,7 @@ function apply(eff){
       if(used<maxSave){
         S.prod[ph]=used+1;
         v+=1;
-        out.push(['note',`${getStaff('producer').personName} (Producer) fängt 1 Monat Verzug ab`]);
+        out.push(['note',`${getStaff('producer').personName} (Producer) fängt Verzug ab`]);
         if(!v)continue;
       }
     }
@@ -931,8 +931,8 @@ function monthEnd(){
   const w=stepW();
   const lines=monthLines();let sum=0;lines.forEach(([c,v])=>{v*=w;S.spend[c]=(S.spend[c]||0)+v;sum+=v});S.res.budget-=sum;
   const d=D(),pe={},notes=[];const add=(k,v)=>{pe[k]=(pe[k]||0)+v};
-  const acc=(key,v,f)=>{v*=w;S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1){S.acc[key]+=1;f(-1)}};
-  const tick=(key,v)=>{S.acc[key]=(S.acc[key]||0)+v;const n=Math.floor(S.acc[key]);S.acc[key]-=n;return n};
+  const acc=(key,v,f)=>{v*=w;S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1-1e-9){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1+1e-9){S.acc[key]+=1;f(-1)}};
+  const tick=(key,v)=>{S.acc[key]=(S.acc[key]||0)+v;const n=Math.floor(S.acc[key]+1e-9);S.acc[key]-=n;return n};
 
   for(const k in PLAN){
     const P=PLAN[k];let v=P.val[S.plan[k]];
@@ -1024,7 +1024,7 @@ function monthEnd(){
   const cr=resolveCrypto();
   if(cr){notes.push(cr.note);if(cr.moral)add('moral',cr.moral)}
   const pc=apply(pe).filter(([k])=>k!=='note');
-  S.res.zeit-=w;
+  S.res.zeit=Math.round((S.res.zeit-w)*1e6)/1e6;
 
   // Publisher-Meilenstein prüfen!
   if(S.milestone&&!S.milestone.done&&STEPS[S.round].id===S.milestone.at){
@@ -1409,7 +1409,7 @@ function reviewScore(r,certPen=0){
 // Prognose während der Entwicklung: Wertung bei mittlerem Wurf, inkl. absehbarem Verzug
 function reviewForecast(){
   if(!S||!S.res)return null;
-  const b=S.res.bugs,late=S.res.zeit<0?-S.res.zeit*3:0;
+  const b=S.res.bugs,late=S.res.zeit<0?Math.round(-S.res.zeit*3):0;
   S.res.bugs=b+late;
   const v=reviewScore(50);
   S.res.bugs=b;
@@ -1455,10 +1455,10 @@ function launch(){
   animate([r],()=>{
     let late='';
     if(S.res.zeit<0){
-      const z=-S.res.zeit;
-      S.res.bugs+=z*3;
-      S.res.hype=clamp(S.res.hype-z,0,10);
-      late=`Ihr wart ${z} Monat${z>1?'e':''} zu spät dran. Das hat Bugs und Hype gekostet. `;
+      const z=Math.round(-S.res.zeit*1e6)/1e6,zm=Math.max(1,Math.round(z*refMonths(S.tier)/12));
+      S.res.bugs=Math.round(S.res.bugs+z*3);
+      S.res.hype=clamp(Math.round(S.res.hype-z),0,10);
+      late=`Ihr wart ${zm} Monat${zm>1?'e':''} zu spät dran. Das hat Bugs und Hype gekostet. `;
     }
     // Fail-State: zu viele Bugs → Plattform-Zertifizierung fällt durch
     let certPen=0;
