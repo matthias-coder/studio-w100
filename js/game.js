@@ -328,6 +328,7 @@ function runEngineProject(goal,months,spec){
   C.studio.staff.forEach(st=>{st.xp=(st.xp||0)+Math.floor(months/6);st.tenure=(st.tenure||0)+1;checkStaffLevelUp(st)});
   C.studio.salaryDrift=Math.round(((C.studio.salaryDrift||0)+0.03*months/6)*100)/100;
   if(months>=9)rollMarketTrend();
+  advanceCalendar(months);
   C.engProjects=(C.engProjects||0)+1;
   C.engProj={goal,months,spec,r,mod,target,ok,crit,fumble,cost,lic,notes};
   render();save();
@@ -1598,6 +1599,38 @@ function legendMilestones(e){
   return notes;
 }
 
+function advanceCalendar(months){C.months=(C.months||0)+months}
+function careerYear(){return Math.floor((C.months||0)/12)+1}
+function applyEngineAging(e){
+  const ageStep=S.dur>=48?2:1;
+  if(C.studio.engine){
+    const eng=C.studio.engine;
+    if(S.engine==='eigen'){
+      eng.runs=(eng.runs||1)+1;
+      if(!eng.genres.includes(S.genre))eng.genres.push(S.genre);
+      if(S.engAction==='new'){
+        eng.age=1;
+        if(e.meta>=70)eng.techPts=(eng.techPts||0)+1;
+        e.engNote=`${eng.name} v1.0 hat ihre Feuertaufe bestanden (Zustand: ${getEngineAgeInfo(eng.age).label})${e.meta>=70?' · +1 Engine-Forschungspunkt!':''}`;
+      }else if(S.engAction==='upgrade'){
+        eng.age=1;
+        e.engNote=`${eng.name} v${eng.version}.0 hat sich im Einsatz bewährt (Zustand: ${getEngineAgeInfo(eng.age).label}).`;
+      }else{
+        eng.age=(eng.age||0)+ageStep;
+        const ageInfo=getEngineAgeInfo(eng.age);
+        e.engNote=`${eng.name} v${eng.version}.0 hat mehr Team-Routine (${eng.runs} Spiele), altert technisch aber auf „${ageInfo.label}“ (${fmt(ageInfo.gfx)} Grafik, ${fmt(ageInfo.gp)} Gameplay beim nächsten Einsatz)!`;
+      }
+      if(S.engAction==='reuse'&&!S.shop.includes('refactoring')){
+        eng.techDebt=(eng.techDebt||0)+1;
+        e.engNote+=(e.engNote?' ':'')+'+1 Technische Schuld durch Wiederverwendung.';
+      }
+    }else{
+      eng.age=(eng.age||0)+ageStep;
+      e.engNote=`Eure eigene Engine (${eng.name}) wurde nicht genutzt und ist auf „${getEngineAgeInfo(eng.age).label}“ gealtert.`;
+    }
+  }
+}
+
 function finishGame(){
   const e=S.end,t=T();
   e.live=S.model!=='kauf'?36*t.scale:0;
@@ -1637,32 +1670,8 @@ function finishGame(){
 
   // 1. Eigene Engine: Gewinnt Routine & Forschungspunkte, altert aber ohne Upgrade!
   e.engNote='';
-  if(C.studio.engine){
-    const eng=C.studio.engine;
-    if(S.engine==='eigen'){
-      eng.runs=(eng.runs||1)+1;
-      if(!eng.genres.includes(S.genre))eng.genres.push(S.genre);
-      if(S.engAction==='new'){
-        eng.age=1;
-        if(e.meta>=70)eng.techPts=(eng.techPts||0)+1;
-        e.engNote=`${eng.name} v1.0 hat ihre Feuertaufe bestanden (Zustand: ${getEngineAgeInfo(eng.age).label})${e.meta>=70?' · +1 Engine-Forschungspunkt!':''}`;
-      }else if(S.engAction==='upgrade'){
-        eng.age=1;
-        e.engNote=`${eng.name} v${eng.version}.0 hat sich im Einsatz bewährt (Zustand: ${getEngineAgeInfo(eng.age).label}).`;
-      }else{
-        eng.age=(eng.age||0)+1;
-        const ageInfo=getEngineAgeInfo(eng.age);
-        e.engNote=`${eng.name} v${eng.version}.0 hat mehr Team-Routine (${eng.runs} Spiele), altert technisch aber auf „${ageInfo.label}“ (${fmt(ageInfo.gfx)} Grafik, ${fmt(ageInfo.gp)} Gameplay beim nächsten Einsatz)!`;
-      }
-      if(S.engAction==='reuse'&&!S.shop.includes('refactoring')){
-        eng.techDebt=(eng.techDebt||0)+1;
-        e.engNote+=(e.engNote?' ':'')+'+1 Technische Schuld durch Wiederverwendung.';
-      }
-    }else{
-      eng.age=(eng.age||0)+1;
-      e.engNote=`Eure eigene Engine (${eng.name}) wurde nicht genutzt und ist auf „${getEngineAgeInfo(eng.age).label}“ gealtert.`;
-    }
-  }
+  advanceCalendar(S.dur);
+  applyEngineAging(e);
 
   // 2. Lead-Personal
   e.staffNotes=[];
