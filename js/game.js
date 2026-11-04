@@ -1008,7 +1008,7 @@ function monthEnd(){
   let eaInc=0;
   if(S.ea&&stepFlag('ea')){
     eaInc=Math.round((2+S.res.hype)*1.2*sc*(hasP('ea')?1.5:1)*w*10)/10;
-    S.res.budget+=eaInc;S.income+=eaInc;add('bugs',-w);
+    S.res.budget+=eaInc;S.income+=eaInc;acc('ea_bugs',-1,x=>add('bugs',x));
   }
 
   const commMult=[1,1.1,1.18,1.25,1.32,1.4][staffLevel('community')]||1;

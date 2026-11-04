@@ -28,3 +28,6 @@ test('crisis path resumes at next step',()=>{const {run}=load();newProject(run);
   run('S.res.budget=1e9;afterMonth()');assert.notEqual(run('S.screen'),'launch');});
 test('runway in real months',()=>{const {run}=load();newProject(run);
   run('S.res.budget=costPerMonth()*5.5');assert.equal(run('runway()'),5);});
+test('early access keeps bugs integer at every step',()=>{const {run}=load();newProject(run);noRandom(run);
+  run('S.ea=true;S.res.budget=1e9');
+  for(let i=0;i<13;i++){run('monthEnd()');assert.ok(Number.isInteger(run('S.res.bugs')),'bugs='+run('S.res.bugs')+' after step '+i);}});
