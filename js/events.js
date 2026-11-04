@@ -111,9 +111,9 @@ function getMand(id){
 
 /* ===================== Monatskarten (6 Phasen) ===================== */
 const E=[
- {p:0,t:'Der Pitch',x:'Ein Publisher hat 20 Minuten für euch. Danach muss er zum Mittagessen.',o:[
-  {l:'Selbst pitchen',st:'business',dc:12,s:{budget:60,hype:1,recoup:60},sx:'Er lacht an den richtigen Stellen. Vertrag mit Vorschuss, der später mit dem Umsatz verrechnet wird.',f:{budget:15,moral:-1,recoup:15},fx:'Die Demo stürzt bei Folie 3 ab. Es gibt einen kleinen Vorschuss aus Mitleid.'},
-  {l:'Ohne Publisher starten',safe:{moral:1,hype:-1},sx:'Ihr bleibt unabhängig. Keiner redet rein, aber es zahlt auch keiner.'}]},
+ {p:0,t:'Die Generalprobe',x:'Bevor es ernst wird, pitcht ihr vor Freunden aus der Branche.',o:[
+  {l:'Vor Publikum proben',st:'business',dc:12,s:{hype:1,moral:1},sx:'Das Feedback ist freundlich und ehrlich. Die Folien sitzen jetzt.',f:{moral:-1},fx:'Die Demo stürzt bei Folie 3 ab. Gut, dass es nur eine Probe war.'},
+  {l:'Lieber weiterbauen',safe:{gp:2},sx:'Ihr spart euch die Folien und baut stattdessen am Spiel.'}]},
  {p:0,t:'Die große Idee',x:'Whiteboard, Pizza, drei Stunden. Ihr braucht den einen Satz, der euer Spiel erklärt.',o:[
   {l:'Etwas völlig Neues',st:'design',dc:14,s:{gp:12,gfx:4,hype:1},sx:'„Wie Tetris, aber mit Gefühlen.“ Alle sind sofort dabei.',f:{gp:3,zeit:-1},fx:'Nach zwei Wochen versteht immer noch niemand das Konzept.'},
   {l:'Bewährtes mit Twist',st:'design',dc:9,s:{gp:7,gfx:3},sx:'Solide Basis, eigener Dreh. Damit lässt sich arbeiten.',f:{gp:2,hype:-1},fx:'Ein Forum nennt euer Konzept schon jetzt „Klon mit Hut“.'}]},

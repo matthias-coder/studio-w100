@@ -499,7 +499,7 @@ function startGame(o){
   goMonth();
 }
 
-function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen='event';render();save()}
+function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
 
 /* ===================== W100 Würfel-Modifikatoren & Regeln ===================== */
 function moralMod(){
@@ -811,11 +811,13 @@ function curTitle(kind,ev){
     :kind==='contract'?CONTRACTS.find(x=>x.id===ev).n
     :kind==='hire'?STAFF[ev].n
     :kind==='dlc'?DLC_OPTS.find(x=>x.id===ev).n
+    :kind==='pitch'?'Pitch-Termine'
     :RESC.find(x=>x.id===ev).n;
 }
 
 function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
+  if(p.kind==='pitch'){const amb=S.fund.amb;return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
   if(p.kind==='rand'){const r=R[p.ev];const adj=r.dcAdj?r.dcAdj(S):0;return {...r,l:'Rettungswurf',dc:dc100(r.dc)+adj*4}}
   if(p.kind==='legend'){
@@ -892,6 +894,7 @@ function resolve(rolls){
     pre=pre.concat(x.ch);
     if(x.txt)txt+=' '+x.txt;
   }
+  if(p.kind==='pitch'){const x=resolvePitch(total,crit,fumble);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
   if(ok&&o.onOk){const x=o.onOk();if(x)txt+=' '+x}
   if(!ok&&o.onFail){const x=o.onFail();if(x)txt+=' '+x}
   S.last={...p,rolls,r,mod,mm,total,ok,crit,fumble,ch,pre,txt,dc:target,st:o.st,l:o.l};
@@ -904,6 +907,7 @@ function afterResult(k){
   else if(k==='mand'){S.mdone.push(S.mcur);goMonth()}
   else if(k==='rand'||k==='legend')afterRandom();
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
+  else if(k==='pitch')goMonth();
   else if(k==='dlc'){S.screen='end';render();save()}
   else if(k==='rescue'){if(S.over)gameOver(S.over);else{S.screen='crisis';render();save()}}
 }

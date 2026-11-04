@@ -51,3 +51,34 @@ function planText(id){
   const list=names.length>2?`${names[0]} … ${names[names.length-1]}`:names.join(', ');
   return `${pct} % bei Unterschrift, Rest in ${names.length} ${names.length===1?'Rate':'Raten'} (${list})`;
 }
+
+/* ===================== Pitch: Auswahl, Wurf, Abschluss, Eigenfinanzierung ===================== */
+function pitchDue(s=S){return !s.fund.pitched&&STEPS[s.round]?.id==='pit_meet'}
+function pitchBonus(s=S){return (Math.floor(s.res.hype/2)+Math.floor((s.res.qual-30)/10))*4+fameBonus()}
+function pitchMod(){return optMod({st:'business'})+pitchBonus()+moralMod()}
+function pitchTarget(id,amb){return dc100(FUNDERS[id].dc+(amb?FUND.ambDc:0))}
+function startPitch(ids,amb){
+  const sel=(ids||[]).filter(id=>funderAvail(id));
+  if(!sel.length)return;
+  S.fund.amb=!!amb;S.pitchSel=sel;
+  startRoll({kind:'pitch',ev:'pitch',adv:false});
+}
+function selfFund(){
+  S.fund.pitched=true;S.fund.self=true;S.skip.push('pit_mix');
+  addLog(`<span>${stepTag()}</span> Finanzierung: nur Eigenkapital`);
+  goMonth();
+}
+function resolvePitch(total,crit,fumble){
+  const amb=S.fund.amb,ch=[],won=[],lost=[];let got=0;
+  (S.pitchSel||[]).filter(id=>funderAvail(id)).forEach(id=>{
+    const ok=crit||(!fumble&&total>=pitchTarget(id,amb));
+    if(!ok){lost.push(FUNDERS[id].n);return}
+    const deal=signDeal(id,r1(funderOffer(id,amb)*(crit?1+FUND.critBonus:1)));
+    got=r1(got+deal.paid);won.push(`${FUNDERS[id].n} (${money(deal.total)})`);
+  });
+  S.fund.pitched=true;
+  if(!S.fund.deals.length&&!S.skip.includes('pit_mix'))S.skip.push('pit_mix');
+  if(got)ch.push(['budget',got]);
+  const txt=(won.length?`Zugesagt: ${won.join(', ')}. `:'')+(lost.length?`Abgesagt: ${lost.join(', ')}.`:'');
+  return {ch,txt:txt.trim()};
+}
