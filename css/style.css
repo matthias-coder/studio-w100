@@ -659,3 +659,21 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
   input[type=checkbox],input[type=radio]:not(.choice input){width:22px;height:22px}
   label:has(>input[type=checkbox]){min-height:44px;display:flex;align-items:center;gap:10px}
 }
+
+/* Sprint-Leiste & Meilenstein */
+.sprintbar{display:grid;gap:6px;margin:8px 0;padding:8px 10px;border:1.5px solid var(--ink);border-radius:6px;background:var(--paper)}
+.sprint-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.sprint-focus{flex-wrap:wrap}
+.sprint-focus button{flex:1 1 auto;min-width:0;white-space:normal}
+.sprint-eff{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sprint-last{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+.crunch[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.sprint-fine .fold-body{display:grid;gap:4px}
+.fine-row{display:flex;align-items:center;gap:6px}
+.fine-row span{flex:1 1 auto;min-width:0}
+.fine-row b{font-family:var(--f-mono);min-width:3.5em;text-align:center}
+.mstable{width:100%;border-collapse:collapse;font:500 13px var(--f-mono);margin:8px 0}
+.mstable th{text-align:left;font-weight:500;opacity:.7}
+.mstable th,.mstable td{padding:3px 6px;border-bottom:1px solid var(--chip)}
+.ms-title{margin:4px 0}
+.ms-badge{display:inline-block;font:600 13px var(--f-mono);padding:3px 10px;border:1.5px solid currentColor;border-radius:4px;margin-bottom:6px}

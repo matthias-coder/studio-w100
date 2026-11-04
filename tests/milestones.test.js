@@ -34,3 +34,9 @@ test('stage-1 save mid-project gets defaults and no retro checks',()=>{const {ru
   run('S.round=10;delete S.sprint;delete S.msDone;delete S.msResult;S.res.moral=5');
   const s=run('normalizeProject(S,C)');assert.deepEqual([...s.msDone],['vs','fp','alpha']);
   assert.equal(s.sprint.focus,'balanced');assert.equal(s.res.moral,5);});
+test('gold master flow ends in the launch screen',()=>{const {run}=load();newProject(run);run('Math.random=()=>0.999;S.res.budget=1e9');
+  run(`S.round=stepIndex('pol_bugs');monthEnd()`);assert.equal(run('S.screen'),'milestone');
+  run('closeMilestone()');
+  if(run('S.screen')==='mand'){run(`S.mdone.push(...mandFor(S.round));goMonth()`)}
+  if(run('S.screen')==='event'){run('S.res.budget=1e9;monthEnd()')}
+  assert.equal(run('S.screen'),'launch');});

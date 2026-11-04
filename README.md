@@ -60,6 +60,11 @@ Die Idee, die realen Hürden, absurden Zufälle, Budget-Kalkulationen und kreati
 - **GOTY-Awards:** Bei jedem Release tretet ihr in *Spiel des Jahres*, *Bestes Gameplay* und *Beste Grafik & Technik* gegen die Konkurrenz an.
 - **Loginloses Multi-User-Speichersystem:** Mehrere Spieler-Profile im Browser (`👤 Spieler`), teilbare **`W100-...`-Speichercodes**, `.json`-Backups und **Markdown-Chronik-Export (`📜 Export`)**.
 
+### 8. 🏃 Sprint & Meilensteine
+- **Sprint pro Schritt:** Über der Ereigniskarte verteilt ihr die Punkte des Teams auf Gameplay, Grafik, Sound, Bugfixing und Marketing. Fertige Schwerpunkte (*Ausgewogen*, *Gameplay zuerst*, *Look & Sound*, *Bugs jagen*, *Marketing-Push*, *Meilenstein-Ziel*) oder **Feintuning** in 5-%-Schritten; die erwarteten Effekte seht ihr als Chips.
+- **Crunch:** +30 % Punkte, dafür −1 Moral und +2 Bugs. Nur bei ausreichender Moral, nicht bei Auftragsarbeit.
+- **Meilensteine:** *Vertical Slice*, *First Playable*, *Alpha*, *Beta* und *Gold Master* prüfen Gameplay, Grafik, Sound und Bugs gegen Zielwerte. Erreicht gibt +1 Moral, verfehlt −1; Publisher-Meilensteine zahlen bei Erfolg ihre Prämie. Im Studio-Panel steht immer der nächste Meilenstein mit Ist/Soll.
+
 ---
 
 ## ⚖️ Disclaimer & Hinweise (Charaktere & KI-Grafiken)

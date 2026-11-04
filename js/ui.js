@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual'];
+const ACTIVE=['event','mand','lang','result','random','legend','interview','shop','crisis','roll','manual','milestone'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -275,19 +275,69 @@ function dirBlock(){
   </div>`;
 }
 
-function milestoneBlock(){
+let sprintFineOpen=false;
+function sprintTune(k,step){
+  const sp=S.sprint;
+  if(sp.focus!=='custom')sp.custom={...sprintAlloc()};
+  sp.custom[k]=clamp((+sp.custom[k]||0)+step,0,100);
+  sp.focus='custom';
+}
+function sprintBar(){
+  if(!S)return '';
+  if(!S.sprint)S.sprint=defaultSprint();
+  const sp=S.sprint;
+  if(S.contractStep===S.round)return `<div class="sprintbar"><div class="sprint-head"><b>Sprint · 0 Punkte</b><button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="false" disabled title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button></div><div class="note">Auftragsarbeit: Das Team ist diesen Schritt ausgebucht.</div></div>`;
+  const d=sprintDelta(),al=sprintAlloc();
+  const r=v=>Math.round(v*10)/10;
+  const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)]].filter(([,v])=>v!==0);
+  const cr=crunchOn(S),can=canCrunch();
+  const foc=Object.keys(FOCUS).filter(k=>k!=='custom').map(k=>`<button type="button" data-focus="${k}" aria-pressed="${sp.focus===k}">${FOCUS[k].n}</button>`).join('');
+  const fine=AREA_KEYS.map(k=>`<div class="fine-row"><span>${AREAS[k].ic} ${AREAS[k].n}</span><button type="button" class="btn tiny ghost" data-area="${k}" data-step="-5" aria-label="${AREAS[k].n} weniger">−5</button><b>${al[k]} %</b><button type="button" class="btn tiny ghost" data-area="${k}" data-step="5" aria-label="${AREAS[k].n} mehr">+5</button></div>`).join('');
+  return `<div class="sprintbar">
+    <div class="sprint-head"><b>Sprint · ${d.pts} Punkte</b>
+      <button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="${cr}" ${can?'':'disabled'} title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button></div>
+    <div class="seg sprint-focus">${foc}</div>
+    <div class="sprint-eff"><span class="label">Erwartet</span>${chips(eff)}</div>
+    <details class="fold sprint-fine"${sprintFineOpen?' open':''}><summary>Feintuning${sp.focus==='custom'?' (eigene Verteilung)':''}</summary><div class="fold-body">${fine}</div></details>
+  </div>`;
+}
+function bindSprint(m){
+  const redraw=()=>{renderMain();renderHud();save()};
+  m.querySelectorAll('[data-focus]').forEach(b=>b.onclick=()=>{S.sprint.focus=b.dataset.focus;redraw()});
+  m.querySelectorAll('[data-crunch]').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.sprint.crunch=!S.sprint.crunch;redraw()});
+  m.querySelectorAll('[data-area]').forEach(b=>b.onclick=()=>{sprintTune(b.dataset.area,+b.dataset.step);redraw()});
+  m.querySelectorAll('.sprint-fine').forEach(d=>d.addEventListener('toggle',()=>{sprintFineOpen=d.open}));
+}
+function lastSprintNote(){
+  if(!S.month||S.month.n!==S.round||!S.month.sprint)return '';
+  const s=S.month.sprint,r=v=>Math.round(v*10)/10;
+  const l=[['gp',r(s.gp)],['gfx',r(s.gfx)],['snd',r(s.snd)],['bugs',r(s.bugs)],['hype',r(s.hype)]].filter(([,v])=>v!==0);
+  if(!l.length)return '';
+  return `<div class="sprint-last"><span class="label">Sprint-Beitrag (${s.pts} Punkte)</span>${chips(l)}</div>`;
+}
+function msRowsHTML(rows){
+  return `<table class="mstable"><thead><tr><th></th><th>Ist</th><th>Soll</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.ok?'pos':'neg'}"><td>${r.n}</td><td>${fmt(r.ist)}</td><td>${r.k==='bugs'?'≤ ':'≥ '}${r.soll}</td><td>${r.ok?'✓':'✗'}</td></tr>`).join('')}</tbody></table>`;
+}
+function msBlock(){
   if(!S)return '';
   ensureMilestone();
-  const ms=S.milestone;
-  if(!ms)return '';
-  const msStep=msById(ms.at)?.n||'Meilenstein',tg=msTargets(ms.at);
+  const nx=nextMs();
+  if(!nx)return '';
+  const n=stepIndex(nx.at)-S.round;
+  const when=n<=0?'nach diesem Schritt':`in ${n} Schritt${n===1?'':'en'}`;
+  const pub=S.milestone&&!S.milestone.done&&S.milestone.at===nx.id
+    ?`<div class="mini"><div><span>Publisher-Prämie</span><span class="pos">+${money(S.milestone.reward)}</span></div></div>`:'';
   return `<details class="fold">
-    <summary>🎯 Meilenstein: ${esc(msStep)} ${ms.done?'(✓)':''}</summary>
-    <div class="fold-body">
-      <div class="note">Ziel bis Ende „${esc(STEPS[stepIndex(msById(ms.at).at)]?.n||msStep)}“: <b>Gameplay ≥ ${tg.gp} · Grafik ≥ ${tg.gfx}</b></div>
-      <div class="mini"><div><span>Prämie</span><span class="pos">+${money(ms.reward)} & +1 Moral</span></div></div>
-    </div>
+    <summary>🎯 Nächster Meilenstein: ${esc(nx.n)} · ${when}</summary>
+    <div class="fold-body">${msRowsHTML(msCheck(nx.id).rows)}${pub}</div>
   </details>`;
+}
+function renderMilestone(m){
+  const r=S.msResult;
+  const o={met:['Erreicht','pos'],near:['Knapp verfehlt','wrn'],miss:['Verfehlt','neg']}[r.outcome];
+  m.className='card';
+  m.innerHTML=`<span class="label">Meilenstein</span><h2 class="ms-title">${esc(r.n)}</h2><div class="ms-badge ${o[1]}">${o[0]}</div>${msRowsHTML(r.rows)}${(r.notes||[]).map(t=>`<p class="note">${esc(t)}</p>`).join('')}<button class="btn" id="msNext">Weiter</button>`;
+  const b=$('msNext');if(b)b.onclick=closeMilestone;
 }
 
 function trendBlock(){
@@ -386,7 +436,7 @@ function renderSheet(){
     <div class="stats">${Object.keys(STATS).map(k=>`<div class="stat"><b>${fmt(modFor(k)).replace('±','+')}</b><span>${STATS[k]}</span></div>`).join('')}</div>
     <div class="insp"><span class="label">Inspiration</span>${[0,1,2].map(i=>`<span class="pip ${i<S.insp?'on':''}"></span>`).join('')}<span class="note">Moral ${fmt(moralMod())}</span></div>
     ${trendBlock()}
-    ${milestoneBlock()}
+    ${msBlock()}
     ${cryptoBlock()}
     ${dirBlock()}`;
   bindSheetEvents(sh);
@@ -831,7 +881,7 @@ function monthNote(){
 
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
-  if(kind==='card'){const c=E[ev];return monthNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
+  if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[S.round-1]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
@@ -966,19 +1016,20 @@ function renderMain(){
   if(sc==='event'){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
-    m.innerHTML=monthNote()+budgetAlert()+`<div class="studio-actions">
+    m.innerHTML=monthNote()+lastSprintNote()+budgetAlert()+sprintBar()+`<div class="studio-actions">
       <span class="label">In diesem Schritt außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
       <button class="btn tiny ghost" data-opensub="hire">👥 Personal${stepFlag('hire')?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(curPhase())?'(✓)':''}</button>
     </div>`+eventBannerHTML('card',evIdx)+`<span class="label">${stepLabel()}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
-    bindOpts(m);bindFin();
+    bindOpts(m);bindFin();bindSprint(m);
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
       S.shopMsg=null;S.screen='shop';wsTab='shop';render();save();
     });
     return;
   }
+  if(sc==='milestone'){renderMilestone(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
