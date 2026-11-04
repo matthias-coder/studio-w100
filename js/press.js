@@ -130,3 +130,23 @@ function acceptInfluencer(){
   return true;
 }
 function declineInfluencer(){S.inf.pending=null}
+
+/* ===================== Überraschungs-Stream ===================== */
+function streamDue(){return !!S&&!!S.inf&&!S.inf.stream&&S.round>=stepIndex('prod_fp')&&S.round<STEPS.length-1&&Math.random()<INF.streamChance}
+function startStream(){
+  const pool=INF_KEYS.concat('zockrange');
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  S.stream=id;S.inf.stream=true;S.screen='stream';
+  addLog(`<span>${stepTag(lastStep())}</span> 📺 Live-Stream: ${INFLUENCERS[id].n} hat eure Demo entdeckt`);
+  render();save();return true;
+}
+function streamCard(id){
+  const d=INFLUENCERS[id],r=d.reach,l=infLikes(id);
+  return {t:`Live-Stream: ${d.n}`,
+    x:`${d.n} hat eure Demo entdeckt und will sie heute Abend live spielen.`,
+    o:[{l:'Live dazuschalten',st:'business',dc:PRESS.streamDc,bonusV:D().s.hype*4+Math.round((infBock(id)-50)/5),
+        s:{hype:2*r,wl:3*r},f:{hype:-(r+1)},
+        sx:`${d.n} streamt euer Spiel und der Chat feiert es.`,fx:`Der Stream läuft schlecht, ${d.n} verzieht das Gesicht und der Chat lacht.`},
+       {l:'Nur Key schicken',safe:l>0?{hype:r}:l<0?{}:{hype:1},sx:`${d.n} bekommt einen Key und spielt in Ruhe.`},
+       {l:'Absagen',safe:{},sx:'Ihr sagt höflich ab. Der Stream findet ohne euch statt.'}]};
+}

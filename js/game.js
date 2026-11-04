@@ -774,12 +774,12 @@ const curCP=()=>curStep().cp;
 const spendTotal=()=>Object.values(S.spend).reduce((a,b)=>a+b,0);
 
 /* ===================== Ablauf & W100-Würfeln ===================== */
-function curCard(){return S.screen==='mand'?getMand(S.mcur):S.screen==='fair'?fairCard(S.fair):E[S.deck[S.round]]}
+function curCard(){return S.screen==='mand'?getMand(S.mcur):S.screen==='fair'?fairCard(S.fair):S.screen==='stream'?streamCard(S.stream):E[S.deck[S.round]]}
 
 function choose(i){
   if(rolling)return;
-  const kind=S.screen==='mand'?'mand':S.screen==='fair'?'fair':'card';
-  const ev=kind==='mand'?S.mcur:kind==='fair'?S.fair:S.deck[S.round];
+  const kind=S.screen==='mand'?'mand':S.screen==='fair'?'fair':S.screen==='stream'?'stream':'card';
+  const ev=kind==='mand'?S.mcur:kind==='fair'?S.fair:kind==='stream'?S.stream:S.deck[S.round];
   const o=curCard().o[i];
   const pre=o.set?applySet({set:o.set},null):[];
   if(o.safe){
@@ -802,6 +802,7 @@ function curTitle(kind,ev){
     :kind==='rand'?R[ev].t
     :kind==='legend'?(DIRS[ev]?`Legendäre Begegnung: ${DIRS[ev].n}`:'Legendäre Begegnung')
     :kind==='fair'?fairCard(ev).t
+    :kind==='stream'?streamCard(ev).t
     :kind==='shop'?SHOP.find(x=>x.id===ev).n
     :kind==='contract'?CONTRACTS.find(x=>x.id===ev).n
     :kind==='hire'?STAFF[ev].n
@@ -814,6 +815,7 @@ function curTitle(kind,ev){
 function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
   if(p.kind==='fair')return fairCard(p.ev).o[p.oi];
+  if(p.kind==='stream')return streamCard(p.ev).o[p.oi];
   if(p.kind==='pitch'){const amb=pitchAmb();return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
   if(p.kind==='renego')return {l:'Nachverhandeln',st:'business',dc:FUND.renegoDc,s:{},f:{},bonusV:fameBonus()};
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
@@ -905,6 +907,7 @@ function afterResult(k){
   if(k==='card')monthEnd();
   else if(k==='mand'){S.mdone.push(S.mcur);goMonth()}
   else if(k==='rand'||k==='legend'||k==='fair')afterRandom();
+  else if(k==='stream'){if(S.last.oi!==2)revealInf(S.stream);afterRandom()}
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
   else if(k==='pitch')goMonth();
   else if(k==='renego'){S.screen='milestone';render();save()}
@@ -1077,6 +1080,9 @@ function afterMonth(){
 
   // Game-Dev-Messe: höchstens einmal pro Projekt, nicht im ersten und letzten Schritt
   if(fairDue()&&startFair())return;
+
+  // Überraschungs-Stream: einmal pro Projekt, ab First Playable
+  if(streamDue()&&startStream())return;
 
   // Interview: ab Monat 3, 20 % pro Monat, höchstens zwei pro Projekt
   if(ivAvail()&&S.round>=2&&(S.ivCount||0)<2&&Math.random()<0.2&&startInterview())return;
