@@ -350,6 +350,7 @@ function startContract(id){
   if(S.contractsPh.includes(ph))return;
   S.contractsPh.push(ph);
   S.contractStep=S.round;
+  if(S.sprint)S.sprint.crunch=false;
   startRoll({kind:'contract',ev:id,adv:false});
 }
 

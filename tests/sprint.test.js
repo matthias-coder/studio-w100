@@ -38,3 +38,8 @@ test('custom focus: all-zero falls back to balanced, equal split sums to 100',()
   const bal=run(`sprintAlloc({...S,sprint:{...S.sprint,focus:'balanced'}})`);
   run(`S.sprint.focus='custom';S.sprint.custom={gp:0,gfx:0,snd:0,bug:0,mkt:0}`);assert.deepEqual(run('sprintAlloc()'),bal);
   run(`S.sprint.custom={gp:3,gfx:3,snd:3,bug:3,mkt:3}`);const a=run('sprintAlloc()');assert.equal(a.gp+a.gfx+a.snd+a.bug+a.mkt,100);});
+test('crunch is ignored in a contract step',()=>{const {run}=load();newProject(run);run('Math.random=()=>0.999;S.res.budget=1e9;S.round=7;S.res.moral=6');
+  run('S.sprint.crunch=true;S.contractStep=S.round');const b=run('S.res.bugs');run('monthEnd()');
+  assert.equal(run('S.res.moral'),6);assert.ok(run('S.res.bugs')-b<2);});
+test('starting a contract switches crunch off',()=>{const {run}=load();newProject(run);run('S.sprint.crunch=true;S.res.budget=1e9');
+  run(`matchMedia=()=>({matches:true});startContract(CONTRACTS[0].id)`);assert.equal(run('S.sprint.crunch'),false);});

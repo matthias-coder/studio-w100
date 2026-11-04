@@ -37,15 +37,15 @@
 
 Focus presets (percent gp/gfx/snd/bug/mkt): **Ausgewogen** = 70 split by `qualWeights()` / 15 / 15 · **Gameplay zuerst** 55/15/10/10/10 · **Look & Sound** 15/40/30/10/5 · **Bugs jagen** 10/5/5/70/10 · **Marketing-Push** 15/15/10/10/50 · **Meilenstein-Ziel** (dynamic, Task 3) · **Eigene Verteilung** (`S.sprint.custom`, 5 % steps).
 
-Milestones (`base` → Soll gp = base + T().gp, gfx = base + T().gfx − 2, snd = base + round((T().gp+T().gfx)/2) − 4, minus 6 more when `sndWeight() < .2`; bug max fixed):
+Milestones (per-dimension bases at reference genre weights gp .55 / gfx .30 / snd .15, `w = qualWeights()`, `t = T()`): Soll gp = gp + t.gp + round(k.gp × (w.gp − .55)), gfx = gfx + t.gfx + round(k.gfx × (w.gfx − .30)), snd = snd + round((t.gp+t.gfx)/2) + round(k.snd × (w.snd − .15)); bug max fixed. The bases were fitted to what the balanced sprint plus the average event-card effects (about +15 gp, +8 gfx, +2 snd per project, added proportionally per step) build; early gp bases are set so a pure sprint without cards is at worst „near“ for the first three milestones.
 
-| id | after step | name | base | max bugs |
-|---|---|---|---|---|
-| vs | pre_slice | Vertical Slice | 30 | 12 |
-| fp | prod_fp | First Playable | 36 | 14 |
-| alpha | prod_alpha | Alpha | 42 | 16 |
-| beta | prod_beta | Beta | 48 | 12 |
-| gm | pol_bugs | Gold Master | 52 | 8 |
+| id | after step | name | gp | gfx | snd | k gp / gfx / snd | max bugs |
+|---|---|---|---|---|---|---|---|
+| vs | pre_slice | Vertical Slice | 31 | 21 | 22 | 21 / 25 / 10 | 12 |
+| fp | prod_fp | First Playable | 34 | 25 | 25 | 27 / 30 / 14 | 14 |
+| alpha | prod_alpha | Alpha | 36 | 26 | 26 | 31 / 36 / 17 | 16 |
+| beta | prod_beta | Beta | 46 | 28 | 28 | 34 / 36 / 18 | 12 |
+| gm | pol_bugs | Gold Master | 48 | 28 | 28 | 36 / 38 / 20 | 8 |
 
 Outcome: **met** (all rows ok) → Moral +1 · **near** (every gap ≤ 4) → no effect, note „knapp verfehlt“ · **miss** → Moral −1. Publisher deal on its milestone: met → `reward`, miss → 40 % chance of cancellation with 50 % recoup repayment (today's numbers), near → nothing.
 
@@ -152,7 +152,7 @@ test('content lever is gone from costs and plan',()=>{const {run}=load();newProj
 **Interfaces:**
 - Consumes: `STEPS`, `stepIndex`, `stepW` (schedule), `AREAS`, `FOCUS`, `normAlloc`, `sprintCapacity` (sprint), `T()`, `sndWeight()` (game).
 - Produces:
-  - `const MILESTONES=[{id:'vs',at:'pre_slice',n:'Vertical Slice',base:30,bugs:12},…]` (table above)
+  - `const MILESTONES=[{id:'vs',at:'pre_slice',n:'Vertical Slice',gp:31,gfx:21,snd:22,k:{gp:21,gfx:25,snd:10},bugs:12},…]` (table above)
   - `msById(id) -> def`
   - `msTargets(id,s=S) -> {gp,gfx,snd,bugs}`
   - `nextMs(s=S) -> def|null`: first milestone with `stepIndex(at) >= s.round` and not in `s.msDone`

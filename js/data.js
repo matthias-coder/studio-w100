@@ -472,7 +472,7 @@ const DSTAT={
   fuehrung:['Führung','Team-Würfe (+4), Start-Moral & Lead-Loyalität'],
   business:['Geschäftssinn','Business-Würfe (+4 pro Punkt über 1)'],
   hype:['Hype-Magnet','Start-Hype, Marketing und Wishlists'],
-  polish:['Polish','Grafik & Gameplay pro Monat und weniger Bugs']
+  polish:['Polish','Mehr Wirkung pro Sprint-Punkt und weniger Bugs']
 };
 
 const ABIL={

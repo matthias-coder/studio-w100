@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {load,newProject}=require('./harness');
 test('indie targets follow the table',()=>{const {run}=load();newProject(run,{tier:'indie'});
-  const t=run(`msTargets('fp')`);assert.equal(t.gp,38);assert.equal(t.gfx,34);assert.equal(t.bugs,14);});
+  const t=run(`msTargets('fp')`);assert.equal(t.gp,36);assert.equal(t.gfx,25);assert.equal(t.bugs,14);});
 test('aaa targets are higher',()=>{const {run}=load();newProject(run,{tier:'indie'});const i=run(`msTargets('beta').gfx`);
   newProject(run,{tier:'aaa'});assert.ok(run(`msTargets('beta').gfx`)>i);});
 test('nextMs skips done milestones',()=>{const {run}=load();newProject(run);
@@ -40,3 +40,21 @@ test('gold master flow ends in the launch screen',()=>{const {run}=load();newPro
   if(run('S.screen')==='mand'){run(`S.mdone.push(...mandFor(S.round));goMonth()`)}
   if(run('S.screen')==='event'){run('S.res.budget=1e9;monthEnd()')}
   assert.equal(run('S.screen'),'launch');});
+test('targets follow the genre weights',()=>{const {run}=load();newProject(run,{tier:'indie'});const rpg=run(`msTargets('gm')`);
+  newProject(run,{tier:'indie',genre:'action',subGenre:'fps'});const fps=run(`msTargets('gm')`);
+  assert.ok(fps.gfx>rpg.gfx&&fps.gp<rpg.gp);});
+test('balanced sprint without cards loses at most 2 moral to milestones',()=>{
+  for(const tier of ['indie','aa','aaa'])for(const [genre,subGenre] of [['rpg',null],['action','fps'],['adventure','vn']]){
+    const {run}=load();newProject(run,{tier,genre,subGenre});
+    run(`Math.random=()=>0.999;S.res.budget=1e12;S.res.moral=5;S.sprint.focus='balanced'`);
+    for(let i=0;i<13;i++){run('monthEnd()');if(run('S.screen')==='milestone')run('closeMilestone()');if(run('S.screen')==='crisis')run('leaveCrisis()');}
+    assert.ok(run('S.res.moral')>=3,tier+' '+genre+' moral='+run('S.res.moral'));}});
+test('balanced sprint with average card effects meets at least 3 of 5 milestones',()=>{
+  for(const tier of ['indie','aa','aaa'])for(const [genre,subGenre] of [['rpg',null],['action','fps'],['adventure','vn']]){
+    const {run}=load();newProject(run,{tier,genre,subGenre});
+    run(`Math.random=()=>0.999;S.res.budget=1e12;S.res.moral=5;S.sprint.focus='balanced'`);
+    const tot=run('totalW()');let met=0;
+    for(let i=0;i<13;i++){const w=run('stepW()')/tot;run(`S.res.gp+=${15*w};S.res.gfx+=${8*w};S.res.snd+=${2*w}`);
+      run('monthEnd()');if(run('S.screen')==='milestone'){if(run('S.msResult.outcome')==='met')met++;run('closeMilestone()');}
+      if(run('S.screen')==='crisis')run('leaveCrisis()');}
+    assert.ok(met>=3,tier+' '+genre+' met='+met);}});

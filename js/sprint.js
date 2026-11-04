@@ -31,7 +31,7 @@ function sprintAlloc(s=S){
   return normAlloc(f.fn?f.fn({...s,sprint:sp}):f.a);
 }
 function canCrunch(s=S){return s.res.moral>=SPRINT.minCrunchMoral}
-function crunchOn(s){return !!(s.sprint&&s.sprint.crunch)&&canCrunch(s)}
+function crunchOn(s){return !!(s.sprint&&s.sprint.crunch)&&canCrunch(s)&&s.contractStep!==s.round}
 function sprintCapacity(s=S){
   const base=SPRINT.base*stepW(s.round,s),parts=[];
   const leads=(C.studio.staff||[]).length;
