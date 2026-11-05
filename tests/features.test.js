@@ -76,3 +76,8 @@ test('hunt: director reroll of a failed QA run gives the run back',()=>{const {r
   assert.equal(run('S.hunt.runs'),2);assert.equal(run('S.screen'),'result');
   run('Math.random=()=>0.99;useAbility()');
   assert.equal(run('S.hunt.runs'),2);assert.equal(run('S.res.bugs'),20);assert.equal(run('S.abUsed'),true);});
+test('hunt: summary logged once after a last-run reroll, with post-reroll counts',()=>{const {run}=load();newProject(run);
+  run(`globalThis.matchMedia=()=>({matches:true});C.dir.ab='reroll';S.abUsed=false;S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt();S.hunt.runs=1;S.pending={kind:'hunt',ev:'crit',oi:0};resolve([2])`);
+  assert.equal(run('S.hunt.done'),true);assert.equal(run(`S.log.filter(x=>String(x).includes('Bug-Jagd beendet')).length`),0);
+  run('Math.random=()=>0.99;useAbility()');run(`afterResult('hunt')`);
+  const l=run(`S.log.filter(x=>String(x).includes('Bug-Jagd beendet'))`);assert.equal(l.length,1);assert.match(String(l[0]),/1 Showstopper/);});

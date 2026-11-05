@@ -153,9 +153,9 @@ function startHunt(sev){
   if(!S.hunt||S.hunt.done||S.hunt.runs<=0||!(bugList()[sev]>0))return;
   startRoll({kind:'hunt',ev:sev,oi:0});
 }
-function huntFinish(){
-  if(S.hunt.done)return;
-  S.hunt.done=true;
+function huntLog(){
+  if(S.hunt.logged)return;
+  S.hunt.logged=true;
   const l=bugList();
   addLog(`🐞 Bug-Jagd beendet: ${l.crit} Showstopper, ${l.major} schwer, ${l.minor} leicht`);
 }
@@ -168,10 +168,10 @@ function resolveHunt(sev,ok,crit){
     if(d)ch.push(['bugs',-d]);
     txt=n?`${n} ${sev==='crit'?'Showstopper':sev==='major'?'schwere':'leichte'} Bug${n>1?'s':''} behoben.`:'';
   }
-  if(S.hunt.runs<=0)huntFinish();
+  if(S.hunt.runs<=0)S.hunt.done=true;
   return {ch,txt};
 }
-function endHunt(){huntFinish();goMonth()}
+function endHunt(){S.hunt.done=true;huntLog();goMonth()}
 function certPenalty(s=S){
   if(!s.hunt)return s.res.bugs>=45?HUNT.certPenHi:s.res.bugs>=30?HUNT.certPen:0;
   const c=bugList(s).crit;

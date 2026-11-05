@@ -930,7 +930,8 @@ function afterResult(k){
   else if(k==='probe'||k==='creep')afterRandom();
   else if(k==='stream'){if(S.last.oi!==2)revealInf(S.stream);afterRandom()}
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
-  else if(k==='pitch'||k==='proto'||k==='hunt')goMonth();
+  else if(k==='pitch'||k==='proto')goMonth();
+  else if(k==='hunt'){if(S.hunt&&S.hunt.done)huntLog();goMonth()}
   else if(k==='renego'){S.screen='milestone';render();save()}
   else if(k==='dlc'){S.screen='end';render();save()}
   else if(k==='rescue'){if(S.over)gameOver(S.over);else{S.screen='crisis';render();save()}}
