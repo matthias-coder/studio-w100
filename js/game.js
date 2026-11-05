@@ -329,6 +329,7 @@ function runEngineProject(goal,months,spec){
   C.studio.staff.forEach(st=>{st.xp=(st.xp||0)+Math.floor(months/6);st.tenure=(st.tenure||0)+1;checkStaffLevelUp(st)});
   C.studio.salaryDrift=Math.round(((C.studio.salaryDrift||0)+0.03*months/6)*100)/100;
   if(months>=9)rollMarketTrend();
+  C.studio.kasse+=liveTick(months).net;
   advanceCalendar(months);
   C.engProjects=(C.engProjects||0)+1;
   C.engProj={goal,months,spec,r,mod,target,ok,crit,fumble,cost,lic,notes};
@@ -436,12 +437,13 @@ function startGame(o){
   const durKey=DUR_KEYS.includes(o.dur)?o.dur:'normal';
   S={v:2,durKey,dur:durMonths(o.tier,durKey),screen:'event',title:o.title||randTitle(),genre:null,subGenre:null,gmod:null,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
      mods:extras.includes('mods'),ea:extras.includes('ea'),
-     stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
+     stats:scaledStats,res,start:budget,einlage:0,investIn:0,liveNet:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff:0,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      feat:null,hunt:null,ship:null,delayM:0,engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:false,trendCold:false,concept:{...defaultConcept(!!GENRES[o.genre]),done:!!o.actsDone},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
+  C.live?.forEach(g=>g.seasonAt=null);
   S.res.zeit=totalW(S)+2;
   if(o.genre)applyGenre(o.genre,o.subGenre||null,o.gmod||null);
   else recalcQual();
@@ -953,6 +955,7 @@ function monthEnd(){
   const sc=T().scale;
   const w=stepW();
   const lines=monthLines();let sum=0;lines.forEach(([c,v])=>{v*=w;S.spend[c]=(S.spend[c]||0)+v;sum+=v});S.res.budget-=sum;
+  const lt=liveTick(stepMonths(S.round));S.res.budget+=lt.net;S.liveNet=(S.liveNet||0)+lt.net;
   const d=D(),pe={},notes=[];const add=(k,v)=>{pe[k]=(pe[k]||0)+v};
   const acc=(key,v,f)=>{v*=w;S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1-1e-9){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1+1e-9){S.acc[key]+=1;f(-1)}};
   const tick=(key,v)=>{S.acc[key]=(S.acc[key]||0)+v;const n=Math.floor(S.acc[key]+1e-9);S.acc[key]-=n;return n};
@@ -1061,8 +1064,9 @@ function monthEnd(){
   }
 
   S.prevRound=S.round;S.round=nextStep(S.round);
-  S.month={sum,pc,sprint:sApplied,n:S.round,done:S.prevRound,ea:eaInc,lic:licInc,wl:wlg,notes};
-  addLog(`<span>${stepTag(lastStep())}</span> Abschluss „${STEPS[lastStep()].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',feat:'🧩 Feature-Punkte',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
+  S.month={sum,pc,sprint:sApplied,n:S.round,done:S.prevRound,ea:eaInc,lic:licInc,wl:wlg,notes,live:lt.net};
+  notes.push(...lt.notes);
+  addLog(`<span>${stepTag(lastStep())}</span> Abschluss „${STEPS[lastStep()].n}“: ${money(sum)} Kosten${eaInc?`, ${money(eaInc,true)} Early Access`:''}${licInc?`, ${money(licInc,true)} Engine-Lizenzen`:''}${lt.net?`, 📡 Live-Betrieb ${money(lt.net,true)}`:''}, +${nf(wlg,0)} Wishlists${pc.length?', '+pc.map(([k,v])=>fmt(v)+' '+({moral:'Moral',hype:'Hype',feat:'🧩 Feature-Punkte',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'}[k]||k)).join(', '):''}${notes.length?' · '+notes.join(' · '):''}`);
   if(S.res.budget<0){openCrisis('month');return}
   afterMonth();
 }
@@ -1712,7 +1716,7 @@ function finishGame(){
   e.lawsuit=crowdLawsuit();
   if(e.lawsuit>0)addLog(`<span>Geldgeber</span> Sammelklage der Backer: ${money(-e.lawsuit)}`);
   e.kasseEnd=S.res.budget-e.live+e.net+e.merch+(e.engRoyalty||0)-S.loan-e.lawsuit;
-  e.capital=S.start+S.einlage+S.investIn;
+  e.capital=S.start+S.einlage+S.investIn+(S.liveNet||0);
   e.erg=e.kasseEnd-e.capital;
   e.ratio=e.erg/Math.max(1,spendTotal());
   e.v=e.ratio>=3&&e.meta>=85?['Kultklassiker','In zehn Jahren macht jemand einen Podcast über euer Spiel.']

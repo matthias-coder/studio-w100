@@ -43,7 +43,9 @@ function sprintCapacity(s=S){
   if(crunchOn(s))parts.push({n:'Crunch',f:SPRINT.crunchMult});
   const deduct=[];
   if(s.contractStep===s.round)deduct.push({n:'Auftragsarbeit',pts:base*parts.reduce((a,p)=>a*p.f,1)});
-  const gross=base*parts.reduce((a,p)=>a*p.f,1)-deduct.reduce((a,d)=>a+d.pts,0);
+  const gross0=base*parts.reduce((a,p)=>a*p.f,1);
+  if(s.contractStep!==s.round){const sh=liveCapShare(s);if(sh>0)deduct.push({n:'Live-Betrieb',pts:gross0*sh})}
+  const gross=gross0-deduct.reduce((a,d)=>a+d.pts,0);
   return {base,parts,deduct,total:Math.max(0,Math.round(gross))};
 }
 function sprintDelta(s=S){

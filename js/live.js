@@ -26,3 +26,41 @@ function liveAdd(e){
   C.live.push(g);h.live={months:0,net:0,seasons:0,on:true};
   return g;
 }
+function liveOn(){return (C.live||[]).filter(g=>g.status==='on')}
+function liveChurn(g){
+  const f=g.fit==='syn'?LIVE.synChurn:g.fit==='clash'?LIVE.clashChurn:0;
+  return clamp(LIVE.churn+(g.stale?LIVE.staleChurn:0)+f-(g.meta-70)*LIVE.metaChurn,LIVE.minChurn,LIVE.maxChurn);
+}
+function liveMonthly(g){
+  const rev=g.players*((g.model==='live'?LIVE.arpu:0)+(g.premium?LIVE.subShare*LIVE.fee:0))*LIVE.cut/1000;
+  const cost=LIVE.server*g.scale+g.players*LIVE.serverPer/1000;
+  return {rev,cost,net:rev-cost};
+}
+function liveSync(g){
+  const h=(C.hall||[]).find(x=>x.nr===g.nr);
+  if(h)h.live={months:g.months,net:g.net,seasons:g.seasons,on:g.status==='on'};
+}
+function liveTick(months){
+  let net=0;const notes=[];
+  liveOn().forEach(g=>{
+    let rem=months;
+    while(rem>1e-9){
+      const ch=Math.min(1,rem);rem-=ch;
+      const n=liveMonthly(g).net*ch;g.net+=n;net+=n;
+      g.players=Math.round(g.players*Math.pow(1-liveChurn(g),ch));g.months+=ch;g.since+=ch;
+    }
+    g.seasonAt=null;
+    if(liveMonthly(g).net<0){
+      g.status='eos';
+      notes.push(`📡 ${g.title}: Die Server kosten mehr, als sie einbringen. Automatisches End of Service.`);
+    }
+    liveSync(g);
+  });
+  (C.live||[]).forEach(g=>{if(g.status!=='on')g.seasonAt=null});
+  return {net,notes};
+}
+function liveCapShare(s=S){
+  let t=0;
+  liveOn().forEach(g=>{t+=(g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0)+(g.seasonAt===s.round?LIVE.seasonCap:0)});
+  return Math.min(t,LIVE.capMax);
+}
