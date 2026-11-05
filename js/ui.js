@@ -468,7 +468,7 @@ function renderConcept(m){
   m.querySelectorAll?.('input[name=csub]').forEach(r=>r.onchange=()=>{if(r.checked){d.sub=r.value;redraw()}});
   m.querySelectorAll?.('input[name=cmod]').forEach(r=>r.onchange=()=>{if(r.checked){d.gmod=r.value;redraw()}});
   m.querySelectorAll?.('input[name=caud]').forEach(r=>r.onchange=()=>{if(r.checked){d.aud=r.value;redraw()}});
-  const rr=$('cReroll');if(rr)rr.onclick=()=>{if(rerollHand()){conceptDraft=null;redraw();save()}};
+  const rr=$('cReroll');if(rr)rr.onclick=()=>{if(rerollHand()){redraw();save()}};
   const go=$('cGo');if(go)go.onclick=()=>{const dr=conceptDraft;if(confirmConcept({...dr,gmod:GENRE_MODS[dr.gmod]?dr.gmod:null}))conceptDraft=null};
 }
 function renderProto(m){

@@ -81,3 +81,11 @@ test('prototype screen shows fun and both buttons',()=>{const {run}=load({ui:tru
   assert.match(h,/Weiter iterieren/);assert.match(h,/Aufhören/);assert.match(h,/1\/4/);});
 test('wizard has three steps and no genre step',()=>{const {run}=load({ui:true});run('C=null;setupDraft=null');
   const h=html(run,'renderSetup');assert.match(h,/Schritt 1 von 3/);assert.doesNotMatch(h,/Genre & Sub-Genre/);});
+test('reshuffling ideas keeps genre and audience choices',()=>{const {run}=load({ui:true});startRaw(run);
+  html(run,'renderConcept');
+  run(`conceptDraft.genre='puzzle';conceptDraft.sub='logic';conceptDraft.aud='hard'`);
+  assert.ok(run('rerollHand()'));
+  html(run,'renderConcept');
+  assert.equal(run('conceptDraft.genre'),'puzzle');assert.equal(run('conceptDraft.sub'),'logic');assert.equal(run('conceptDraft.aud'),'hard');
+  assert.ok(run(`Object.keys(IDEA_SLOTS).every(k=>S.concept.hand[k].includes(conceptDraft.picks[k]))`));
+  assert.ok(run('confirmConcept(conceptDraft)'));});
