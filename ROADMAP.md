@@ -1,11 +1,12 @@
 # 🗺️ Roadmap — Studio W100
 
 ## Als Nächstes
-- **Erlebbare Phasen, Etappen 5–7** (siehe docs/superpowers/specs/2026-11-04-phasen-erlebnis-design.md). Etappen 2 (Sprint & Meilensteine), 3 (Geldgeber), 4a (Ideen-Mixer, USP, Zielgruppe, Prototyp-Schleife) und 4b (Feature-Liste, Bug-Jagd, Release-Entscheidung) sind erledigt.
+- **Erlebbare Phasen, Etappen 6–7** (siehe docs/superpowers/specs/2026-11-04-phasen-erlebnis-design.md). Etappen 2 (Sprint & Meilensteine), 3 (Geldgeber), 4a (Ideen-Mixer, USP, Zielgruppe, Prototyp-Schleife), 4b (Feature-Liste, Bug-Jagd, Release-Entscheidung) und 5 (Geschäftsmodelle & Live-Betrieb) sind erledigt.
   - Offen aus Etappe 3, Stellschrauben in `js/funding.js` (`FUND`/`FUNDERS`): Angebotsanteile (Publisher .6, Investoren .4, Förderung .15, Crowdfunding .05+.05×Hype ≤ .5), Pitch-SGs (14/15/11/13), `invHype` 3, Nachverhandlungs-SG 12 — per Spieltest feinjustieren.
   - Offen aus Influencer/Journalisten, Stellschrauben in `js/press.js` (`INF`/`PRESS`): Bock-Formel, Preisstufen, Stream-Chance 8 %, Recherche 5 % je Punkt (max. 30 %), PR-Risiko 25 % + 5 % je Punkt, Kritiker-Verschiebung ±6 — per Spieltest feinjustieren.
   - Offen aus Etappe 4a, Stellschrauben in `js/activities.js` (`CONCEPT`/`PROTO`/`AUD`): Ideen-Mixer, Prototyp-Schleife und Zielgruppen-Werte — per Spieltest feinjustieren.
   - Offen aus Etappe 4b, Stellschrauben in `js/features.js` (`FEAT`/`HUNT`/`SHIP`) und Feature-Anteil des Schwerpunkts „Ausgewogen“ (45) in `js/sprint.js` — per Spieltest feinjustieren. Meilenstein-Ziele eventuell nachkalibrieren, weil der ausgewogene Sprint jetzt einen Teil der Punkte in Features steckt.
+  - Offen aus Etappe 5, Stellschrauben in `js/live.js` (`LIVE`, `LIVE_SYN`, `LIVE_CLASH`): Start-Verkäufe (`launchMult`, `premiumSales`), Churn (`churn`, `staleChurn`, Genre-Synergie/Clash), Einnahmen (`arpu`, `fee`, `cut`), Serverkosten, Team-Kapazität (`capLive`, `capPremium`, `capMax`), Season (`seasonEvery`, `seasonCost`, `seasonBack`, `seasonCap`) und `eosFame` — per Spieltest feinjustieren.
   - Idee für Etappe 7: Ereigniskarten, die von der Zielgruppe abhängen (Gelegenheitsspieler, Core-Gamer, Hardcore-Fans).
 - **Influencer-Bilder:** Für Papaplatine, PewDieBrie, Markimultiplier, Jack Septicsky und Jerma Germ-a fehlen noch Bilder in `raw-assets/influencer`; ohne Bild sind sie nicht spielbar.
 - **Mehr Ereignisse und Content:** Kommt vor der längeren Entwicklungsdauer, damit mehrjährige Projekte genug Abwechslung haben.
