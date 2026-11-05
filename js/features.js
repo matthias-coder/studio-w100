@@ -144,10 +144,11 @@ function bugList(s=S){
   }
   return {crit,major,minor};
 }
+function featuresDue(s=S){return STEPS[s.round]?.id==='prod_plan'&&!s.feat}
 function huntDue(s=S){return STEPS[s.round]?.id==='pol_bugs'&&!(s.hunt&&s.hunt.done)}
-function openHunt(){
-  if(S.hunt)return;
-  S.hunt={base:bugSplit(S.res.bugs),runs:HUNT.runs+(staffLevel('qalead')>=3?1:0),done:false};
+function openHunt(s=S){
+  if(s.hunt)return;
+  s.hunt={base:bugSplit(Math.max(0,s.res.bugs)),runs:HUNT.runs+(staffLevel('qalead')>=3?1:0),done:false};
 }
 function startHunt(sev){
   if(!S.hunt||S.hunt.done||S.hunt.runs<=0||!(bugList()[sev]>0))return;

@@ -500,7 +500,7 @@ function applyGenre(genre,sub,gmod){
   recalcQual();
 }
 
-function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':protoDue()?'proto':(typeof huntDue==='function'&&huntDue())?(openHunt(),'hunt'):(typeof shipDue==='function'&&shipDue())?'ship':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
+function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':protoDue()?'proto':(typeof featuresDue==='function'&&featuresDue())?'features':(typeof huntDue==='function'&&huntDue())?(openHunt(),'hunt'):(typeof shipDue==='function'&&shipDue())?'ship':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
 
 /* ===================== W100 Würfel-Modifikatoren & Regeln ===================== */
 function moralMod(){

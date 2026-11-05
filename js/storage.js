@@ -184,6 +184,15 @@ function normalizeProject(s,c){
     if(conceptDue(s))s.screen='concept';
     else if(protoDue(s))s.screen='proto';
   }
+  if(s.feat===undefined)s.feat=s.round>stepIndex('prod_plan')?{plan:null,legacy:true}:null;
+  if(s.hunt===undefined)s.hunt=null;
+  if(s.ship===undefined)s.ship=s.round>stepIndex('pol_ship')?'ontime':null;
+  if(typeof s.delayM!=='number')s.delayM=0;
+  if(s.screen==='event'){
+    if(featuresDue(s))s.screen='features';
+    else if(huntDue(s)){openHunt(s);s.screen='hunt'}
+    else if(shipDue(s))s.screen='ship';
+  }
   if(!s.msDone)s.msDone=MILESTONES.filter(m=>stepIndex(m.at)<s.round).map(m=>m.id);
   if(s.msResult===undefined)s.msResult=null;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;
