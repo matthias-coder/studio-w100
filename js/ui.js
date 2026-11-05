@@ -1788,6 +1788,7 @@ let showLockedSetupDirs=false;
 function ensureSetupDraft(){
   const first=!C;
   const tag=first?'new':('g'+C.gameNo);
+  if(setupDraft&&!MODELS[setupDraft.model])setupDraft.model='kauf';
   if(setupDraft&&setupDraft._tag===tag)return;
   const unl=getUnlockedChars();
   const defDir=first?(unl[0]||'custom'):(C.dir.id||'keep');

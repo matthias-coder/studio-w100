@@ -21,3 +21,15 @@ test('refund is not applied twice when switching profiles',()=>{const {run,store
 test('refund is not applied twice across reloads',()=>{const {run,store}=load();twoSlots(store);
   run('initStorage()');run('save()');run('initStorage()');
   assert.equal(run('C.studio.kasse'),25);});
+test('abo project loads as kauf with premium, live mod dropped',()=>{const {run}=load();require('./harness').newProject(run);
+  run(`S.model='abo';S.gmod='live';delete S.liveNet;S=normalizeProject(S,C)`);
+  assert.equal(run('S.model'),'kauf');assert.ok(run('S.extras').includes('premium'));assert.equal(run('S.gmod'),null);assert.equal(run('S.liveNet'),0);});
+test('finished abo project migrates too',()=>{const {run}=load();require('./harness').newProject(run);
+  run(`S.v=1;S.screen='end';S.model='abo';S.gmod='live';S=normalizeProject(S,C)`);
+  assert.equal(run('S.model'),'kauf');assert.ok(run('S.extras').includes('premium'));assert.equal(run('S.gmod'),null);assert.equal(run('S.liveNet'),0);});
+test('career without live list gets one',()=>{const {run}=load();require('./harness').newProject(run);
+  run('delete C.live;C=normalizeCareer(C)');assert.deepEqual(run('C.live'),[]);});
+test('season screen survives reload only while due',()=>{const {run}=load();require('./harness').newProject(run);
+  run(`C.live=[{nr:1,title:'L',scale:1,model:'live',premium:false,players:9000,peak:9000,meta:70,fit:null,months:6,since:6,stale:false,seasons:0,seasonAt:null,net:0,status:'on'}];S.screen='season';S.season=1`);
+  assert.equal(run('normalizeProject(S,C).screen'),'season');
+  run(`C.live[0].since=0`);assert.equal(run('normalizeProject(S,C).screen'),'event');});

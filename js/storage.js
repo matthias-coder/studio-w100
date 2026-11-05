@@ -135,10 +135,23 @@ function _pressDefaults(s){
   if(s.probeSeen===undefined)s.probeSeen=false;
 }
 
+// Etappe 5: Abo-Modell wurde zum Premium-Extra, der Genre-Modifikator live entfiel
+function migrateModel(s){
+  if(!s)return;
+  if(s.model==='abo'){
+    s.model='kauf';
+    if(!Array.isArray(s.extras))s.extras=[];
+    if(!s.extras.includes('premium'))s.extras.push('premium');
+  }
+  if(s.gmod==='live')s.gmod=null;
+  if(typeof s.liveNet!=='number')s.liveNet=0;
+}
+
 function normalizeProject(s,c){
   // Laufendes Projekt aus der Zeit vor dem Schrittmodell: abbrechen, Restbudget erstatten
   if(s&&s.v!==2&&(s.end||['sales','end','over','launch'].includes(s.screen))){
     // Abgeschlossenes Altprojekt: nichts erstatten (Budget ist bereits in der Kasse), nur minimal migrieren
+    migrateModel(s);
     s.v=2;s.durKey='normal';s.dur=refMonths(s.tier||'indie');
     if(!s.fund){s.fund=defaultFund();s.fund.pitched=true}
     if(!s.skip)s.skip=[];
@@ -153,6 +166,7 @@ function normalizeProject(s,c){
     return null;
   }
   if(!s||!s.res)return s;
+  migrateModel(s);
   _pressDefaults(s);
   if(!s.sprint)s.sprint=defaultSprint();
   if(s.contractStep==null)s.contractStep=-1;
@@ -181,6 +195,7 @@ function normalizeProject(s,c){
   if(!s.proto)s.proto={n:0,fun:0,done:s.round>stepIndex('pre_proto')};
   if(s.usp===undefined)s.usp=null;
   if(!s.aud)s.aud='core';
+  if(s.screen==='season'&&!seasonDue(s,c))s.screen='event';
   if(s.screen==='event'){
     if(conceptDue(s))s.screen='concept';
     else if(protoDue(s))s.screen='proto';
