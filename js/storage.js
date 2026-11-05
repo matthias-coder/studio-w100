@@ -171,6 +171,19 @@ function normalizeProject(s,c){
     delete s.milestone;
   }
   if(s.round===stepIndex('pit_meet')&&!s.fund.pitched&&s.screen==='event')s.screen='pitch';
+  if(!s.concept)s.concept=s.genre!=null?{done:true,lock:true,hand:{hook:[],setting:[],twist:[]},rerolls:0}:defaultConcept(false);
+  if(!s.concept.done){
+    const h=s.concept.hand;
+    if(!h||['hook','setting','twist'].some(k=>!Array.isArray(h[k])||!h[k].length))s.concept.hand=drawHand();
+    if(typeof s.concept.rerolls!=='number')s.concept.rerolls=CONCEPT.rerolls;
+  }
+  if(!s.proto)s.proto={n:0,fun:0,done:s.round>stepIndex('pre_proto')};
+  if(s.usp===undefined)s.usp=null;
+  if(!s.aud)s.aud='core';
+  if(s.screen==='event'){
+    if(conceptDue(s))s.screen='concept';
+    else if(protoDue(s))s.screen='proto';
+  }
   if(!s.msDone)s.msDone=MILESTONES.filter(m=>stepIndex(m.at)<s.round).map(m=>m.id);
   if(s.msResult===undefined)s.msResult=null;
   if(s.res.gp===undefined)s.res.gp=s.res.qual||20;

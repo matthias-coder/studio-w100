@@ -58,3 +58,19 @@ test('fun multiplies sprint gameplay',()=>{const {run}=load();newProject(run);ru
   const a=run('sprintDelta().gp');run('S.proto.fun=3');assert.ok(Math.abs(run('sprintDelta().gp')-a*1.24)<1e-9);});
 test('USP raises the pitch bonus',()=>{const {run}=load();newProject(run);const a=run('pitchBonus()');
   run(`S.usp={ids:[],area:'gp',power:2,n:'x'}`);assert.equal(run('pitchBonus()'),a+6);});
+
+test('legacy save with genre counts the concept as done',()=>{const {run}=load();newProject(run);
+  run(`S.round=stepIndex('pre_slice');delete S.concept;delete S.proto;delete S.usp;delete S.aud`);
+  const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
+  assert.equal(s.concept.done,true);assert.equal(s.proto.done,true);assert.equal(s.usp,null);assert.equal(s.aud,'core');});
+test('legacy save before pre_proto can still run the loop',()=>{const {run}=load();newProject(run);
+  run(`S.round=stepIndex('pre_tech');delete S.proto`);assert.equal(run('normalizeProject(JSON.parse(JSON.stringify(S)),C)').proto.done,false);});
+test('reload on a pending concept or loop restores the screen',()=>{const {run}=load();start(run);
+  run(`S.screen='event'`);assert.equal(run('normalizeProject(JSON.parse(JSON.stringify(S)),C)').screen,'concept');
+  newProject(run);run(`S.round=stepIndex('pre_proto');S.proto={n:1,fun:1,done:false};S.screen='event'`);
+  assert.equal(run('normalizeProject(JSON.parse(JSON.stringify(S)),C)').screen,'proto');});
+test('pending concept without hand gets a fresh hand and numeric rerolls',()=>{const {run}=load();start(run);
+  run(`S.concept={done:false,lock:false}`);
+  const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
+  for(const k of ['hook','setting','twist'])assert.equal(s.concept.hand[k].length,3);
+  assert.equal(typeof s.concept.rerolls,'number');});
