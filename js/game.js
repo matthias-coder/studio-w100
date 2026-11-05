@@ -329,7 +329,7 @@ function runEngineProject(goal,months,spec){
   C.studio.staff.forEach(st=>{st.xp=(st.xp||0)+Math.floor(months/6);st.tenure=(st.tenure||0)+1;checkStaffLevelUp(st)});
   C.studio.salaryDrift=Math.round(((C.studio.salaryDrift||0)+0.03*months/6)*100)/100;
   if(months>=9)rollMarketTrend();
-  C.studio.kasse+=liveTick(months).net;
+  const lt=liveTick(months);C.studio.kasse+=lt.net;notes.push(...lt.notes);
   advanceCalendar(months);
   C.engProjects=(C.engProjects||0)+1;
   C.engProj={goal,months,spec,r,mod,target,ok,crit,fumble,cost,lic,notes};
@@ -1617,8 +1617,6 @@ function sales(){
     if(S.age!=null)mods.push('USK '+S.age+' ×'+nf(ageFactor(),2));
     if(S.trendHot)mods.push('Boom-Genre ×1,15');
     if(modSales(S.gmod,S.model)!==1)mods.push(GENRE_MODS[S.gmod].n+' ×'+nf(modSales(S.gmod,S.model),2));
-    if(S.model==='live')mods.push('Live-Service-Launch ×'+nf(LIVE.launchMult,2));
-    if(hasPremium(S))mods.push('Premium-Abo ×'+nf(LIVE.premiumSales,2));
     if(S.trendCold)mods.push('Übersättigt ×0,90');
     if(wonAwardNames(e).length)mods.push(`Awards ×${nf(awardMult,2)}`);
     if(mods.length)detail.push(['Marktfaktoren',mods.join(' · ')]);

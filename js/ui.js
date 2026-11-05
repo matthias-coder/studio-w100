@@ -593,15 +593,19 @@ function renderShip(m){
 
 function renderSeason(m){
   m.className='card big-decision';
-  const g=(C.live||[]).find(x=>x.nr===S.season)||seasonDue();
-  if(!g){m.innerHTML='';return}
+  const g=(C.live||[]).find(x=>x.nr===S.season&&x.status==='on');
+  if(!g){
+    m.innerHTML=`<span class="label">📡 Live-Betrieb</span><h3>Dieses Spiel läuft nicht mehr</h3><div class="opts"><button type="button" class="opt" id="seasonSkip"><span class="t">Weiter</span></button></div>`;
+    const w=$('seasonSkip');if(w)w.onclick=()=>decideSeason('skip');
+    return;
+  }
   const back=Math.max(0,Math.min(g.peak-g.players,Math.round(g.peak*LIVE.seasonBack)));
   m.innerHTML=`<span class="label">📡 Live-Betrieb</span><h3>Season für „${esc(g.title)}“?</h3>
     <p class="note">${nf(g.players,0)} Spieler (Spitze ${nf(g.peak,0)}) · ${money(liveMonthly(g).net,true)}/Monat · seit ${nf(g.since,0)} Monaten ohne neue Inhalte</p>
     <div class="opts">
-      <button type="button" class="opt" id="seasonRun"><span class="t">🎉 Season starten · ${money(seasonCost(g))}</span><span class="d">+${nf(back,0)} Spieler zurück · nächster Schritt −15 % Team-Kapazität</span></button>
+      <button type="button" class="opt" id="seasonRun"><span class="t">🎉 Season starten · ${money(seasonCost(g))}</span><span class="d">+${nf(back,0)} Spieler zurück · nächster Schritt −${Math.round(LIVE.seasonCap*100)} % Team-Kapazität</span></button>
       <button type="button" class="opt" id="seasonSkip"><span class="t">⏭️ Diesmal auslassen</span><span class="d">Spart Geld, aber Spieler wandern schneller ab.</span></button>
-      <button type="button" class="opt" id="seasonEos"><span class="t">🔌 End of Service</span><span class="d">Server aus, Kapazität frei · −2 Fame</span></button>
+      <button type="button" class="opt" id="seasonEos"><span class="t">🔌 End of Service</span><span class="d">Server aus, Kapazität frei · −${LIVE.eosFame} Fame</span></button>
     </div>`;
   const run=$('seasonRun');if(run)run.onclick=()=>decideSeason('run');
   const sk=$('seasonSkip');if(sk)sk.onclick=()=>decideSeason('skip');
@@ -631,7 +635,7 @@ function renderLiveView(m){
     ${off.length?`<details class="fold"><summary>Beendete Live-Spiele (${off.length})</summary><div class="fold-body"><div class="mini">${off.map(g=>`<div><span>${esc(g.title)}</span><span>${nf(g.months,0)} Monate · ${nf(g.seasons,0)} Seasons · ${money(g.net,true)}</span></div>`).join('')}</div></div></details>`:''}`;
   m.querySelectorAll?.('[data-eos]').forEach(b=>b.onclick=()=>{
     const g=list.find(x=>x.nr===+b.dataset.eos);
-    if(typeof confirm==='function'&&!confirm(`End of Service für „${g?g.title:''}“? Das kostet 2 Fame.`))return;
+    if(typeof confirm==='function'&&!confirm(`End of Service für „${g?g.title:''}“? Das kostet ${LIVE.eosFame} Fame.`))return;
     endService(+b.dataset.eos);render();save();
   });
 }

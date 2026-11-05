@@ -22,6 +22,7 @@ function liveAdd(e){
   const t=T(),players=S.model==='live'?e.units:Math.round(e.units*LIVE.kaufActive),h=C.hall[C.hall.length-1];
   const g={nr:h.nr,title:S.title,tier:t.n,scale:t.scale,model:S.model,premium:hasPremium(S),players,peak:players,meta:e.meta,user:e.user,
     fit:liveFit(S.genre,S.subGenre),months:0,since:0,stale:false,seasons:0,seasonAt:null,net:0,status:'on'};
+  if(liveMonthly(g).net<0)return null;
   if(!Array.isArray(C.live))C.live=[];
   C.live.push(g);h.live={months:0,net:0,seasons:0,on:true};
   return g;
@@ -44,14 +45,14 @@ function liveTick(months){
   let net=0;const notes=[];
   liveOn().forEach(g=>{
     let rem=months;
-    while(rem>1e-9){
+    while(rem>1e-9&&g.status==='on'){
       const ch=Math.min(1,rem);rem-=ch;
       const n=liveMonthly(g).net*ch;g.net+=n;net+=n;
       g.players=Math.round(g.players*Math.pow(1-liveChurn(g),ch));g.months+=ch;g.since+=ch;
-    }
-    if(liveMonthly(g).net<0){
-      g.status='eos';
-      notes.push(`📡 ${g.title}: Die Server kosten mehr, als sie einbringen. Automatisches End of Service.`);
+      if(liveMonthly(g).net<0){
+        g.status='eos';g.seasonAt=null;
+        notes.push(`📡 ${esc(g.title)}: Die Server kosten mehr, als sie einbringen. Automatisches End of Service.`);
+      }
     }
     liveSync(g);
   });
@@ -78,7 +79,7 @@ function endService(nr,auto=false){
   g.status='eos';g.seasonAt=null;
   if(!auto)C.studio.fame=Math.max(0,(C.studio.fame||0)-LIVE.eosFame);
   liveSync(g);
-  if(typeof S!=='undefined'&&S)addLog(`🔌 End of Service: „${g.title}“`);
+  if(typeof S!=='undefined'&&S)addLog(`🔌 End of Service: „${esc(g.title)}“`);
   return true;
 }
 function decideSeason(choice){
@@ -91,10 +92,10 @@ function decideSeason(choice){
     g.players=Math.min(g.peak,g.players+Math.round(g.peak*LIVE.seasonBack));
     g.stale=false;g.since=0;g.seasons++;g.seasonAt=S.round;
     liveSync(g);
-    addLog(`📡 Season für „${g.title}“ gestartet`);
+    addLog(`📡 Season für „${esc(g.title)}“ gestartet`);
   }else if(choice==='skip'){
     g.stale=true;g.since=0;liveSync(g);
-    addLog(`📡 Season für „${g.title}“ ausgelassen`);
+    addLog(`📡 Season für „${esc(g.title)}“ ausgelassen`);
   }else if(choice==='eos'){
     endService(g.nr);
   }
