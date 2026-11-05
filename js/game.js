@@ -993,6 +993,7 @@ function monthEnd(){
   featBuild(sd.feat).forEach(n=>notes.push(n));
   if(crunchOn(S))S.crunchN=(S.crunchN||0)+1;
   S.sprint.crunch=false;
+  C.live?.forEach(g=>{g.seasonAt=null}); // season share was applied above; the next step starts clean
   // Hype verfliegt langsam, wenn er hoch ist und nichts nachkommt
   if(S.res.hype>=6)acc('hype_decay',-(S.res.hype-5)*.2,x=>add('hype',x));
 

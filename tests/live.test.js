@@ -81,5 +81,5 @@ test('a season on low cash opens the crisis',()=>{const {run}=load();newProject(
   run(`S.res.budget=5;openSeason();decideSeason('run')`);assert.equal(run('S.screen'),'crisis');});
 test('season capacity share is applied to the coming step, then cleared by monthEnd',()=>{const {run}=load();newProject(run);
   const pts=sa=>{run(liveGame({seasonAt:sa}));run('S.round=3;S.res.moral=10;C.studio.staff=Array.from({length:8},()=>({loyalty:6,sal:1}));S.res.budget=1e6;Math.random=()=>0.999;monthEnd()');return run('S.month.sprint.pts')};
-  const withSeason=pts(3),without=pts(null);
-  assert.ok(withSeason<without);assert.equal(run('C.live[0].seasonAt'),null);});
+  const withSeason=pts(3);assert.equal(run('C.live[0].seasonAt'),null);
+  assert.ok(withSeason<pts(null));});
