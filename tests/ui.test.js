@@ -123,3 +123,18 @@ test('works skips certification warning; copy singular and constants',()=>{const
   run(`S.round=stepIndex('pol_ship')`);assert.match(html(run,'renderShip'),/It just works/);});
 test('sprint expected chips show feature points',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');startPlan(['rpg_1'])`);
   assert.match(run('sprintBar()'),/Feature-Punkte/);});
+
+/* ---- Etappe 5: live ops UI ---- */
+const liveC=`C.live=[{nr:1,title:'Raid Nacht',scale:1,model:'live',premium:true,players:9000,peak:12000,meta:70,fit:null,months:6,since:6,stale:true,seasons:0,seasonAt:null,net:40,status:'on'}]`;
+test('season screen shows three choices',()=>{const {run}=load({ui:true});newProject(run);run(liveC+`;S.season=1;S.screen='season'`);
+  const h=run(`(()=>{const m={innerHTML:'',className:''};renderSeason(m);return m.innerHTML})()`);
+  assert.match(h,/Raid Nacht/);assert.match(h,/id="seasonRun"/);assert.match(h,/id="seasonSkip"/);assert.match(h,/id="seasonEos"/);
+  assert.ok(run(`ACTIVE.includes('season')`));});
+test('live tab lists running games with end of service',()=>{const {run}=load({ui:true});newProject(run);run(liveC);
+  const h=run(`(()=>{const m={innerHTML:'',className:''};renderLiveView(m);return m.innerHTML})()`);
+  assert.match(h,/Raid Nacht/);assert.match(h,/data-eos="1"/);assert.match(h,/ohne neue Inhalte/);});
+test('sprint bar and step note mention live ops',()=>{const {run}=load({ui:true});newProject(run);run(liveC);
+  assert.match(run('sprintBar()'),/Live-Betrieb bindet 20 %/);
+  run(`S.round=1;S.month={sum:1,pc:[],n:1,done:0,wl:0,notes:[],live:3.5}`);assert.match(run('monthNote()'),/Live-Betrieb/);});
+test('wizard drops premium for free-to-play',()=>{const {run}=load({ui:true});run(CAREER);
+  run(`ensureSetupDraft();setupDraft.extras=['premium'];setupDraft.model='f2p';setupModel('f2p')`);assert.equal(run('JSON.stringify(setupDraft.extras)'),'[]');});

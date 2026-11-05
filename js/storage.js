@@ -399,7 +399,7 @@ function generateChronicleText(){
     C.hall.forEach(h=>{
       const subScores=(h.gp!=null&&h.gfx!=null)?` (Gameplay ${h.gp} / Grafik ${h.gfx})`:'';
       const aw=(h.awards&&h.awards.length)?` | 🏆 ${h.awards.join(', ')}`:'';
-      lines.push(`${h.nr}. **${h.title}** (${h.genre} · ${h.tier}${h.engine?' · '+h.engine:''}) — Wertung: **${h.meta!=null?h.meta+'/100':'Abgebrochen'}**${subScores} | ${h.v} | Ergebnis: ${h.erg!=null?money(h.erg,true):'–'}${h.dlc?' | inkl. '+h.dlc:''}${aw}`);
+      lines.push(`${h.nr}. **${h.title}** (${h.genre} · ${h.tier}${h.engine?' · '+h.engine:''}) — Wertung: **${h.meta!=null?h.meta+'/100':'Abgebrochen'}**${subScores} | ${h.v} | Ergebnis: ${h.erg!=null?money(h.erg,true):'–'}${h.dlc?' | inkl. '+h.dlc:''}${h.live&&(h.live.months||h.live.on)?` | Live: ${h.live.months} Mon., ${money(h.live.net,true)}`:''}${aw}`);
     });
   }else{
     lines.push(`- Noch keine Spiele veröffentlicht.`);

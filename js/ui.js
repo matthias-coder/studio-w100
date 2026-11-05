@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto','features','creep','hunt','ship'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto','features','creep','hunt','ship','season'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -305,6 +305,8 @@ function sprintBar(){
   const sp=S.sprint;
   if(S.contractStep===S.round)return `<div class="sprintbar"><div class="sprint-head"><b>Sprint · 0 Punkte</b></div><div class="note">Auftragsarbeit: Das Team ist diesen Schritt ausgebucht.</div></div>`;
   const d=sprintDelta(),al=sprintAlloc();
+  const liveSh=liveCapShare();
+  const liveNote=liveSh>0?`<div class="note">📡 Live-Betrieb bindet ${Math.round(liveSh*100)} % des Teams</div>`:'';
   const r=v=>Math.round(v*10)/10;
   const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)],['feat',r(d.feat)]].filter(([,v])=>v!==0);
   const cr=crunchOn(S),can=canCrunch();
@@ -315,11 +317,11 @@ function sprintBar(){
   const fineD=`<details class="fold sprint-fine"${sprintFineOpen?' open':''}><summary>Feintuning${sp.focus==='custom'?' (eigene Verteilung)':''}</summary><div class="fold-body">${fine}</div></details>`;
   if(sprintPhone()){
     return `<details class="sprintbar sprint-phone" id="sprintMain"${sprintBarOpen?' open':''}><summary><b>Sprint · ${esc(FOCUS[sp.focus]?.n||'')} · ${d.pts} Punkte</b>${eff.length?chips(eff):''}</summary>
-    <div class="sprint-head">${crb}</div><div class="seg sprint-focus">${foc}</div>${fineD}</details>`;
+    <div class="sprint-head">${crb}</div>${liveNote}<div class="seg sprint-focus">${foc}</div>${fineD}</details>`;
   }
   return `<div class="sprintbar">
     <div class="sprint-head"><b>Sprint · ${d.pts} Punkte</b>${crb}</div>
-    <div class="seg sprint-focus">${foc}</div>${effRow}${fineD}
+    ${liveNote}<div class="seg sprint-focus">${foc}</div>${effRow}${fineD}
   </div>`;
 }
 function bindSprint(m){
@@ -587,6 +589,51 @@ function renderShip(m){
     </div>`;
   const a=$('shipNow');if(a)a.onclick=()=>decideShip(false);
   const b=$('shipLate');if(b)b.onclick=()=>decideShip(true);
+}
+
+function renderSeason(m){
+  m.className='card big-decision';
+  const g=(C.live||[]).find(x=>x.nr===S.season)||seasonDue();
+  if(!g){m.innerHTML='';return}
+  const back=Math.max(0,Math.min(g.peak-g.players,Math.round(g.peak*LIVE.seasonBack)));
+  m.innerHTML=`<span class="label">📡 Live-Betrieb</span><h3>Season für „${esc(g.title)}“?</h3>
+    <p class="note">${nf(g.players,0)} Spieler (Spitze ${nf(g.peak,0)}) · ${money(liveMonthly(g).net,true)}/Monat · seit ${nf(g.since,0)} Monaten ohne neue Inhalte</p>
+    <div class="opts">
+      <button type="button" class="opt" id="seasonRun"><span class="t">🎉 Season starten · ${money(seasonCost(g))}</span><span class="d">+${nf(back,0)} Spieler zurück · nächster Schritt −15 % Team-Kapazität</span></button>
+      <button type="button" class="opt" id="seasonSkip"><span class="t">⏭️ Diesmal auslassen</span><span class="d">Spart Geld, aber Spieler wandern schneller ab.</span></button>
+      <button type="button" class="opt" id="seasonEos"><span class="t">🔌 End of Service</span><span class="d">Server aus, Kapazität frei · −2 Fame</span></button>
+    </div>`;
+  const run=$('seasonRun');if(run)run.onclick=()=>decideSeason('run');
+  const sk=$('seasonSkip');if(sk)sk.onclick=()=>decideSeason('skip');
+  const eo=$('seasonEos');if(eo)eo.onclick=()=>decideSeason('eos');
+}
+
+function liveModelLabel(g){return [g.model==='live'?'Live Service':'',g.premium?'Premium-Abo':''].filter(Boolean).join(' + ')}
+function renderLiveView(m){
+  const list=C.live||[],on=list.filter(g=>g.status==='on'),off=list.filter(g=>g.status!=='on');
+  const card=g=>{
+    const mo=liveMonthly(g).net;
+    const cap=Math.round(((g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0))*100);
+    const left=Math.max(0,LIVE.seasonEvery-g.since);
+    return `<div class="legend-card"><div class="dir-info"><b>${esc(g.title)}</b> <span class="note">${liveModelLabel(g)}</span>
+      <div class="mini">
+        <div><span>Spieler</span><span>${nf(g.players,0)} (Spitze ${nf(g.peak,0)})</span></div>
+        <div><span>Ergebnis pro Monat</span><span class="${mo>=0?'pos':'neg'}">${money(mo,true)}</span></div>
+        <div><span>Team-Kapazität</span><span>${cap} %</span></div>
+        <div><span>Season</span><span>${left>0?`nächste Season in ${nf(left,0)} Monaten`:'Season fällig'}</span></div>
+      </div>
+      ${g.stale?'<p class="note">⚠️ ohne neue Inhalte</p>':''}
+      <button type="button" class="btn tiny ghost" data-eos="${g.nr}">🔌 End of Service</button></div></div>`;
+  };
+  m.className='card';
+  m.innerHTML=`<span class="label">📡 Live-Betrieb (${on.length})</span><h3>Laufende Live-Spiele</h3>
+    ${on.length?on.map(card).join(''):'<p class="note">Aktuell läuft kein Spiel im Live-Betrieb.</p>'}
+    ${off.length?`<details class="fold"><summary>Beendete Live-Spiele (${off.length})</summary><div class="fold-body"><div class="mini">${off.map(g=>`<div><span>${esc(g.title)}</span><span>${nf(g.months,0)} Monate · ${nf(g.seasons,0)} Seasons · ${money(g.net,true)}</span></div>`).join('')}</div></div></details>`:''}`;
+  m.querySelectorAll?.('[data-eos]').forEach(b=>b.onclick=()=>{
+    const g=list.find(x=>x.nr===+b.dataset.eos);
+    if(typeof confirm==='function'&&!confirm(`End of Service für „${g?g.title:''}“? Das kostet 2 Fame.`))return;
+    endService(+b.dataset.eos);render();save();
+  });
 }
 
 function trendBlock(){
@@ -872,6 +919,9 @@ function renderWsNav(){
         🏆 Liga (${rivalsCount})
       </button>
     `:''}
+    ${C&&(C.live||[]).length?`<button type="button" class="ws-tab ${activeTab==='live'?'active':''}" data-wstab="live">
+      📡 Live-Betrieb (${liveOn().length})
+    </button>`:''}
     <button type="button" class="ws-tab ${activeTab==='legends'?'active':''}" data-wstab="legends">
       🌟 Legenden (${unlCount}/${totCount})
     </button>
@@ -1189,7 +1239,7 @@ function monthNote(){
   if(!S.month||S.month.n!==S.round)return '';
   const M=S.month;
   const L={moral:'Moral',hype:'Hype',qual:'Qualität',gp:'Gameplay',gfx:'Grafik',snd:'Sound',bugs:'Bugs',zeit:'Zeit'};
-  return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.done??M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
+  return `<div class="monthnote" onclick="this.classList.toggle('open')">${STEPS[M.done??M.n-1]?.n} abgerechnet: ${money(M.sum)} Kosten${M.ea?' · '+money(M.ea,true)+' Early Access':''}${M.lic?' · '+money(M.lic,true)+' Engine-Lizenzen':''}${M.live?' · 📡 '+money(M.live,true)+' Live-Betrieb':''} · +${nf(M.wl,0)} Wishlists${M.pc.length?' · '+M.pc.map(([k,v])=>fmt(v)+' '+(L[k]||k)).join(' · '):''}${M.notes.length?' · '+M.notes.join(' · '):''}</div>`;
 }
 
 function resultNextLabel(L){
@@ -1365,6 +1415,7 @@ function renderMain(){
   if(wsTab==='legends'){renderLegendsView(m);return}
   if(C&&wsTab==='engine'){renderEngineLab(m);return}
   if(C&&wsTab==='league'){renderLeagueView(m);return}
+  if(C&&wsTab==='live'){renderLiveView(m);return}
 
   if(!S&&C?.retired){renderRetirement(m);return}
   if(!S){renderSetup(m);return}
@@ -1392,6 +1443,7 @@ function renderMain(){
   if(sc==='proto'){renderProto(m);return}
   if(sc==='hunt'){renderHunt(m);return}
   if(sc==='ship'){renderShip(m);return}
+  if(sc==='season'){renderSeason(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
@@ -1686,7 +1738,8 @@ function ledger(e){
   if(repays.length)R2('Rückzahlungen an Geldgeber',money(-repays.reduce((a,q)=>a+q.x,0)));
   if(Math.abs(incomeRest)>0.05)R2('Vorab-, Auftrags- & Lizenz-Einnahmen'+(S.crypto?.pay?' (inkl. Krypto)':''),money(incomeRest,true));
   if(S.crypto)R2('🪙 Krypto-Einsatz $MOONCAT',money(-S.crypto.amt));
-  Object.keys(CAT).forEach(k=>{if(S.spend[k]>0)R2(CAT[k][0]+(k==='server'&&e&&e.live?' (inkl. erstem Live-Jahr)':''),money(-S.spend[k]))});
+  Object.keys(CAT).forEach(k=>{if(S.spend[k]>0)R2(CAT[k][0]+(k==='server'&&e&&e.live?' (inkl. erstem Server-Jahr)':''),money(-S.spend[k]))});
+  if(S.liveNet)R2('Live-Betrieb anderer Spiele (zählt nicht zum Projektergebnis)',money(S.liveNet,true));
   if(e){
     if(S.loan)R2('Kredit-Rückzahlung',money(-S.loan));
     if(e.lawsuit>0)R2('Sammelklage der Backer',money(-e.lawsuit));
@@ -1737,6 +1790,7 @@ function renderEnd(m){
    <p>${e.v[1]}</p>
    ${wonAwards.length?`<div class="award-box"><b>🏆 Gewonnene Auszeichnungen (${wonAwards.length}×)</b><div class="chips">${wonAwards.map(a=>`<span class="chip p">🏆 ${esc(a.cat)}</span>`).join('')}</div><span class="note">Prestige: Verkäufe ×${nf(1+wonAwards.length*0.08,2)} & +${wonAwards.length*3} Fame!</span></div>`:''}
    ${e.legNotes&&e.legNotes.length?`<div class="alert good"><b>🔓 Neue Legende</b><span>${e.legNotes.map(esc).join('<br>')}</span></div>`:''}
+   ${e.liveG?`<div class="alert mid"><b>📡 Geht in den Live-Betrieb</b><span>${nf(e.liveG.players,0)} Spieler · ca. ${money(liveMonthly(e.liveG).net,true)}/Monat · bindet ${Math.round(((e.liveG.model==='live'?LIVE.capLive:0)+(e.liveG.premium?LIVE.capPremium:0))*100)} % des Teams. Alle ${LIVE.seasonEvery} Monate steht eine Season an.</span></div>`:''}
    ${e.engNote?`<div class="alert mid"><b>Engine-Entwicklung & Alterung</b><span>${esc(e.engNote)}</span></div>`:''}
    ${e.staffNotes&&e.staffNotes.length?`<div class="alert good"><b>Lead-Personal</b><span>${e.staffNotes.map(esc).join(' · ')}</span></div>`:''}
    <div class="mini">
@@ -1785,6 +1839,10 @@ let setupStep=1;
 let setupDraft=null;
 let showLockedSetupDirs=false;
 
+function setupModel(k){
+  setupDraft.model=k;
+  setupDraft.extras=setupDraft.extras.filter(ek=>!PROJECT_EXTRAS[ek]?.models||PROJECT_EXTRAS[ek].models.includes(k));
+}
 function ensureSetupDraft(){
   const first=!C;
   const tag=first?'new':('g'+C.gameNo);
@@ -2122,14 +2180,16 @@ function renderSetup(m){
         <div class="choices compact">
           ${Object.entries(PROJECT_EXTRAS).map(([ek,ex])=>{
             const checked=setupDraft.extras.includes(ek);
+            const blocked=!!ex.models&&!ex.models.includes(setupDraft.model);
             const upCost=ex.upfront?Math.round(ex.upfront*sc):0;
             const mCost=ex.monthly?Math.round(ex.monthly*sc):0;
             const sportHint=(ek==='sportLic'&&sqIdx&&sqIdx.gk==='sports')?'<span class="pos">⚽ +25 % Sport-Synergie!</span>':'';
             return `<label class="choice">
-              <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}>
+              <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}${blocked?' disabled':''}>
               <b>${ex.n}</b>
               <code>${upCost?`Vorab −${money(upCost)} · `:''}${mCost?`−${money(perMonth(mCost,{tier:setupDraft.tier}))}/Monat · `:''}${ex.code}</code>
               <span class="more">${ex.d}</span>
+              ${blocked?'<span class="note">Nur mit Kaufspiel oder Live Service</span>':''}
               ${sportHint}
             </label>`;
           }).join('')}
@@ -2202,7 +2262,7 @@ function renderSetup(m){
     }
   });
   m.querySelectorAll('input[name=dur]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.dur=r.value});
-  m.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.model=r.value});
+  m.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{if(r.checked){setupModel(r.value);renderMain()}});
 
   m.querySelectorAll('[data-extra]').forEach(chk=>chk.onchange=()=>{
     const ek=chk.dataset.extra;
