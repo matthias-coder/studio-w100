@@ -57,9 +57,10 @@ function liveTick(months){
   });
   return {net,notes};
 }
+function liveGameCap(g){return (g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0)}
 function liveCapShare(s=S){
   let t=0;
-  liveOn().forEach(g=>{t+=(g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0)+(g.seasonAt===s.round?LIVE.seasonCap:0)});
+  liveOn().forEach(g=>{t+=liveGameCap(g)+(g.seasonAt===s.round?LIVE.seasonCap:0)});
   return Math.min(t,LIVE.capMax);
 }
 function seasonDue(s=S,c=C){

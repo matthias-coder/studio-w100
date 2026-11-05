@@ -83,3 +83,8 @@ test('season capacity share is applied to the coming step, then cleared by month
   const pts=sa=>{run(liveGame({seasonAt:sa}));run('S.round=3;S.res.moral=10;C.studio.staff=Array.from({length:8},()=>({loyalty:6,sal:1}));S.res.budget=1e6;Math.random=()=>0.999;monthEnd()');return run('S.month.sprint.pts')};
   const withSeason=pts(3);assert.equal(run('C.live[0].seasonAt'),null);
   assert.ok(withSeason<pts(null));});
+
+test('liveGameCap sums model and premium share',()=>{const {run}=load();
+  assert.equal(run(`liveGameCap({model:'live',premium:true})`),.2);
+  assert.equal(run(`liveGameCap({model:'kauf',premium:true})`),.08);
+  assert.equal(run(`liveGameCap({model:'kauf',premium:false})`),0);});

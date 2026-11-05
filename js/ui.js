@@ -613,9 +613,9 @@ function renderLiveView(m){
   const list=C.live||[],on=list.filter(g=>g.status==='on'),off=list.filter(g=>g.status!=='on');
   const card=g=>{
     const mo=liveMonthly(g).net;
-    const cap=Math.round(((g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0))*100);
+    const cap=Math.round(liveGameCap(g)*100);
     const left=Math.max(0,LIVE.seasonEvery-g.since);
-    return `<div class="legend-card"><div class="dir-info"><b>${esc(g.title)}</b> <span class="note">${liveModelLabel(g)}</span>
+    return `<div class="live-card"><div class="live-head"><b>${esc(g.title)}</b> <span class="note">${liveModelLabel(g)}</span></div>
       <div class="mini">
         <div><span>Spieler</span><span>${nf(g.players,0)} (Spitze ${nf(g.peak,0)})</span></div>
         <div><span>Ergebnis pro Monat</span><span class="${mo>=0?'pos':'neg'}">${money(mo,true)}</span></div>
@@ -623,7 +623,7 @@ function renderLiveView(m){
         <div><span>Season</span><span>${left>0?`nächste Season in ${nf(left,0)} Monaten`:'Season fällig'}</span></div>
       </div>
       ${g.stale?'<p class="note">⚠️ ohne neue Inhalte</p>':''}
-      <button type="button" class="btn tiny ghost" data-eos="${g.nr}">🔌 End of Service</button></div></div>`;
+      <button type="button" class="btn tiny ghost" data-eos="${g.nr}">🔌 End of Service</button></div>`;
   };
   m.className='card';
   m.innerHTML=`<span class="label">📡 Live-Betrieb (${on.length})</span><h3>Laufende Live-Spiele</h3>
@@ -1790,7 +1790,7 @@ function renderEnd(m){
    <p>${e.v[1]}</p>
    ${wonAwards.length?`<div class="award-box"><b>🏆 Gewonnene Auszeichnungen (${wonAwards.length}×)</b><div class="chips">${wonAwards.map(a=>`<span class="chip p">🏆 ${esc(a.cat)}</span>`).join('')}</div><span class="note">Prestige: Verkäufe ×${nf(1+wonAwards.length*0.08,2)} & +${wonAwards.length*3} Fame!</span></div>`:''}
    ${e.legNotes&&e.legNotes.length?`<div class="alert good"><b>🔓 Neue Legende</b><span>${e.legNotes.map(esc).join('<br>')}</span></div>`:''}
-   ${e.liveG?`<div class="alert mid"><b>📡 Geht in den Live-Betrieb</b><span>${nf(e.liveG.players,0)} Spieler · ca. ${money(liveMonthly(e.liveG).net,true)}/Monat · bindet ${Math.round(((e.liveG.model==='live'?LIVE.capLive:0)+(e.liveG.premium?LIVE.capPremium:0))*100)} % des Teams. Alle ${LIVE.seasonEvery} Monate steht eine Season an.</span></div>`:''}
+   ${e.liveG?`<div class="alert mid"><b>📡 Geht in den Live-Betrieb</b><span>${nf(e.liveG.players,0)} Spieler · ca. ${money(liveMonthly(e.liveG).net,true)}/Monat · bindet ${Math.round(liveGameCap(e.liveG)*100)} % des Teams. Alle ${LIVE.seasonEvery} Monate steht eine Season an.</span></div>`:''}
    ${e.engNote?`<div class="alert mid"><b>Engine-Entwicklung & Alterung</b><span>${esc(e.engNote)}</span></div>`:''}
    ${e.staffNotes&&e.staffNotes.length?`<div class="alert good"><b>Lead-Personal</b><span>${e.staffNotes.map(esc).join(' · ')}</span></div>`:''}
    <div class="mini">

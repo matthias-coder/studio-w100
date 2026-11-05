@@ -683,3 +683,8 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
 .sprint-phone[open]>summary{margin-bottom:6px}
 .big-decision{border:2px solid var(--accent);border-left-width:8px;background:var(--sheet)}
 .big-decision>h3{color:var(--accent)}
+
+/* Live-Betrieb: Karten in voller Breite */
+.live-card{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.live-card .mini span:last-child{white-space:nowrap}
+.live-card .btn{justify-self:start}
