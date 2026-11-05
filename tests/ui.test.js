@@ -102,3 +102,8 @@ test('creep card renders',()=>{const {run}=load({ui:true});newProject(run);run(`
   assert.match(run('optsHTML(creepCard(S.creep))'),/Einbauen/);});
 test('featEstimate is positive and grows with duration',()=>{const a=load();newProject(a.run,{dur:'short'});const b=load();newProject(b.run,{dur:'long'});
   assert.ok(a.run('featEstimate()')>0);assert.ok(b.run('featEstimate()')>a.run('featEstimate()'));});
+
+test('hunt screen shows severities and certification',()=>{const {run}=load({ui:true});newProject(run);run(`S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt()`);
+  const h=html(run,'renderHunt');assert.match(h,/Showstopper ×3/);assert.match(h,/QA-Runden: 3/);assert.match(h,/durchgefallen/);assert.match(h,/Fertig/);});
+test('ship screen offers both choices with cost',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('pol_ship')`);
+  const h=html(run,'renderShip');assert.match(h,/Pünktlich releasen/);assert.match(h,/Um 2 Monate verschieben/);});

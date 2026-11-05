@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto','features','creep'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto','features','creep','hunt','ship'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -550,6 +550,40 @@ function renderProto(m){
     <p class="note">Jede Fun-Stufe: +8 % Gameplay aus jedem Sprint</p>`;
   const it=$('pIter');if(it)it.onclick=startProto;
   const st=$('pStop');if(st)st.onclick=endProto;
+}
+
+/* ===================== Bug-Jagd & Release-Entscheidung ===================== */
+const HUNT_ROWS=[['crit','🔴','Showstopper'],['major','🟠','Schwer'],['minor','🟡','Leicht']];
+function renderHunt(m){
+  m.className='card';
+  const l=bugList(),h=S.hunt,pen=certPenalty();
+  const rows=HUNT_ROWS.map(([k,ic,n])=>{
+    const dc=HUNT.dc[k],off=!l[k]||h.runs<=0;
+    return `<button type="button" class="opt" data-hunt="${k}"${off?' disabled':''}><span class="t">${ic} ${n} ×${l[k]}</span><span class="d">SG ${dc100(dc)} (${winChance(dc,optMod({st:'technik'}))} %) · −${HUNT.w[k]} Bugs je Treffer</span></button>`;
+  }).join('');
+  const cert=l.crit<=HUNT.certCrit?'Zertifizierung: ✓ voraussichtlich bestanden':`Zertifizierung: ✗ durchgefallen (−${pen} Wertung)`;
+  m.innerHTML=eventBannerHTML('hunt')+`<span class="label">${stepLabel()}</span><h3>Bug-Jagd</h3>
+    <p class="note">Die QA nimmt sich die schlimmsten Fehler vor, bevor es in die Zertifizierung geht.</p>
+    <div class="chips"><span class="chip">QA-Runden: ${h.runs} übrig</span><span class="chip">🐞 ${S.res.bugs} Bugs</span><span class="chip ${pen?'n':'p'}">${cert}</span></div>
+    <div class="opts">${rows}</div>
+    <div class="row"><button type="button" class="btn" id="huntEnd">✅ Fertig</button></div>`;
+  m.querySelectorAll?.('[data-hunt]').forEach(b=>b.onclick=()=>{if(!b.disabled)startHunt(b.dataset.hunt)});
+  const e=$('huntEnd');if(e)e.onclick=endHunt;
+}
+function renderShip(m){
+  m.className='card big-decision';
+  const l=bugList(),fc=reviewForecast(),mo=delayMonths(),w=delayWeight();
+  const bugs=Math.min(S.res.bugs,Math.round(SHIP.bugPerW*w)),q=Math.round(SHIP.qualPerW*w);
+  const funder=(S.fund&&S.fund.deals||[]).some(d=>(d.id==='pub'||d.id==='inv')&&d.status==='active');
+  const cert=certPenalty()?`Showstopper: ${l.crit} · Zertifizierung gefährdet`:`Showstopper: ${l.crit} · Zertifizierung ok`;
+  m.innerHTML=eventBannerHTML('ship')+`<span class="label">${stepLabel()}</span><h3>Release: Jetzt oder später?</h3>
+    <p class="note">Prognose: ${fc==null?'–':fc} · Bugs: ${S.res.bugs} · ${cert}</p>
+    <div class="opts">
+      <button type="button" class="opt" id="shipNow"><span class="t">🚀 Pünktlich releasen</span><span class="d">Alles bleibt, wie es ist.</span></button>
+      <button type="button" class="opt" id="shipLate"><span class="t">⏳ Um ${mo} Monate verschieben · ${money(delayCost())}</span><span class="d">−${bugs} Bugs · +${q} Gameplay/Grafik/Sound · −1 Hype${funder?' · Geldgeber murren (−1 Moral)':''}</span></button>
+    </div>`;
+  const a=$('shipNow');if(a)a.onclick=()=>decideShip(false);
+  const b=$('shipLate');if(b)b.onclick=()=>decideShip(true);
 }
 
 function trendBlock(){
@@ -1164,6 +1198,7 @@ function headFor(kind,ev){
   if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
   if(kind==='creep'){const c=creepCard(ev);return banner+`<span class="stamp">Production</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='proto')return banner+`<span class="stamp">Pre-Production</span><h3>Prototyp-Iteration</h3>`;
+  if(kind==='hunt')return banner+`<span class="stamp">Polish & QA</span><h3>QA-Runde</h3>`;
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[lastStep()]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
@@ -1352,6 +1387,8 @@ function renderMain(){
   if(sc==='concept'){renderConcept(m);return}
   if(sc==='features'){renderFeatures(m);return}
   if(sc==='proto'){renderProto(m);return}
+  if(sc==='hunt'){renderHunt(m);return}
+  if(sc==='ship'){renderShip(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
