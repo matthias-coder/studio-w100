@@ -54,6 +54,7 @@ function decodeSaveString(str){
 
 function normalizeCareer(c){
   if(!c||!c.studio)return c;
+  if(!Array.isArray(c.live))c.live=[];
   if(Array.isArray(c.studio.staff)){
     c.studio.staff=c.studio.staff.map(item=>{
       if(typeof item==='string'){

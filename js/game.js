@@ -1593,9 +1593,8 @@ function sales(){
     let rev=0,detail=[];
     detail.push(['Wishlists beim Release',nf(S.res.wl,0)+' ('+nf(conv*100,0)+' % kaufen sofort)']);
     if(S.model==='kauf'||S.model==='live'){
-      units=Math.round(units*(S.model==='live'?LIVE.launchMult:1)*(hasPremium(S)?LIVE.premiumSales:1));
-      rev=units*price*.6/1000;e.units=units;
-      detail.push(['Verkaufte Exemplare',nf(units,0)],['Preis',nf(price,2)+' €'],['Umsatz netto (60 % nach Plattform und Steuern)',money(rev)]);
+      const mr=modelRevenue(units,price);
+      units=mr.units;rev=mr.rev;e.units=units;detail.push(...mr.detail);
     }else{
       const players=Math.round(units*14*(.5+S.res.hype/10)),rate=clamp(4+S.payers,1,12);
       rev=players*(rate/100)*45*.7/1000;e.units=players;
@@ -1610,6 +1609,8 @@ function sales(){
     if(S.age!=null)mods.push('USK '+S.age+' ×'+nf(ageFactor(),2));
     if(S.trendHot)mods.push('Boom-Genre ×1,15');
     if(modSales(S.gmod,S.model)!==1)mods.push(GENRE_MODS[S.gmod].n+' ×'+nf(modSales(S.gmod,S.model),2));
+    if(S.model==='live')mods.push('Live-Service-Launch ×'+nf(LIVE.launchMult,2));
+    if(hasPremium(S))mods.push('Premium-Abo ×'+nf(LIVE.premiumSales,2));
     if(S.trendCold)mods.push('Übersättigt ×0,90');
     if(wonAwardNames(e).length)mods.push(`Awards ×${nf(awardMult,2)}`);
     if(mods.length)detail.push(['Marktfaktoren',mods.join(' · ')]);
@@ -1770,6 +1771,7 @@ function finishGame(){
   C.studio.tier=S.tier;
   const engLabel=S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short||'';
   C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),gk:S.genre,sk:S.subGenre,tier:t.n,engine:engLabel,meta:e.meta,user:e.user,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
+  e.liveG=liveAdd(e);
   rollMarketTrend(); // Neuer Markttrend für das Folgejahr!
   addLog(`<span>Release</span> ${MODELS[S.model].sales} W100 ${e.sr} +${e.sb} → ${nf(e.units,0)} ${S.model==='f2p'?'Spieler':'Käufer'}, Ergebnis ${money(e.erg,true)}`);
   S.screen='end';render();save();

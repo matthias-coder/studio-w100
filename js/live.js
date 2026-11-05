@@ -10,3 +10,19 @@ function liveFit(genre,sub){
   const keys=[genre,...(sub?[genre+'.'+sub]:[])],has=l=>keys.some(k=>l.includes(k));
   return has(LIVE_SYN)?'syn':has(LIVE_CLASH)?'clash':null;
 }
+function modelRevenue(units,price){
+  units=Math.round(units*(S.model==='live'?LIVE.launchMult:1)*(hasPremium(S)?LIVE.premiumSales:1));
+  const rev=units*price*.6/1000,detail=[['Verkaufte Exemplare',nf(units,0)],['Preis',nf(price,2)+' €'],['Umsatz netto (60 % nach Plattform und Steuern)',money(rev)]];
+  if(hasPremium(S))detail.push(['Premium-Abo','−10 % Verkäufe, Abo-Einnahmen im Live-Betrieb']);
+  if(S.model==='live')detail.push(['Live Service','Launch ×0,85, danach laufende Einnahmen im Live-Betrieb']);
+  return {units,rev,detail};
+}
+function liveAdd(e){
+  if(S.model!=='live'&&!hasPremium(S))return null;
+  const t=T(),players=S.model==='live'?e.units:Math.round(e.units*LIVE.kaufActive),h=C.hall[C.hall.length-1];
+  const g={nr:h.nr,title:S.title,tier:t.n,scale:t.scale,model:S.model,premium:hasPremium(S),players,peak:players,meta:e.meta,user:e.user,
+    fit:liveFit(S.genre,S.subGenre),months:0,since:0,stale:false,seasons:0,seasonAt:null,net:0,status:'on'};
+  if(!Array.isArray(C.live))C.live=[];
+  C.live.push(g);h.live={months:0,net:0,seasons:0,on:true};
+  return g;
+}
