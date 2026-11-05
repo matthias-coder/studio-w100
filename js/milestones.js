@@ -26,12 +26,16 @@ function msCheck(id,s=S){
     const ist=s.res[k],soll=t[k];return {k,n,ist,soll,ok:ist>=soll,gap:soll-ist};
   });
   rows.push({k:'bugs',n:'Bugs',ist:s.res.bugs,soll:t.bugs,ok:s.res.bugs<=t.bugs,gap:s.res.bugs-t.bugs});
+  if(s.feat&&s.feat.plan&&(id==='alpha'||id==='beta')){
+    const fs=s.feat.plan.filter(f=>id==='beta'||f.core),soll=fs.length,ist=fs.filter(f=>f.done).length;
+    rows.push({k:'feat',n:id==='beta'?'Features':'Kern-Features',ist,soll,ok:ist>=soll,gap:(soll-ist)*MS_NEAR});
+  }
   const outcome=rows.every(r=>r.ok)?'met':rows.every(r=>r.gap<=MS_NEAR)?'near':'miss';
   return {id,n:m.n,outcome,rows};
 }
 // Punkte, die dieser Schritt in jeden Bereich stecken muss, um das Ziel gleichmäßig bis zum Meilensteinschritt zu erreichen
 function msNeed(s=S){
-  const out={gp:0,gfx:0,snd:0,bug:0},m=nextMs(s);
+  const out={gp:0,gfx:0,snd:0,bug:0,feat:0},m=nextMs(s);
   if(!m)return out;
   const end=stepIndex(m.at);let tot=0;
   for(let i=s.round;i<=end;i++)tot+=stepW(i,s);
@@ -40,6 +44,10 @@ function msNeed(s=S){
   const f=now/tot,t=msTargets(m.id,s);
   ['gp','gfx','snd'].forEach(k=>{out[k]=Math.max(0,t[k]-s.res[k])/AREAS[k].rate*f});
   out.bug=Math.max(0,s.res.bugs-t.bugs)/Math.abs(AREAS.bug.rate)*f;
+  if(s.feat&&s.feat.plan){
+    const all=m.id==='beta'||m.id==='gm';
+    out.feat=s.feat.plan.filter(x=>!x.done&&(all||x.core)).reduce((a,x)=>a+x.cost-x.prog,0)*f;
+  }
   return out;
 }
 (function(){

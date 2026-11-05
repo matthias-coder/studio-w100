@@ -154,6 +154,11 @@ function resolveRenego(ok){
 }
 function startRenego(){startRoll({kind:'renego',ev:'renego',adv:false})}
 function cutOptions(s=S){
+  if(s.feat&&s.feat.plan){
+    const o=s.feat.plan.filter(f=>!f.done).map(f=>({id:f.id,n:f.n}));
+    o.push({id:'scope',n:'Umfang kürzen'});
+    return o;
+  }
   const o=(s.extras||[]).map(id=>({id,n:PROJECT_EXTRAS[id]?.n||id}));
   o.push({id:'scope',n:'Umfang kürzen'});
   return o;
@@ -161,7 +166,10 @@ function cutOptions(s=S){
 function cutFeature(id){
   const notes=[];
   if(id==='scope'){S.res.gp-=FUND.cutGp;recalcQual();notes.push(`Umfang gekürzt (Gameplay −${FUND.cutGp})`)}
-  else{
+  else if(S.feat&&S.feat.plan&&S.feat.plan.some(f=>f.id===id)){
+    const f=S.feat.plan.find(x=>x.id===id);
+    featCut(id);notes.push(`${f.n} gestrichen`);
+  }else{
     S.extras=(S.extras||[]).filter(x=>x!==id);
     if(id==='mods')S.mods=false;
     if(id==='ea')S.ea=false;

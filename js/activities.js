@@ -91,7 +91,14 @@ function confirmConcept({genre,sub,gmod,picks,aud}={}){
 
 /* Wirkung von USP und Zielgruppe */
 function uspTarget(s=S){return s.usp?msTargets('gm',s)[s.usp.area]:0}
-function uspKept(s=S){return !!s.usp&&s.res[s.usp.area]>=uspTarget(s)}
+function uspKept(s=S){
+  if(!s.usp||!(s.res[s.usp.area]>=uspTarget(s)))return false;
+  if(s.feat&&s.feat.plan){
+    if(s.feat.cut.some(f=>f.id==='usp'))return false;
+    const f=s.feat.plan.find(x=>x.id==='usp');if(f&&!f.done)return false;
+  }
+  return true;
+}
 function uspRev(s=S){return s.usp?(uspKept(s)?1:-1)*CONCEPT.revPer*s.usp.power:0}
 function audSales(s=S){return AUD[s.aud]?.sales??1}
 function audRev(s=S){return AUD[s.aud]?.rev??0}

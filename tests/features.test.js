@@ -19,3 +19,22 @@ test('move up and cut; built features cannot be cut; cutting an extra feature dr
   run('featBuild(5)');assert.equal(run(`featCut('usp')`),false);});
 test('monthEnd builds features from the sprint',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp','rpg_1'])`);
   run(`S.sprint.focus='balanced';Math.random=()=>0.999;monthEnd()`);assert.ok(run('S.feat.plan[0].prog>0||S.feat.plan[0].done'));});
+
+test('alpha checks core features, beta all planned',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp','rpg_1','photo'])`);
+  run(`S.res.gp=S.res.gfx=S.res.snd=99;S.res.bugs=0`);
+  let r=run(`msCheck('alpha')`);const fr=r.rows.find(x=>x.k==='feat');assert.equal(fr.soll,2);assert.equal(fr.ist,0);assert.equal(r.outcome,'miss');
+  run('featBuild(5)');assert.equal(run(`msCheck('alpha').outcome`),'near');run('featBuild(5)');assert.equal(run(`msCheck('alpha').outcome`),'met');
+  assert.equal(run(`msCheck('beta').rows.find(x=>x.k==='feat').soll`),3);});
+test('no feature rows without a plan; beta with an empty plan is met',()=>{const {run}=load();newProject(run);
+  assert.ok(!run(`msCheck('alpha').rows.some(x=>x.k==='feat')`));toPlan(run);run('startPlan([])');
+  run(`S.res.gp=S.res.gfx=S.res.snd=99;S.res.bugs=0`);assert.equal(run(`msCheck('beta').outcome`),'met');});
+test('Meilenstein-Ziel asks for feature points before alpha',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp','rpg_1'])`);
+  run(`S.round=stepIndex('prod_fp')`);assert.ok(run('msNeed().feat')>0);});
+test('funder cut offers unfinished features, keeps stage-3 effects',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp','rpg_1'])`);
+  run('featBuild(5)');assert.deepEqual([...run('cutOptions().map(o=>o.id)')],['rpg_1','scope']);
+  const z=run('S.res.zeit');run(`S.fund.cutPending=true;cutFeature('rpg_1')`);assert.equal(run('S.res.zeit'),z+1);assert.equal(run('S.feat.plan.length'),1);});
+test('release: unfinished and cut core features cost review, USP feature needed',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp','rpg_1'])`);
+  assert.equal(run('featRev()'),-3*2-2);run(`S.res.gp=99;featBuild(5)`);assert.equal(run('uspKept()'),true);
+  run(`featCut('rpg_1')`);assert.equal(run('featRev()'),-2*2);});
+test('old save without plan keeps extras cut and zero featRev',()=>{const {run}=load();newProject(run,{extras:['ea']});
+  assert.deepEqual([...run('cutOptions().map(o=>o.id)')],['ea','scope']);assert.equal(run('featRev()'),0);});

@@ -1464,7 +1464,7 @@ function reviewScore(r,certPen=0){
   const rtBonus=(S.engine==='eigen'&&C.studio.engine?.modules.includes('raytracing'))?2:0;
   const engAgeRev=(S.engine==='eigen'&&C.studio.engine)?getEngineAgeInfo(S.engAgeAtStart||0).rev:0;
   const extraRevBonus=(S.extras||[]).reduce((acc,ek)=>acc+(PROJECT_EXTRAS[ek]?.reviewBonus||0),0);
-  return clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()+uspRev(S)+audRev(S)-certPen),15,98);
+  return clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()+uspRev(S)+audRev(S)+featRev(S)-certPen),15,98);
 }
 // Prognose während der Entwicklung: Wertung bei mittlerem Wurf, inkl. absehbarem Verzug
 function reviewForecast(){

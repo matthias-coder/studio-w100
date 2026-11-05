@@ -44,10 +44,10 @@ function startPlan(ids){
   S.feat={plan,cut,creepN:0};
   return true;
 }
-function featActive(s=S){return !!(s&&s.feat&&s.feat.plan.some(f=>!f.done))}
+function featActive(s=S){return !!(s&&s.feat&&s.feat.plan&&s.feat.plan.some(f=>!f.done))}
 function featBuild(pts){
   const notes=[];
-  if(!S.feat)return notes;
+  if(!S.feat||!S.feat.plan)return notes;
   for(const f of S.feat.plan){
     if(pts<=0)break;
     if(f.done)continue;
@@ -62,13 +62,13 @@ function featBuild(pts){
 }
 // Ein unfertiges Feature eine Stelle nach oben (nicht über fertige hinweg)
 function featUp(id){
-  if(!S.feat)return false;
+  if(!S.feat||!S.feat.plan)return false;
   const p=S.feat.plan,i=p.findIndex(f=>f.id===id);
   if(i<1||p[i].done||p[i-1].done)return false;
   [p[i-1],p[i]]=[p[i],p[i-1]];return true;
 }
 function featCut(id){
-  if(!S.feat)return false;
+  if(!S.feat||!S.feat.plan)return false;
   const p=S.feat.plan,i=p.findIndex(f=>f.id===id);
   if(i<0||p[i].done)return false;
   const [f]=p.splice(i,1);S.feat.cut.push(f);
@@ -82,4 +82,10 @@ function featCut(id){
 function featStats(s=S){
   const p=(s.feat&&s.feat.plan)||[],cut=(s.feat&&s.feat.cut)||[];
   return {planned:p.length,built:p.filter(f=>f.done).length,core:p.filter(f=>f.core).length,coreBuilt:p.filter(f=>f.core&&f.done).length,cutCore:cut.filter(f=>f.core).length};
+}
+// Review-Malus: unfertige geplante und gestrichene Kern-Features (0 ohne Plan)
+function featRev(s=S){
+  if(!s.feat||!s.feat.plan)return 0;
+  const st=featStats(s);
+  return -FEAT.missRev*(st.planned-st.built)-FEAT.coreCutRev*st.cutCore;
 }
