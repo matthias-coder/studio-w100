@@ -23,6 +23,6 @@ const CAREER=`C={studio:{name:'Test',fame:0,kasse:0,staff:[],exStaff:[],engine:n
  hall:[],gameNo:0,unlockedChars:[]}`;
 function newProject(run,o={}){
   run(CAREER);
-  run(`startGame(${JSON.stringify({title:'T',genre:'rpg',subGenre:null,gmod:null,tier:'indie',model:'kauf',ip:'neu',extras:[],dur:'normal',...o})})`);
+  run(`startGame(${JSON.stringify({title:'T',genre:'rpg',subGenre:null,gmod:null,actsDone:true,tier:'indie',model:'kauf',ip:'neu',extras:[],dur:'normal',...o})})`);
 }
 module.exports={load,newProject,CAREER};

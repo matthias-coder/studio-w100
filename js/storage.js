@@ -177,7 +177,7 @@ function normalizeProject(s,c){
   if(s.res.gfx===undefined)s.res.gfx=s.res.qual||20;
   if(s.res.snd===undefined)s.res.snd=Math.round((s.res.gp+s.res.gfx)/2);
   // Laufendes Projekt mit altem Genre verwerfen
-  if(!subGenreOf(s.genre,s.subGenre))return null;
+  if(!(s.genre==null&&s.concept&&!s.concept.done)&&!subGenreOf(s.genre,s.subGenre))return null;
   return s;
 }
 
@@ -369,7 +369,7 @@ function generateChronicleText(){
   if(S){
     lines.push('');
     lines.push(`## 🚧 Aktuelles Projekt in Entwicklung: „${S.title}“`);
-    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n} (${TIERS[S.tier]?.n}) | **Schritt:** ${Math.min(S.round+1,STEPS.length)}/${STEPS.length} (${S.round>=STEPS.length?'Release':PHASES[curStep(S).ph]})`);
+    lines.push(`- **Genre & Klasse:** ${GENRES[S.genre]?.n||'Genre offen'} (${TIERS[S.tier]?.n}) | **Schritt:** ${Math.min(S.round+1,STEPS.length)}/${STEPS.length} (${S.round>=STEPS.length?'Release':PHASES[curStep(S).ph]})`);
     lines.push(`- **Status:** Budget ${money(S.res.budget)} | Gesamt-Qualität ${S.res.qual} (Gameplay ${S.res.gp} · Grafik ${S.res.gfx} · Sound ${S.res.snd??'–'}) | Bugs ${S.res.bugs} | Hype ${S.res.hype}/10 | Moral ${S.res.moral}/10 | Wishlists ${nf(S.res.wl,0)}`);
   }
   return lines.join('\n');

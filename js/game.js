@@ -39,6 +39,7 @@ function winChance(dc,mod,adv=false){
 /* ===================== Grafik & Gameplay -> Gesamtqualität ===================== */
 function genreName(sObj=S){
   if(!sObj)return '';
+  if(!sObj.genre)return 'Genre offen';
   const main=GENRES[sObj.genre]?.n||sObj.genre;
   const sub=subGenreOf(sObj.genre,sObj.subGenre)?.n;
   const mod=GENRE_MODS[sObj.gmod]?' + '+GENRE_MODS[sObj.gmod].n:'';
@@ -372,10 +373,7 @@ function mandFor(i){const ids=[];for(let j=i-1;j>=0&&isSkipped(j);j--)ids.unshif
 /* ===================== Spielstart ===================== */
 function startGame(o){
   if(!C.trend)rollMarketTrend();
-  const g=GENRES[o.genre],t=TIERS[o.tier],dir=D();
-  const subKey=subGenreOf(o.genre,o.subGenre)?o.subGenre:defaultSub(o.genre);
-  const subG=subGenreOf(o.genre,subKey);
-  const gmod=GENRE_MODS[o.gmod]?o.gmod:null;
+  const t=TIERS[o.tier],dir=D();
 
   // Extras normalisieren (unterstützt Array o.extras sowie Legacy-Flags o.mods / o.ea)
   const extrasSet=new Set(Array.isArray(o.extras)?o.extras:[]);
@@ -399,35 +397,8 @@ function startGame(o){
     zeit:0,
     wl:0
   };
-  for(const k in g.b){
-    if(k==='qual'){res.gp+=g.b[k];res.gfx+=g.b[k];res.snd+=g.b[k]}
-    else res[k]=(res[k]||0)+g.b[k];
-  }
-  if(subG){
-    for(const k in subG.b){
-      const half=Math.round(subG.b[k]*0.5);
-      if(k==='qual'){res.gp+=half;res.gfx+=half;res.snd+=half}
-      else res[k]=(res[k]||0)+half;
-    }
-  }
-
-  // Genre-Modifikator: eigene Effekte plus Synergie oder Reibung mit Genre/Sub-Genre
-  if(gmod){
-    const mb={...GENRE_MODS[gmod].b},fitM=modFit(o.genre,subKey,gmod);
-    if(fitM==='syn')for(const k in MOD_SYN)mb[k]=(mb[k]||0)+MOD_SYN[k];
-    if(fitM==='clash')for(const k in MOD_CLASH)mb[k]=(mb[k]||0)+MOD_CLASH[k];
-    for(const k in mb)res[k]=(res[k]||0)+mb[k];
-  }
-
-  if((g.fit===o.model||(subG&&subG.fit===o.model))&&o.model!=='kauf')res.hype+=1;
-  const isHot=C.trend&&C.trend.hot===o.genre;
-  const isCold=C.trend&&C.trend.cold===o.genre;
-  if(isHot)res.hype+=1;
   res.hype+=IPS[ip].hype;
 
-  const aff=(dir.aff[o.genre]||0)+(dir.perks.includes('spezial')?1:0);
-  res.gp+=aff*5+(dir.perks.includes('spezial')?4:0);
-  res.gfx+=aff*3;
   res.moral+=dir.s.fuehrung-1;
   res.hype+=dir.s.hype-1+(dir.flaws.includes('verspricht')?2:0);
   if(staffLevel('art')>=4)res.hype+=1;
@@ -439,9 +410,7 @@ function startGame(o){
   res.wl+=Math.round((C.studio.fame+C.dir.fame)*60*t.sales+(seq?seq.meta*40*t.sales:0));
 
   const scaledStats={};
-  for(const k in STATS){
-    scaledStats[k]=(g.s[k]||0)*4+(subG?(subG.s[k]||0)*2:0);
-  }
+  for(const k in STATS)scaledStats[k]=0;
 
   // Projekt-Extras anwenden (Start-Effekte, Vorabkosten & Stat-Boni)
   let upfrontExtraCost=0;
@@ -465,16 +434,17 @@ function startGame(o){
   const plan={};for(const k in PLAN)plan[k]=PLAN[k].def;
 
   const durKey=DUR_KEYS.includes(o.dur)?o.dur:'normal';
-  S={v:2,durKey,dur:durMonths(o.tier,durKey),screen:'event',title:o.title||randTitle(),genre:o.genre,subGenre:subKey,gmod,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
+  S={v:2,durKey,dur:durMonths(o.tier,durKey),screen:'event',title:o.title||randTitle(),genre:null,subGenre:null,gmod:null,extras,tier:o.tier,model:o.model,ip,seq:seq?{title:seq.title,meta:seq.meta}:null,
      mods:extras.includes('mods'),ea:extras.includes('ea'),
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
-     plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
+     plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff:0,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:isHot,trendCold:isCold,seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
+     trendHot:false,trendCold:false,concept:{done:!!o.actsDone,lock:!!o.genre},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
   S.res.zeit=totalW(S)+2;
-  recalcQual();
+  if(o.genre)applyGenre(o.genre,o.subGenre||null,o.gmod||null);
+  else recalcQual();
   const fee=(IPS[ip].fee*t.scale)+upfrontExtraCost;
   if(fee){S.res.budget-=fee;S.spend.projekt=fee}
   // Ein Ereignis pro Schritt: bevorzugt unbenutzt aus der Inhaltsphase, sonst Wiederholung, sonst Nachbarphase
@@ -489,6 +459,46 @@ function startGame(o){
   const exLabels=extras.map(k=>PROJECT_EXTRAS[k]?.n).filter(Boolean);
   addLog(`<span>Start</span> ${esc(C.studio.name)} beginnt „${esc(S.title)}“: ${t.n}, ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}, ${IPS[ip].n}${seq?' von „'+esc(seq.title)+'“':''}, ${MODELS[o.model].n}${exLabels.length?' · Extras: '+exLabels.join(', '):''}, Director ${esc(dir.n)}, ${money(budget)} Budget`);
   goMonth();
+}
+
+/* Genre-abhängige Startwerte: bei Projektstart oder später im Konzept-Schritt */
+function applyGenre(genre,sub,gmod){
+  const g=GENRES[genre];if(!g||!S)return;
+  const dir=D();
+  const subKey=subGenreOf(genre,sub)?sub:defaultSub(genre);
+  const subG=subGenreOf(genre,subKey);
+  const gm=GENRE_MODS[gmod]?gmod:null;
+  const res=S.res;
+  S.genre=genre;S.subGenre=subKey;S.gmod=gm;
+  for(const k in g.b){
+    if(k==='qual'){res.gp+=g.b[k];res.gfx+=g.b[k];res.snd+=g.b[k]}
+    else res[k]=(res[k]||0)+g.b[k];
+  }
+  if(subG){
+    for(const k in subG.b){
+      const half=Math.round(subG.b[k]*0.5);
+      if(k==='qual'){res.gp+=half;res.gfx+=half;res.snd+=half}
+      else res[k]=(res[k]||0)+half;
+    }
+  }
+  if(gm){
+    const mb={...GENRE_MODS[gm].b},fitM=modFit(genre,subKey,gm);
+    if(fitM==='syn')for(const k in MOD_SYN)mb[k]=(mb[k]||0)+MOD_SYN[k];
+    if(fitM==='clash')for(const k in MOD_CLASH)mb[k]=(mb[k]||0)+MOD_CLASH[k];
+    for(const k in mb)res[k]=(res[k]||0)+mb[k];
+  }
+  if((g.fit===S.model||(subG&&subG.fit===S.model))&&S.model!=='kauf')res.hype+=1;
+  S.trendHot=!!(C.trend&&C.trend.hot===genre);
+  S.trendCold=!!(C.trend&&C.trend.cold===genre);
+  if(S.trendHot)res.hype+=1;
+  const spez=dir.perks.includes('spezial');
+  S.aff=(dir.aff[genre]||0)+(spez?1:0);
+  res.gp+=S.aff*5+(spez?4:0);
+  res.gfx+=S.aff*3;
+  for(const k in STATS)S.stats[k]=(S.stats[k]||0)+(g.s[k]||0)*4+(subG?(subG.s[k]||0)*2:0);
+  res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,10);res.bugs=Math.max(0,res.bugs);
+  recalcQual();
+  addLog(`<span>${stepTag()}</span> Konzept: ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}`);
 }
 
 function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
@@ -1266,7 +1276,7 @@ function gameOver(reason){
   S.over=reason;S.screen='over';
   if(!S.overDone){
     S.overDone=true;
-    C.hall.push({nr:C.hall.length+1,title:S.title,genre:GENRES[S.genre].n,tier:T().n,meta:null,units:0,erg:null,v:reason==='moral'?'Team gekündigt':'Insolvenz'});
+    C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),gk:S.genre,sk:S.subGenre,tier:T().n,meta:null,units:0,erg:null,v:reason==='moral'?'Team gekündigt':'Insolvenz'});
     C.dir.fame=Math.max(0,C.dir.fame-10);
     C.studio.fame=0;C.studio.kasse=-1;
   }
@@ -1750,7 +1760,7 @@ function finishGame(){
   C.studio.kasse=e.kasseNew;
   C.studio.tier=S.tier;
   const engLabel=S.engine==='eigen'?(C.studio.engine?.name||'Eigenbau'):ENGINE_DEFS[S.engine]?.short||'';
-  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),tier:t.n,engine:engLabel,meta:e.meta,user:e.user,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
+  C.hall.push({nr:C.hall.length+1,title:S.title,genre:genreName(S),gk:S.genre,sk:S.subGenre,tier:t.n,engine:engLabel,meta:e.meta,user:e.user,gp:S.res.gp,gfx:S.res.gfx,snd:S.res.snd,units:e.units,erg:e.erg,v:e.v[0],awards:wonAwardNames(e),ipLost:!!S.ipLost||S.ip==='lizenz'});
   rollMarketTrend(); // Neuer Markttrend für das Folgejahr!
   addLog(`<span>Release</span> ${MODELS[S.model].sales} W100 ${e.sr} +${e.sb} → ${nf(e.units,0)} ${S.model==='f2p'?'Spieler':'Käufer'}, Ergebnis ${money(e.erg,true)}`);
   S.screen='end';render();save();
