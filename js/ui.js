@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -405,6 +405,85 @@ function renderPitch(m){
   const sf=$('pitchSelf');if(sf)sf.onclick=()=>{pitchDraft={sel:[],amb:false};selfFund()};
 }
 
+/* ===================== Konzept (Ideen-Mixer) & Prototyp-Schleife ===================== */
+let conceptDraft=null;
+function ensureConceptDraft(){
+  const c=S.concept;
+  if(conceptDraft&&Object.keys(IDEA_SLOTS).every(k=>c.hand[k].includes(conceptDraft.picks[k])))return;
+  const keep=conceptDraft;
+  const locked=c.lock&&S.genre;
+  const genre=locked?S.genre:(keep?.genre||'rpg');
+  const sub=locked?S.subGenre:(keep?.sub||defaultSub(genre));
+  conceptDraft={genre,sub,gmod:keep?.gmod||'none',aud:keep?.aud||'core',picks:Object.fromEntries(Object.keys(IDEA_SLOTS).map(k=>[k,c.hand[k][0]]))};
+}
+function uspLine(){
+  if(!S.usp)return '';
+  const a=S.usp.area;
+  return `💡 USP: ${esc(S.usp.n)} · ${AREAS[a].n} ${S.res[a]}/${uspTarget()} ${uspKept()?'✓':'✗'}`;
+}
+function renderConcept(m){
+  m.className='card big-decision';
+  ensureConceptDraft();
+  const c=S.concept,d=conceptDraft,lock=!!c.lock;
+  const tr=C?.trend;
+  const mainG=GENRES[d.genre]||GENRES.rpg;
+  const subKey=subGenreOf(d.genre,d.sub)?d.sub:defaultSub(d.genre);
+  const gm=GENRE_MODS[d.gmod]?d.gmod:null;
+  const fitTag=k=>{const f=modFit(d.genre,subKey,k);return f==='syn'?' <span class="pos">✓ Synergie</span>':f==='clash'?' <span class="neg">✗ beißt sich</span>':''};
+  const genreHTML=lock?`<p class="note"><b>Fortsetzung: Genre steht fest</b> – ${esc(genreName(S))}</p>`:`
+    ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n}</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n}</span></div>`:''}
+    <div class="field"><span class="label">1. Hauptgenre</span>
+      <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
+        const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
+        const isHot=tr&&tr.hot===k,isCold=tr&&tr.cold===k;
+        return `<label class="choice"><input type="radio" name="cg" value="${k}" ${d.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*4)).join(' · ')}</code><span class="more">${esc(g.d)}</span></label>`;
+      }).join('')}</div></div>
+    <div class="field"><span class="label">2. Sub-Genre von ${esc(mainG.n)}</span>
+      <div class="choices compact">${Object.entries(mainG.subs).map(([k,sg])=>`<label class="choice"><input type="radio" name="csub" value="${k}" ${subKey===k?'checked':''}><b>${esc(sg.n)}</b><code>${Object.entries(sg.s||{}).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(' · ')}</code><span class="more">${esc(sg.d)}</span></label>`).join('')}</div></div>
+    <div class="field"><span class="label">3. Optionaler Modifikator</span>
+      <div class="choices compact">
+        <label class="choice"><input type="radio" name="cmod" value="none" ${!gm?'checked':''}><b>Keiner</b><span class="more">Klassisch, ohne genreübergreifende Zutat.</span></label>
+        ${Object.entries(GENRE_MODS).map(([k,md])=>`<label class="choice"><input type="radio" name="cmod" value="${k}" ${gm===k?'checked':''}><b>${esc(md.n)}${fitTag(k)}</b><span class="more">${esc(md.d)}</span></label>`).join('')}
+      </div></div>`;
+  const rows=Object.entries(IDEA_SLOTS).map(([slot,lbl])=>`<div class="field"><span class="label">${lbl}</span><div class="opts">${c.hand[slot].map(id=>{
+    const card=ideaById(slot,id),on=d.picks[slot]===id;
+    return `<button type="button" class="opt" data-idea="${slot}:${id}" aria-pressed="${on}"><span class="t">${card.ic} ${esc(card.n)}</span><span class="check">${AREAS[card.a].ic} ${AREAS[card.a].n}</span></button>`;
+  }).join('')}</div></div>`).join('');
+  const ids=Object.keys(IDEA_SLOTS).map(k=>d.picks[k]);
+  const area=uspArea(ids),power=uspPower(ids,d.genre);
+  const uname=Object.keys(IDEA_SLOTS).map(k=>ideaById(k,d.picks[k]).n).join(' · ');
+  const tgt=S.genre?`Ziel zum Release: ${AREAS[area].n} ≥ ${msTargets('gm')[area]}`:'Ziel zum Release: wird nach dem Festlegen berechnet';
+  const audHTML=Object.entries(AUD).map(([k,a])=>`<label class="choice"><input type="radio" name="caud" value="${k}" ${d.aud===k?'checked':''}><b>${esc(a.n)}</b><code>Verkäufe ×${nf(a.sales,2)} · Wertung ${fmt(a.rev)}${a.hype?' · +'+a.hype+' Hype':''}</code><span class="more">${esc(a.d)}</span></label>`).join('');
+  m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Ideen-Mixer: Worum geht es?</h3>
+    <p class="note">Eine große Entscheidung: Genre, Idee und Zielgruppe prägen das ganze Projekt.</p>
+    ${genreHTML}
+    ${rows}
+    <div class="row"><button type="button" class="btn ghost" id="cReroll"${c.rerolls>0?'':' disabled'}>🔀 Neu mischen (noch ${c.rerolls}×)</button></div>
+    <div class="synergy-box"><b>💡 USP: ${esc(uname)}</b><div class="chips"><span class="chip">${AREAS[area].ic} ${AREAS[area].n}</span><span class="chip">${'★'.repeat(power)}${'☆'.repeat(3-power)} Stärke ${power}</span><span class="chip">${tgt}</span></div></div>
+    <div class="field"><span class="label">Zielgruppe</span><div class="choices compact">${audHTML}</div></div>
+    <div class="row"><button type="button" class="btn" id="cGo">💡 Konzept festlegen</button></div>`;
+  const redraw=()=>renderConcept(m);
+  m.querySelectorAll?.('[data-idea]').forEach(b=>b.onclick=()=>{const [s,id]=b.dataset.idea.split(':');d.picks[s]=id;redraw()});
+  m.querySelectorAll?.('input[name=cg]').forEach(r=>r.onchange=()=>{if(r.checked){d.genre=r.value;d.sub=defaultSub(r.value);redraw()}});
+  m.querySelectorAll?.('input[name=csub]').forEach(r=>r.onchange=()=>{if(r.checked){d.sub=r.value;redraw()}});
+  m.querySelectorAll?.('input[name=cmod]').forEach(r=>r.onchange=()=>{if(r.checked){d.gmod=r.value;redraw()}});
+  m.querySelectorAll?.('input[name=caud]').forEach(r=>r.onchange=()=>{if(r.checked){d.aud=r.value;redraw()}});
+  const rr=$('cReroll');if(rr)rr.onclick=()=>{if(rerollHand()){conceptDraft=null;redraw();save()}};
+  const go=$('cGo');if(go)go.onclick=()=>{const dr=conceptDraft;if(confirmConcept({...dr,gmod:GENRE_MODS[dr.gmod]?dr.gmod:null}))conceptDraft=null};
+}
+function renderProto(m){
+  m.className='card';
+  const p=S.proto,dc=protoDc();
+  const fun='●'.repeat(p.fun)+'○'.repeat(Math.max(0,PROTO.maxFun-p.fun));
+  m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Prototyp-Schleife</h3>
+    <p class="note">Ihr probiert Ideen im Prototyp aus, bis sich das Spiel gut anfühlt.</p>
+    <div class="chips"><span class="chip p">Fun gefunden: ${fun}</span><span class="chip">Iterationen ${p.n}/${PROTO.max}</span><span class="chip">Nächste Iteration: SG ${dc100(dc)} (${winChance(dc,optMod({st:'design'}))} %)</span></div>
+    <div class="row"><button type="button" class="btn" id="pIter">🎲 Weiter iterieren</button><button type="button" class="btn ghost" id="pStop">✅ Aufhören</button></div>
+    <p class="note">Jede Fun-Stufe: +8 % Gameplay aus jedem Sprint</p>`;
+  const it=$('pIter');if(it)it.onclick=startProto;
+  const st=$('pStop');if(st)st.onclick=endProto;
+}
+
 function trendBlock(){
   if(!C||!C.trend)return '';
   const tr=C.trend;
@@ -437,6 +516,7 @@ function qualPanel(){
     ${row('🎨','Grafik',r.gfx,Math.round(qb.w.gfx*100)+' %','var(--c-tools)')}
     ${row('🎵','Sound',r.snd??qb.avg,Math.round(qb.w.snd*100)+' %','var(--accent)')}
     ${row('🐞','Bugs',r.bugs,S.works?'zählen nicht':'−'+Math.round(r.bugs*1.2)+' Wertung',r.bugs>=15?'var(--bad)':'var(--warn)',r.bugs*4)}
+    ${S.usp?`<div class="note">${uspLine()}</div>`:''}
     <div class="note">Qualität <b>${r.qual}</b> = gewichteter Schnitt ${qb.avg}${adj.length?' · '+adj.join(' · '):''}. Prognose: ${metaLabel(fc)}.</div>
   </div>`;
 }
@@ -1014,6 +1094,7 @@ function resultNextLabel(L){
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
   if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
+  if(kind==='proto')return banner+`<span class="stamp">Pre-Production</span><h3>Prototyp-Iteration</h3>`;
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[lastStep()]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
   if(kind==='legend'){
@@ -1199,6 +1280,8 @@ function renderMain(){
   }
   if(sc==='milestone'){renderMilestone(m);return}
   if(sc==='pitch'){renderPitch(m);return}
+  if(sc==='concept'){renderConcept(m);return}
+  if(sc==='proto'){renderProto(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
@@ -1606,9 +1689,6 @@ function ensureSetupDraft(){
     ip:'neu',
     dur:'normal',
     model:'kauf',
-    genre:'rpg',
-    subGenre:defaultSub('rpg'),
-    gmod:'none',
     extras:[],
     mode:'game',
     engGoal:'gen',
@@ -1644,11 +1724,11 @@ function launchSetupProject(){
     };
     rollMarketTrend();
   }
+  const sq=setupDraft.ip.startsWith('seq:')?C.hall[+setupDraft.ip.slice(4)]:null;
+  const seqGenre=sq&&sq.gk?{genre:sq.gk,subGenre:sq.sk}:{};
   const cfg={
     title:(setupDraft.title||'').trim()||randTitle(),
-    genre:setupDraft.genre,
-    subGenre:subGenreOf(setupDraft.genre,setupDraft.subGenre)?setupDraft.subGenre:defaultSub(setupDraft.genre),
-    gmod:GENRE_MODS[setupDraft.gmod]?setupDraft.gmod:null,
+    ...seqGenre,
     tier:(first&&setupDraft.tier!=='indie')||(!first&&C.studio.kasse<TIERS[setupDraft.tier].min)?'indie':setupDraft.tier,
     dur:setupDraft.dur,
     model:setupDraft.model,
@@ -1789,8 +1869,7 @@ function renderSetup(m){
   const stepLabels=[
     [1,'1. Studio & Director'],
     [2,'2. Klasse & Modell'],
-    [3,'3. Genre & Sub-Genre'],
-    [4,'4. Extras & Start']
+    [3,'3. Extras & Start']
   ];
 
   const stepsBar=`<div class="wiz-steps" role="tablist" aria-label="Projekt-Assistent">
@@ -1817,7 +1896,7 @@ function renderSetup(m){
         </div>
       </div>
       <div class="wiz-nav">
-        <span class="note">Schritt 1 von 4</span>
+        <span class="note">Schritt 1 von 3</span>
         <div class="row">
           <button type="button" class="btn" id="wizNext">Weiter: Klasse & Modell →</button>
         </div>
@@ -1866,7 +1945,7 @@ function renderSetup(m){
       </div>
       <p class="err" id="setupErr" hidden></p>
       <div class="wiz-nav">
-        <span class="note">Schritt 1 von 4 · Tipp: Klick auf eine Karte zeigt alle Details</span>
+        <span class="note">Schritt 1 von 3 · Tipp: Klick auf eine Karte zeigt alle Details</span>
         <div class="row">
           <button type="button" class="btn" id="wizNext">Weiter: Klasse & Modell →</button>
         </div>
@@ -1909,57 +1988,6 @@ function renderSetup(m){
       </div>
       <div class="wiz-nav">
         <button type="button" class="btn ghost" id="wizPrev">← Zurück: Studio & Director</button>
-        <button type="button" class="btn" id="wizNext">Weiter: Genre & Sub-Genre →</button>
-      </div>`;
-  }else if(setupStep===3){
-    const mainG=GENRES[setupDraft.genre]||GENRES.rpg;
-    const subKey=subGenreOf(setupDraft.genre,setupDraft.subGenre)?setupDraft.subGenre:defaultSub(setupDraft.genre);
-    const subG=subGenreOf(setupDraft.genre,subKey);
-    const blendGfxW=subG?.gfxW!=null?(mainG.gfxW*0.5+subG.gfxW*0.5):mainG.gfxW;
-    const combinedStats=Object.keys(STATS).map(sk=>`${STATS[sk]} +${(mainG.s[sk]||0)*4+(subG?.s?.[sk]||0)*2}`).join(' · ');
-    const bonus=Object.entries(subG?.b||{}).map(([k,v])=>chip([k,Math.round(v*0.5)])).join('');
-    const fit=subG?.fit||mainG.fit;
-    const gm=GENRE_MODS[setupDraft.gmod]?setupDraft.gmod:null;
-    const gmFit=gm?modFit(setupDraft.genre,subKey,gm):null;
-    const fitTag=k=>{const f=modFit(setupDraft.genre,subKey,k);return f==='syn'?' <span class="pos">✓ Synergie</span>':f==='clash'?' <span class="neg">✗ beißt sich</span>':''};
-    const modEff=gm?Object.entries({...GENRE_MODS[gm].b}).map(e=>chip(e)).join(''):'';
-
-    bodyHTML=`
-      <h3>Schritt 3: Genre & Sub-Genre</h3>
-      ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+15% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−10% Verkäufe)</span></div>`:''}
-      <div class="field">
-        <span class="label">1. Hauptgenre</span>
-        <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
-          const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
-          const isHot=tr&&tr.hot===k;
-          const isCold=tr&&tr.cold===k;
-          return `<label class="choice"><input type="radio" name="g" id="g-${k}" value="${k}" ${setupDraft.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*4)).join(' · ')}</code><span class="more">${esc(g.d)}</span></label>`;
-        }).join('')}</div>
-      </div>
-      <div class="field">
-        <span class="label">2. Sub-Genre von ${esc(mainG.n)}</span>
-        <div class="choices compact">${Object.entries(mainG.subs).map(([k,sg])=>`<label class="choice"><input type="radio" name="subg" value="${k}" ${subKey===k?'checked':''}><b>${esc(sg.n)}</b><code>${Object.entries(sg.s||{}).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(' · ')}${sg.fit&&sg.fit!=='kauf'?' · passt zu '+MODELS[sg.fit].n:''}</code><span class="more">${esc(sg.d)}</span></label>`).join('')}</div>
-      </div>
-      <div class="field">
-        <span class="label">3. Optionaler Modifikator</span>
-        <div class="choices compact">
-          <label class="choice"><input type="radio" name="gmod" value="none" ${!gm?'checked':''}><b>Keiner</b><span class="more">Klassisch, ohne genreübergreifende Zutat.</span></label>
-          ${Object.entries(GENRE_MODS).map(([k,md])=>`<label class="choice"><input type="radio" name="gmod" value="${k}" ${gm===k?'checked':''}><b>${esc(md.n)}${fitTag(k)}</b><code>${typeof md.sales==='object'?'Verkäufe ×'+nf(md.sales.kauf,2)+' bis ×'+nf(md.sales.f2p,2):md.sales!==1?'Verkäufe ×'+nf(md.sales,2):'Verkäufe ±0'}${md.monthly?' · Serverkosten ab Beta':''}</code><span class="more">${esc(md.d)}</span></label>`).join('')}
-        </div>
-      </div>
-      <div class="synergy-box ${gmFit==='syn'?'dream':gmFit==='clash'?'wild':''}">
-        <b>🎯 ${esc(mainG.n)} · ${esc(subG?.n||'')}${gm?' + '+esc(GENRE_MODS[gm].n):''}</b>
-        <span class="note">${esc(subG?.d||mainG.d)}</span>
-        <div class="chips">
-          <span class="chip">${combinedStats}</span>
-          <span class="chip">🎮 Gameplay ${Math.round((1-blendGfxW)*100)} % · 🎨 Grafik ${Math.round(blendGfxW*100)} %</span>
-          ${fit!=='kauf'?`<span class="chip">Passt zu ${MODELS[fit].n} (+1 Hype)</span>`:''}
-          ${bonus}${modEff}
-          ${gmFit==='syn'?`<span class="chip p">Synergie: +${MOD_SYN.gp} Gameplay, +${MOD_SYN.hype} Hype</span>`:gmFit==='clash'?`<span class="chip n">Reibung: ${MOD_CLASH.gp} Gameplay, +${MOD_CLASH.bugs} Bugs</span>`:''}
-        </div>
-      </div>
-      <div class="wiz-nav">
-        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Klasse & Modell</button>
         <button type="button" class="btn" id="wizNext">Weiter: Extras & Lizenzen →</button>
       </div>`;
   }else{
@@ -1972,10 +2000,11 @@ function renderSetup(m){
     const extraUpfront=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.upfront||0)*sc),0);
     const extraMonthly=setupDraft.extras.reduce((acc,ek)=>acc+Math.round((PROJECT_EXTRAS[ek]?.monthly||0)*sc),0);
     const netStartBudget=startBudget-ipFee-extraUpfront;
-    const isSportGenre=setupDraft.genre==='sports';
+    const sqIdx=setupDraft.ip.startsWith('seq:')?C?.hall?.[+setupDraft.ip.slice(4)]:null;
+    const sqGenre=sqIdx&&sqIdx.gk?genreName({genre:sqIdx.gk,subGenre:sqIdx.sk}):null;
 
     bodyHTML=`
-      <h3>Schritt 4: Extras, Lizenzen & Projektstart</h3>
+      <h3>Schritt 3: Extras, Lizenzen & Projektstart</h3>
       <div class="field">
         <span class="label">Optionale Projekt-Extras & Lizenzen (${setupDraft.extras.length} gewählt — Klick wählt an/ab)</span>
         <div class="choices compact">
@@ -1983,7 +2012,7 @@ function renderSetup(m){
             const checked=setupDraft.extras.includes(ek);
             const upCost=ex.upfront?Math.round(ex.upfront*sc):0;
             const mCost=ex.monthly?Math.round(ex.monthly*sc):0;
-            const sportHint=(ek==='sportLic'&&isSportGenre)?'<span class="pos">⚽ +25 % Sport-Synergie!</span>':'';
+            const sportHint=(ek==='sportLic'&&sqIdx&&sqIdx.gk==='sports')?'<span class="pos">⚽ +25 % Sport-Synergie!</span>':'';
             return `<label class="choice">
               <input type="checkbox" data-extra="${ek}" id="ek-${ek}" ${checked?'checked':''}>
               <b>${ex.n}</b>
@@ -1999,7 +2028,7 @@ function renderSetup(m){
         <div class="mini">
           <div><span>Studio & Director</span><span><b>${esc(setupDraft.studioName)}</b> · ${esc(selDir.n)}</span></div>
           <div><span>Spiel & Rahmen</span><span><b>„${esc(setupDraft.title)}“</b> · ${t.n} · ${IPS[ipKey]?.n||'Fortsetzung'} · ${MODELS[setupDraft.model]?.n}</span></div>
-          <div><span>Genre & Ausrichtung</span><span><b>${GENRES[setupDraft.genre]?.n}${subGenreOf(setupDraft.genre,setupDraft.subGenre)?' · '+subGenreOf(setupDraft.genre,setupDraft.subGenre).n:''}${GENRE_MODS[setupDraft.gmod]?' + '+GENRE_MODS[setupDraft.gmod].n:''}</b></span></div>
+                    <div><span>Genre</span><span>${sqGenre?`<b>${esc(sqGenre)}</b> (Fortsetzung)`:'wird im Konzept festgelegt'}</span></div>
           <div><span>Startkapital / Kasse</span><span>${money(startBudget)}</span></div>
           ${(ipFee+extraUpfront)>0?`<div><span>Abzgl. Vorabkosten (Lizenz & Extras)</span><span class="neg">−${money(ipFee+extraUpfront)}</span></div>`:''}
           <div><span><b>Verfügbares Budget im ersten Schritt</b></span><span class="${netStartBudget<40*sc?'neg':'pos'}"><b>${money(netStartBudget)}</b>${extraMonthly?` (zzgl. ${money(perMonth(extraMonthly,{tier:setupDraft.tier}))}/Monat für Extras)`:''}</span></div>
@@ -2008,7 +2037,7 @@ function renderSetup(m){
       </div>
       <p class="err" id="setupErr" hidden></p>
       <div class="wiz-nav">
-        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Genre & Mix</button>
+        <button type="button" class="btn ghost" id="wizPrev">← Zurück: Klasse & Modell</button>
         <button type="button" class="btn" id="go">🚀 ${first?'Studio gründen & Projekt starten':'Projekt jetzt starten'}</button>
       </div>`;
   }
@@ -2063,21 +2092,6 @@ function renderSetup(m){
   m.querySelectorAll('input[name=dur]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.dur=r.value});
   m.querySelectorAll('input[name=m]').forEach(r=>r.onchange=()=>{if(r.checked)setupDraft.model=r.value});
 
-  m.querySelectorAll('input[name=g]').forEach(r=>r.onchange=()=>{
-    if(r.checked){
-      setupDraft.genre=r.value;
-      setupDraft.subGenre=defaultSub(r.value);
-      renderMain();
-    }
-  });
-  m.querySelectorAll('input[name=gmod]').forEach(r=>r.onchange=()=>{if(r.checked){setupDraft.gmod=r.value;renderMain()}});
-  m.querySelectorAll('input[name=subg]').forEach(r=>r.onchange=()=>{
-    if(r.checked){
-      setupDraft.subGenre=r.value;
-      renderMain();
-    }
-  });
-
   m.querySelectorAll('[data-extra]').forEach(chk=>chk.onchange=()=>{
     const ek=chk.dataset.extra;
     if(chk.checked){
@@ -2097,7 +2111,7 @@ function renderSetup(m){
       if(err){err.hidden=false;err.textContent=`Dein Director hat ${-ptsLeft()} Punkte zu viel. Senke einen Wert, streiche einen Vorteil oder nimm eine Macke.`}
       return;
     }
-    setupStep=Math.min(4,setupStep+1);
+    setupStep=Math.min(3,setupStep+1);
     renderMain();
   };
 

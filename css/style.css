@@ -681,3 +681,5 @@ details.fold .fold-body{padding:10px 11px;display:grid;gap:8px}
 .sprint-phone>summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;cursor:pointer}
 .sprint-phone>summary .chip{font-size:11px;padding:1px 6px}
 .sprint-phone[open]>summary{margin-bottom:6px}
+.big-decision{border:2px solid var(--accent);border-left-width:8px;background:var(--sheet)}
+.big-decision>h3{color:var(--accent)}

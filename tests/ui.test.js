@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const {load,newProject}=require('./harness');
+const {load,newProject,CAREER}=require('./harness');
 test('sprint bar renders presets and points',()=>{const {run}=load({ui:true});newProject(run);
   const h=run('sprintBar()');assert.match(h,/Ausgewogen/);assert.match(h,/Meilenstein-Ziel/);assert.match(h,/Punkte/);});
 test('crunch button disabled at moral 1',()=>{const {run}=load({ui:true});newProject(run);
@@ -34,7 +34,7 @@ test('Ist column shows plain numbers',()=>{const {run}=load({ui:true});newProjec
 test('monthNote names the finished step after a skip',()=>{const {run}=load({ui:true});newProject(run);
   run(`Math.random=()=>0.999;S.res.budget=1e9;S.skip=['pit_mix'];S.round=stepIndex('pit_meet')`);run('monthEnd()');
   const n=run('monthNote()');assert.match(n,/Pitch-Termine/);assert.doesNotMatch(n,/Finanzierung steht/);});
-const html=(run,fn)=>run(`(()=>{const m={innerHTML:'',className:''};${fn}(m);return m.innerHTML})()`);
+const html=(run,fn)=>run(`(()=>{const m={innerHTML:'',className:'',querySelectorAll:()=>[]};${fn}(m);return m.innerHTML})()`);
 test('pitch screen lists funders and both buttons',()=>{const {run}=load({ui:true});newProject(run);
   run(`S.round=stepIndex('pit_meet');S.screen='pitch'`);const h=html(run,'renderPitch');
   assert.match(h,/data-fd="pub"/);assert.match(h,/data-fd="crowd"/);assert.match(h,/id="pitchSelf"/);assert.match(h,/id="pitchGo"[^>]*disabled/);});
@@ -66,3 +66,18 @@ test('stale pitch draft is filtered by availability',()=>{const {run}=load({ui:t
 test('ambitious pitch label wraps (not class check)',()=>{const {run}=load({ui:true});newProject(run);
   run(`S.round=stepIndex('pit_meet')`);const h=html(run,'renderPitch');
   assert.match(h,/id="pitchAmb"/);assert.doesNotMatch(h,/<label class="check"/);});
+
+/* ===== Stage 4a: concept + prototype screens, wizard without genre ===== */
+const startRaw=(run,o={})=>{run(CAREER);run(`startGame(${JSON.stringify({title:'T',tier:'indie',model:'kauf',ip:'neu',extras:[],dur:'normal',...o})})`)};
+test('concept screen shows genre, idea rows and audience',()=>{const {run}=load({ui:true});startRaw(run);
+  const h=html(run,'renderConcept');assert.match(h,/Ideen-Mixer/);assert.match(h,/Kniff/);assert.match(h,/Schauplatz/);assert.match(h,/Twist/);
+  assert.match(h,/Rollenspiel/);assert.match(h,/Hardcore-Fans/);assert.match(h,/Konzept festlegen/);});
+test('locked sequel genre is shown as fixed',()=>{const {run}=load({ui:true});startRaw(run,{genre:'puzzle',subGenre:'logic'});
+  assert.match(html(run,'renderConcept'),/Genre steht fest/);});
+test('sidebar and HUD render before a genre exists',()=>{const {run}=load({ui:true});startRaw(run);
+  assert.doesNotThrow(()=>run('qualPanel();renderHud();reviewForecast()'));});
+test('prototype screen shows fun and both buttons',()=>{const {run}=load({ui:true});newProject(run);
+  run(`S.round=stepIndex('pre_proto');S.proto={n:1,fun:1,done:false}`);const h=html(run,'renderProto');
+  assert.match(h,/Weiter iterieren/);assert.match(h,/Aufhören/);assert.match(h,/1\/4/);});
+test('wizard has three steps and no genre step',()=>{const {run}=load({ui:true});run('C=null;setupDraft=null');
+  const h=html(run,'renderSetup');assert.match(h,/Schritt 1 von 3/);assert.doesNotMatch(h,/Genre & Sub-Genre/);});
