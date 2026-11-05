@@ -64,3 +64,40 @@ function liveCapShare(s=S){
   liveOn().forEach(g=>{t+=(g.model==='live'?LIVE.capLive:0)+(g.premium?LIVE.capPremium:0)+(g.seasonAt===s.round?LIVE.seasonCap:0)});
   return Math.min(t,LIVE.capMax);
 }
+function seasonDue(s=S,c=C){
+  if(!s||!c)return null;
+  return (c.live||[]).find(g=>g.status==='on'&&g.since>=LIVE.seasonEvery)||null;
+}
+function seasonCost(g){return LIVE.seasonCost*g.scale}
+function openSeason(){
+  const g=seasonDue();if(!g)return false;
+  S.season=g.nr;S.screen='season';render();save();return true;
+}
+function endService(nr,auto=false){
+  const g=(C.live||[]).find(x=>x.nr===nr);
+  if(!g||g.status!=='on')return false;
+  g.status='eos';g.seasonAt=null;
+  if(!auto)C.studio.fame=Math.max(0,(C.studio.fame||0)-LIVE.eosFame);
+  liveSync(g);
+  if(typeof S!=='undefined'&&S)addLog(`🔌 End of Service: „${g.title}“`);
+  return true;
+}
+function decideSeason(choice){
+  const g=(C.live||[]).find(x=>x.nr===S.season);
+  S.season=null;
+  if(!g||g.status!=='on'){afterRandom();return}
+  if(choice==='run'){
+    const cost=seasonCost(g);
+    S.res.budget-=cost;S.liveNet=(S.liveNet||0)-cost;g.net-=cost;
+    g.players=Math.min(g.peak,g.players+Math.round(g.peak*LIVE.seasonBack));
+    g.stale=false;g.since=0;g.seasons++;g.seasonAt=S.round;
+    liveSync(g);
+    addLog(`📡 Season für „${g.title}“ gestartet`);
+  }else if(choice==='skip'){
+    g.stale=true;g.since=0;liveSync(g);
+    addLog(`📡 Season für „${g.title}“ ausgelassen`);
+  }else if(choice==='eos'){
+    endService(g.nr);
+  }
+  afterRandom();
+}

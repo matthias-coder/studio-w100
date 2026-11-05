@@ -1104,6 +1104,9 @@ function afterMonth(){
     render();save();return;
   }
 
+  // Live-Betrieb: Season fällig (höchstens ein Screen pro Schritt)
+  if(seasonDue()&&openSeason())return;
+
   // Game-Dev-Messe: höchstens einmal pro Projekt, nicht im ersten und letzten Schritt
   if(fairDue()&&startFair())return;
 
