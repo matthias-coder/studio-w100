@@ -92,3 +92,13 @@ test('reshuffling ideas keeps genre and audience choices',()=>{const {run}=load(
 test('concept screen shows modifier costs, synergy box and sport licence hint',()=>{const {run}=load({ui:true});startRaw(run,{extras:['sportLic']});
   const h=html(run,'renderConcept');assert.match(h,/Serverkosten ab Beta/);assert.match(h,/synergy-box/);assert.match(h,/Gameplay \d+ %/);
   assert.match(h,/Sportlizenz: \+25 %/);assert.match(h,/passt zu/);});
+
+test('plan screen lists candidates and the estimate',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');S.usp={ids:['loop','jazz','liar'],area:'gp',power:2,n:'x'}`);
+  const h=html(run,'renderFeatures');assert.match(h,/Feature-Umfang/);assert.match(h,/Skill-Bäume/);assert.match(h,/Fotomodus/);assert.match(h,/Plan übernehmen/);assert.match(h,/Erwartet bis Beta/);});
+test('feature panel shows progress and actions',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');startPlan(['rpg_1','rpg_2']);featBuild(5)`);
+  const h=run('featPanelHTML()');assert.match(h,/Features 1\/2/);assert.match(h,/data-fcut="rpg_2"/);assert.doesNotMatch(h,/data-fcut="rpg_1"/);});
+test('creep card renders',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');startPlan(['rpg_1']);S.round=stepIndex('prod_fp');Math.random=()=>0;startCreep()`);
+  assert.equal(run('S.screen'),'creep');assert.match(run(`headFor('creep',S.creep)`),/Feature Creep/);
+  assert.match(run('optsHTML(creepCard(S.creep))'),/Einbauen/);});
+test('featEstimate is positive and grows with duration',()=>{const a=load();newProject(a.run,{dur:'short'});const b=load();newProject(b.run,{dur:'long'});
+  assert.ok(a.run('featEstimate()')>0);assert.ok(b.run('featEstimate()')>a.run('featEstimate()'));});

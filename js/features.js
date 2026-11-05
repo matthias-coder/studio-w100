@@ -61,6 +61,15 @@ function featBuild(pts){
   return notes;
 }
 // Ein unfertiges Feature eine Stelle nach oben (nicht über fertige hinweg)
+// Erwartete Feature-Punkte bis Beta im Fokus "Ausgewogen" (mutiert S nicht)
+function featEstimate(s=S){
+  let t=0;
+  for(let i=stepIndex('prod_plan');i<=stepIndex('prod_beta');i++){
+    const c={...s,round:i,sprint:{...(s.sprint||defaultSprint()),focus:'balanced',crunch:false},feat:{plan:[{done:false}],cut:[],creepN:0}};
+    t+=sprintDelta(c).feat;
+  }
+  return Math.round(t);
+}
 function featUp(id){
   if(!S.feat||!S.feat.plan)return false;
   const p=S.feat.plan,i=p.findIndex(f=>f.id===id);

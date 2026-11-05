@@ -6,7 +6,7 @@ function dieSVG(n,cls=''){
   return `<svg class="d20 ${cls}" viewBox="0 0 100 100" aria-hidden="true"><polygon class="face" points="50,4 90,27 90,73 50,96 10,73 10,27"/><polygon points="50,24 78,66 22,66"/><line x1="50" y1="24" x2="50" y2="4"/><line x1="50" y1="24" x2="10" y2="27"/><line x1="50" y1="24" x2="90" y2="27"/><line x1="22" y1="66" x2="10" y2="27"/><line x1="22" y1="66" x2="10" y2="73"/><line x1="22" y1="66" x2="50" y2="96"/><line x1="78" y1="66" x2="90" y2="27"/><line x1="78" y1="66" x2="90" y2="73"/><line x1="78" y1="66" x2="50" y2="96"/><text x="50" y="50">${n}</text></svg>`;
 }
 
-const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto'];
+const ACTIVE=['event','mand','lang','result','random','legend','fair','stream','probe','interview','shop','crisis','roll','manual','milestone','pitch','concept','proto','features','creep'];
 
 /* ===================== Asset-Helfer (Porträts, Studio-Ansicht & Event-Szenen) ===================== */
 function charPortraitHTML(img,isScene=false,size='md',locked=false,alt='Charakter'){
@@ -279,9 +279,10 @@ function dirBlock(){
 }
 
 let sprintFineOpen=false;
+function sprintKeys(){return AREA_KEYS.filter(k=>k!=='feat'||featActive())}
 function sprintTune(k,step){
   const sp=S.sprint,a=sprintAlloc();
-  const others=AREA_KEYS.filter(j=>j!==k),O=others.reduce((t,j)=>t+a[j],0);
+  const others=sprintKeys().filter(j=>j!==k),O=others.reduce((t,j)=>t+a[j],0);
   const x=step>=0?Math.min(step,100-a[k],others.length?100:0):-Math.min(-step,a[k]);
   // x>0: take x from others (proportional); x<0: give -x to others
   const take=x>0,amt=Math.abs(x),n={...a};
@@ -308,7 +309,7 @@ function sprintBar(){
   const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)]].filter(([,v])=>v!==0);
   const cr=crunchOn(S),can=canCrunch();
   const foc=Object.keys(FOCUS).filter(k=>k!=='custom').map(k=>`<button type="button" data-focus="${k}" aria-pressed="${sp.focus===k}">${FOCUS[k].n}</button>`).join('');
-  const fine=AREA_KEYS.map(k=>`<div class="fine-row"><span>${AREAS[k].ic} ${AREAS[k].n}</span><button type="button" class="btn tiny ghost" data-area="${k}" data-step="-5" aria-label="${AREAS[k].n} weniger">−5</button><b>${al[k]} %</b><button type="button" class="btn tiny ghost" data-area="${k}" data-step="5" aria-label="${AREAS[k].n} mehr">+5</button></div>`).join('');
+  const fine=sprintKeys().map(k=>`<div class="fine-row"><span>${AREAS[k].ic} ${AREAS[k].n}</span><button type="button" class="btn tiny ghost" data-area="${k}" data-step="-5" aria-label="${AREAS[k].n} weniger">−5</button><b>${al[k]} %</b><button type="button" class="btn tiny ghost" data-area="${k}" data-step="5" aria-label="${AREAS[k].n} mehr">+5</button></div>`).join('');
   const crb=`<button type="button" class="btn tiny ghost crunch" data-crunch="1" aria-pressed="${cr}" ${can?'':'disabled'} title="Crunch: +30 % Punkte, −1 Moral, +2 Bugs">🔥 Crunch</button>`;
   const effRow=eff.length?`<div class="sprint-eff"><span class="label">Erwartet</span>${chips(eff)}</div>`:'';
   const fineD=`<details class="fold sprint-fine"${sprintFineOpen?' open':''}><summary>Feintuning${sp.focus==='custom'?' (eigene Verteilung)':''}</summary><div class="fold-body">${fine}</div></details>`;
@@ -403,6 +404,52 @@ function renderPitch(m){
   const a=$('pitchAmb');if(a)a.onchange=()=>{pitchDraft.amb=a.checked;renderPitch(m)};
   const go=$('pitchGo');if(go)go.onclick=()=>{const d=pitchDraft;pitchDraft={sel:[],amb:false};startPitch(d.sel,d.amb)};
   const sf=$('pitchSelf');if(sf)sf.onclick=()=>{pitchDraft={sel:[],amb:false};selfFund()};
+}
+
+/* ===================== Features: Plan-Screen & Panel ===================== */
+let featDraft=null;
+const FEAT_AREA={gp:'Gameplay',gfx:'Grafik',snd:'Sound'};
+function featKind(f){return f.core?'Kern':f.src==='extra'?'Extra':'Optional'}
+function renderFeatures(m){
+  m.className='card big-decision';
+  const cands=featCandidates(S);
+  if(!featDraft)featDraft=new Set(cands.filter(f=>f.planned).map(f=>f.id));
+  cands.forEach(f=>{if(f.src==='extra')featDraft.add(f.id)});
+  const on=cands.filter(f=>featDraft.has(f.id)),cost=on.reduce((t,f)=>t+f.cost,0);
+  const rows=cands.map(f=>{
+    const checked=featDraft.has(f.id),locked=f.src==='extra';
+    const note=locked?'Gestrichen wird über die Feature-Liste':f.core&&!checked?`Streichen kostet −${FEAT.coreCutRev} Wertung`:'';
+    return `<button type="button" class="opt" data-fp="${f.id}" aria-pressed="${checked}"${locked?' disabled':''}><span class="t">${esc(f.n)} · ${AREAS[f.a].ic} ${featKind(f)}</span><span class="check">${f.cost} Punkte · +${f.val} ${FEAT_AREA[f.a]}</span>${note?`<span class="d">${note}</span>`:''}</button>`;
+  }).join('');
+  m.innerHTML=eventBannerHTML('features')+`<span class="label">${stepLabel()}</span><h3>Feature-Umfang: Was kommt ins Spiel?</h3>
+    <p class="note">Kern-Features prüft die Alpha, alle geplanten Features die Beta. Gebaut wird über den Sprint fast von selbst.</p>
+    <div class="opts">${rows}</div>
+    <p class="note">Geplant: ${on.length} Features · ${cost} Punkte · Erwartet bis Beta: ~${featEstimate()} Feature-Punkte (Ausgewogen)</p>
+    <div class="row"><button class="btn" id="featGo">🧩 Plan übernehmen</button></div>`;
+  m.querySelectorAll?.('[data-fp]').forEach(b=>b.onclick=()=>{
+    if(b.disabled)return;
+    const id=b.dataset.fp;
+    if(featDraft.has(id))featDraft.delete(id);else featDraft.add(id);
+    renderFeatures(m);
+  });
+  const go=$('featGo');if(go)go.onclick=()=>{const ids=[...featDraft];featDraft=null;startPlan(ids);goMonth()};
+}
+function featCutTitle(f){return f.core?(f.src==='usp'?'USP gebrochen, −'+FEAT.coreCutRev+' Wertung':'Kern-Feature: −'+FEAT.coreCutRev+' Wertung'):'Extra entfällt'}
+function featPanelHTML(){
+  if(!S||!S.feat||!S.feat.plan)return '';
+  const plan=S.feat.plan,built=plan.filter(f=>f.done).length,nx=plan.find(f=>!f.done);
+  const sum=`🧩 Features ${built}/${plan.length}${nx?` · nächstes: ${esc(nx.n)} ${Math.round(nx.prog*10)/10}/${nx.cost}`:' · alles gebaut'}`;
+  const rows=plan.map(f=>f.done
+    ?`<div class="fine-row"><span>✓ ${esc(f.n)}</span></div>`
+    :`<div class="fine-row"><span>${esc(f.n)} ${Math.round(f.prog*10)/10}/${f.cost}</span><button type="button" class="btn tiny ghost" data-fup="${f.id}" aria-label="${esc(f.n)} nach oben">⬆</button><button type="button" class="btn tiny ghost" data-fcut="${f.id}" title="${esc(featCutTitle(f))}">✂ Streichen</button></div>`).join('');
+  return `<details class="fold feat-panel"${featPanelOpen?' open':''}><summary>${sum}</summary><div class="fold-body">${rows}</div></details>`;
+}
+let featPanelOpen=false;
+function bindFeatPanel(m){
+  const redraw=()=>{renderMain();renderHud();save()};
+  m.querySelectorAll('[data-fup]').forEach(b=>b.onclick=()=>{featUp(b.dataset.fup);redraw()});
+  m.querySelectorAll('[data-fcut]').forEach(b=>b.onclick=()=>{featCut(b.dataset.fcut);redraw()});
+  m.querySelectorAll('.feat-panel').forEach(d=>d.addEventListener('toggle',()=>{featPanelOpen=d.open}));
 }
 
 /* ===================== Konzept (Ideen-Mixer) & Prototyp-Schleife ===================== */
@@ -641,7 +688,7 @@ function renderDock(){
     return;
   }
 
-  const editable=S&&['event','mand','lang','random','legend','fair','stream','probe','result','shop','crisis'].includes(S.screen);
+  const editable=S&&['event','mand','lang','random','legend','fair','stream','creep','probe','result','shop','crisis'].includes(S.screen);
   const t=S?T():(C.studio.tier?TIERS[C.studio.tier]:TIERS.indie);
   const logCount=S&&S.log?S.log.length:0;
 
@@ -1115,6 +1162,7 @@ function resultNextLabel(L){
 function headFor(kind,ev){
   const banner=eventBannerHTML(kind,ev);
   if(kind==='card'){const c=E[ev];return monthNote()+lastSprintNote()+banner+`<span class="label">${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(c)}</p>`}
+  if(kind==='creep'){const c=creepCard(ev);return banner+`<span class="stamp">Production</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='proto')return banner+`<span class="stamp">Pre-Production</span><h3>Prototyp-Iteration</h3>`;
   if(kind==='mand'){const c=getMand(ev);return banner+`<span class="stamp">Grundsatzentscheidung · ${stepLabel()}</span><h3>${c.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${c.x}</p>`}
   if(kind==='rand'){const rv=R[ev];return banner+`<span class="stamp">${rv.flaw?'Macke des Directors':'Zufallsereignis'} · Ende ${STEPS[lastStep()]?.n||''}</span><h3>${rv.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(rv)}</p>`}
@@ -1286,13 +1334,13 @@ function renderMain(){
   if(sc==='event'){
     const evIdx=S.deck[S.round];
     const ev=E[evIdx];
-    m.innerHTML=monthNote()+lastSprintNote()+budgetAlert()+sprintBar()+`<div class="studio-actions">
+    m.innerHTML=monthNote()+lastSprintNote()+budgetAlert()+sprintBar()+featPanelHTML()+`<div class="studio-actions">
       <span class="label">In diesem Schritt außerdem</span>
       <button class="btn tiny ghost" id="shopBtn" data-opensub="invest">🛒 Investieren<span class="hide-sm"> & Equipment</span></button>
       <button class="btn tiny ghost" data-opensub="hire">👥 Personal${stepFlag('hire')?'<span class="hide-sm"> einstellen</span>':''} (${C.studio.staff.length}/${Object.keys(STAFF).length})</button>
       <button class="btn tiny ghost" data-opensub="earn">💼 Geld verdienen ${(S.contractsPh||[]).includes(curPhase())?'(✓)':''}</button>
     </div>`+eventBannerHTML('card',evIdx)+`<span class="label">${stepLabel()}</span><h3>${ev.t}</h3><p class="evx" onclick="this.classList.toggle('open')">${vx(ev)}</p>`+optsHTML(ev);
-    bindOpts(m);bindFin();bindSprint(m);
+    bindOpts(m);bindFin();bindSprint(m);bindFeatPanel(m);
     m.querySelectorAll('[data-opensub]').forEach(b=>b.onclick=()=>{
       shopSubTab=b.dataset.opensub;
       S.shopMsg=null;S.screen='shop';wsTab='shop';render();save();
@@ -1302,17 +1350,19 @@ function renderMain(){
   if(sc==='milestone'){renderMilestone(m);return}
   if(sc==='pitch'){renderPitch(m);return}
   if(sc==='concept'){renderConcept(m);return}
+  if(sc==='features'){renderFeatures(m);return}
   if(sc==='proto'){renderProto(m);return}
   if(sc==='mand'){const c=getMand(S.mcur);m.innerHTML=headFor('mand',S.mcur)+optsHTML(c);bindOpts(m);return}
   if(sc==='lang'){renderLang(m);return}
   if(sc==='legend'){renderLegendEncounter(m);return}
   if(sc==='fair'){m.className='card rnd';m.innerHTML=headFor('fair',S.fair)+optsHTML(fairCard(S.fair));bindOpts(m);bindZoomTriggers(m);return}
+  if(sc==='creep'){m.className='card rnd';m.innerHTML=headFor('creep',S.creep)+optsHTML(creepCard(S.creep));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='stream'){m.className='card rnd';m.innerHTML=headFor('stream',S.stream)+optsHTML(streamCard(S.stream));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='probe'){m.className='card rnd';m.innerHTML=headFor('probe',S.probe.j)+optsHTML(probeCard(S.probe.j));bindOpts(m);bindZoomTriggers(m);return}
   if(sc==='interview'){renderInterview(m);return}
   if(sc==='roll'){
     const p=S.pending;
-    m.className='card'+(['rand','rescue','legend','fair','stream','probe'].includes(p.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair','stream','creep','probe'].includes(p.kind)?' rnd':'');
     m.innerHTML=headFor(p.kind,p.ev)+`<div class="tray"><div class="dice" id="dice">${Array.from({length:p.adv?2:1},()=>dieSVG('?')).join('')}</div><div class="calc"><span class="label">Der W100 rollt …</span></div></div>`;
     return;
   }
@@ -1324,7 +1374,7 @@ function renderMain(){
   }
   if(sc==='result'){
     const L=S.last;
-    m.className='card'+(['rand','rescue','legend','fair','stream','probe'].includes(L.kind)?' rnd':'');
+    m.className='card'+(['rand','rescue','legend','fair','stream','creep','probe'].includes(L.kind)?' rnd':'');
     const body=L.safe?`<p><b>${L.l}</b></p><p>${L.txt||''}</p>${chips((L.pre||[]).concat(L.ch))||'<p class="note">Keine Änderungen.</p>'}`:resultBlock(L);
     const nx=resultNextLabel(L);
     m.innerHTML=headFor(L.kind,L.ev)+body+`<div class="row"><button class="btn" id="nx">${nx}</button>${rerollBtn()}</div>`;
