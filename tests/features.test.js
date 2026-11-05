@@ -53,3 +53,26 @@ test('creep: failed roll then successful reroll leaves no feature, moral applied
 test('creep: failed roll then failed reroll keeps exactly one creep feature',()=>{const {run}=load();newProject(run);toPlan(run);creepFail(run);
   run('Math.random=()=>0.3;S.pending=null;useAbility()');
   assert.equal(run(`S.feat.plan.filter(f=>f.src==='creep').length`),1);});
+
+test('bug split weights sum to the bug count',()=>{const {run}=load();
+  for(const b of [0,1,7,12,30,45,57]){const x=run(`bugSplit(${b})`);assert.equal(x.crit*5+x.major*2+x.minor,b,String(b));}
+  assert.deepEqual({...run('bugSplit(30)')},{crit:3,major:5,minor:5});});
+test('bug list reconciles later bug changes',()=>{const {run}=load();newProject(run);run(`S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt()`);
+  run('S.res.bugs=33');assert.deepEqual({...run('bugList()')},{crit:3,major:5,minor:8});
+  run('S.res.bugs=21');const l=run('bugList()');assert.equal(l.crit*5+l.major*2+l.minor,21);assert.ok(l.minor>=0&&l.major>=0&&l.crit>=0);});
+test('QA roll removes bugs of the chosen severity',()=>{const {run}=load();newProject(run);run(`S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt()`);
+  run(`resolveHunt('crit',true,false)`);assert.equal(run('S.res.bugs'),25);assert.equal(run('bugList().crit'),2);
+  run(`resolveHunt('crit',true,true)`);assert.equal(run('bugList().crit'),0);assert.equal(run('S.res.bugs'),15);});
+test('runs end the hunt; qalead adds a run',()=>{const {run}=load();newProject(run);run(`S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt()`);
+  assert.equal(run('S.hunt.runs'),3);for(let i=0;i<3;i++)run(`resolveHunt('minor',false,false)`);assert.equal(run('S.hunt.done'),true);
+  const b=load();newProject(b.run);b.run(`C.studio.staff.push({id:'qalead',level:3,loyalty:6});S.round=stepIndex('pol_bugs');openHunt()`);assert.equal(b.run('S.hunt.runs'),4);});
+test('pol_bugs opens the hunt screen',()=>{const {run}=load();newProject(run);run(`S.res.budget=1e9;S.round=stepIndex('pol_bugs');goMonth()`);assert.equal(run('S.screen'),'hunt');});
+test('certification by showstoppers with a hunt, old rule without',()=>{const {run}=load();newProject(run);
+  run('S.res.bugs=30');assert.equal(run('certPenalty()'),8);run(`S.round=stepIndex('pol_bugs');openHunt();resolveHunt('crit',true,false)`);
+  assert.equal(run('certPenalty()'),0);run('S.res.bugs+=20');assert.equal(run('certPenalty()'),0);
+  run(`S.hunt.base={crit:4,major:0,minor:0};S.res.bugs=20`);assert.equal(run('certPenalty()'),15);});
+test('hunt: director reroll of a failed QA run gives the run back',()=>{const {run}=load();newProject(run);
+  run(`globalThis.matchMedia=()=>({matches:true});C.dir.ab='reroll';S.abUsed=false;S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt();S.pending={kind:'hunt',ev:'crit',oi:0};resolve([2])`);
+  assert.equal(run('S.hunt.runs'),2);assert.equal(run('S.screen'),'result');
+  run('Math.random=()=>0.99;useAbility()');
+  assert.equal(run('S.hunt.runs'),2);assert.equal(run('S.res.bugs'),20);assert.equal(run('S.abUsed'),true);});

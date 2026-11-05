@@ -123,3 +123,57 @@ function creepCard(id){
         sx:'Das Team bleibt fokussiert.',fx:'Es landet trotzdem im Build.',onFail:()=>{creepAdd(id)}},
        {l:'Streng ablehnen',safe:{moral:-1},sx:'Die Stimmung leidet.'}]};
 }
+
+/* ===================== Bug-Jagd ===================== */
+function bugSplit(b){
+  const crit=Math.floor(b/10),rest=b-HUNT.w.crit*crit,major=Math.floor(rest/3);
+  return {crit,major,minor:rest-HUNT.w.major*major};
+}
+// Basis der Jagd, abgeglichen mit dem aktuellen Bugstand (Zuwachs = leicht, Abbau von leicht nach schwer)
+function bugList(s=S){
+  const b=Math.max(0,s.res.bugs);
+  if(!s.hunt)return bugSplit(b);
+  const w=HUNT.w;let {crit,major,minor}=s.hunt.base;
+  const diff=b-(crit*w.crit+major*w.major+minor*w.minor);
+  if(diff>0)minor+=diff;
+  else if(diff<0){
+    let need=-diff;
+    const m=Math.min(minor,need);minor-=m;need-=m;
+    if(need>0){const n=Math.min(major,Math.ceil(need/w.major));major-=n;need-=n*w.major;if(need<0){minor+=-need;need=0}}
+    if(need>0){const n=Math.min(crit,Math.ceil(need/w.crit));crit-=n;need-=n*w.crit;if(need<0)minor+=-need}
+  }
+  return {crit,major,minor};
+}
+function huntDue(s=S){return STEPS[s.round]?.id==='pol_bugs'&&!(s.hunt&&s.hunt.done)}
+function openHunt(){
+  if(S.hunt)return;
+  S.hunt={base:bugSplit(S.res.bugs),runs:HUNT.runs+(staffLevel('qalead')>=3?1:0),done:false};
+}
+function startHunt(sev){
+  if(!S.hunt||S.hunt.done||S.hunt.runs<=0||!(bugList()[sev]>0))return;
+  startRoll({kind:'hunt',ev:sev,oi:0});
+}
+function huntFinish(){
+  if(S.hunt.done)return;
+  S.hunt.done=true;
+  const l=bugList();
+  addLog(`🐞 Bug-Jagd beendet: ${l.crit} Showstopper, ${l.major} schwer, ${l.minor} leicht`);
+}
+function resolveHunt(sev,ok,crit){
+  const ch=[];let txt='';
+  S.hunt.base=bugList();S.hunt.runs--;
+  if(ok){
+    const n=Math.min(crit?2:1,S.hunt.base[sev]),d=Math.min(S.res.bugs,n*HUNT.w[sev]);
+    S.hunt.base[sev]-=n;S.res.bugs-=d;
+    if(d)ch.push(['bugs',-d]);
+    txt=n?`${n} ${sev==='crit'?'Showstopper':sev==='major'?'schwere':'leichte'} Bug${n>1?'s':''} behoben.`:'';
+  }
+  if(S.hunt.runs<=0)huntFinish();
+  return {ch,txt};
+}
+function endHunt(){huntFinish();goMonth()}
+function certPenalty(s=S){
+  if(!s.hunt)return s.res.bugs>=45?HUNT.certPenHi:s.res.bugs>=30?HUNT.certPen:0;
+  const c=bugList(s).crit;
+  return c>=HUNT.certHiCrit?HUNT.certPenHi:c>HUNT.certCrit?HUNT.certPen:0;
+}
