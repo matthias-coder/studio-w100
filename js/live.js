@@ -49,14 +49,12 @@ function liveTick(months){
       const n=liveMonthly(g).net*ch;g.net+=n;net+=n;
       g.players=Math.round(g.players*Math.pow(1-liveChurn(g),ch));g.months+=ch;g.since+=ch;
     }
-    g.seasonAt=null;
     if(liveMonthly(g).net<0){
       g.status='eos';
       notes.push(`📡 ${g.title}: Die Server kosten mehr, als sie einbringen. Automatisches End of Service.`);
     }
     liveSync(g);
   });
-  (C.live||[]).forEach(g=>{if(g.status!=='on')g.seasonAt=null});
   return {net,notes};
 }
 function liveCapShare(s=S){

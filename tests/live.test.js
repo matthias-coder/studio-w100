@@ -69,7 +69,7 @@ test('running a season costs money, brings players back, adds capacity load for 
   run(liveGame({since:6,players:10000}));run('S.res.budget=1000;openSeason()');const cap=run('liveCapShare()');
   run(`decideSeason('run')`);assert.equal(run('S.res.budget'),988);assert.equal(run('S.liveNet'),-12);
   assert.equal(run('C.live[0].players'),16000);assert.equal(run('C.live[0].since'),0);assert.equal(run('C.live[0].seasons'),1);
-  assert.ok(Math.abs(run('liveCapShare()')-cap-0.15)<1e-9);run('liveTick(1)');assert.equal(run('C.live[0].seasonAt'),null);});
+  assert.ok(Math.abs(run('liveCapShare()')-cap-0.15)<1e-9);run('liveTick(1)');assert.equal(run('C.live[0].seasonAt'),run('S.round'));});
 test('skipping makes the game stale until the next season',()=>{const {run}=load();newProject(run);run(liveGame({since:6}));
   run(`openSeason();decideSeason('skip')`);assert.equal(run('C.live[0].stale'),true);assert.equal(run('C.live[0].since'),0);
   run(`C.live[0].since=6;openSeason();S.res.budget=1000;decideSeason('run')`);assert.equal(run('C.live[0].stale'),false);});
@@ -79,3 +79,7 @@ test('end of service costs fame and frees capacity',()=>{const {run}=load();newP
   assert.equal(run('C.hall[0].live.on'),false);assert.equal(run('endService(1)'),false);});
 test('a season on low cash opens the crisis',()=>{const {run}=load();newProject(run);run(liveGame({since:6}));
   run(`S.res.budget=5;openSeason();decideSeason('run')`);assert.equal(run('S.screen'),'crisis');});
+test('season capacity share is applied to the coming step, then cleared by monthEnd',()=>{const {run}=load();newProject(run);
+  const pts=sa=>{run(liveGame({seasonAt:sa}));run('S.round=3;S.res.moral=10;C.studio.staff=Array.from({length:8},()=>({loyalty:6,sal:1}));S.res.budget=1e6;Math.random=()=>0.999;monthEnd()');return run('S.month.sprint.pts')};
+  const withSeason=pts(3),without=pts(null);
+  assert.ok(withSeason<without);assert.equal(run('C.live[0].seasonAt'),null);});
