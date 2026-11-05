@@ -39,6 +39,7 @@ test('gold master flow ends in the launch screen',()=>{const {run}=load();newPro
   run(`S.round=stepIndex('pol_bugs');monthEnd()`);assert.equal(run('S.screen'),'milestone');
   run('closeMilestone()');
   if(run('S.screen')==='mand'){run(`S.mdone.push(...mandFor(S.round));goMonth()`)}
+  if(run('S.screen')==='ship'){run('decideShip(false)')}
   if(run('S.screen')==='event'){run('S.res.budget=1e9;monthEnd()')}
   assert.equal(run('S.screen'),'launch');});
 test('targets follow the genre weights',()=>{const {run}=load();newProject(run,{tier:'indie'});const rpg=run(`msTargets('gm')`);

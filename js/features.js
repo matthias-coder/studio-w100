@@ -177,3 +177,24 @@ function certPenalty(s=S){
   const c=bugList(s).crit;
   return c>=HUNT.certHiCrit?HUNT.certPenHi:c>HUNT.certCrit?HUNT.certPen:0;
 }
+
+/* ===== Release decision ===== */
+function shipDue(s=S){return STEPS[s.round]?.id==='pol_ship'&&!s.ship}
+function delayMonths(s=S){return Math.max(SHIP.minMonths,Math.round(s.dur*SHIP.share))}
+function delayWeight(s=S){return delayMonths(s)*12/refMonths(s.tier)}
+function delayCost(s=S){return monthSum()*delayWeight(s)}
+function decideShip(delay){
+  if(S.ship)return;
+  if(!delay){S.ship='ontime';addLog(`<span>${stepTag()}</span> 🚀 Release bleibt pünktlich`);goMonth();return}
+  const m=delayMonths(),w=delayWeight(),cost=delayCost();
+  const bugs=Math.min(S.res.bugs,Math.round(SHIP.bugPerW*w)),q=Math.round(SHIP.qualPerW*w);
+  S.ship='delay';S.delayM=m;
+  S.res.budget-=cost;S.spend.verschiebung=(S.spend.verschiebung||0)+cost;
+  S.res.bugs-=bugs;S.res.gp+=q;S.res.gfx+=q;S.res.snd+=q;
+  S.res.hype=Math.max(0,Math.min(10,S.res.hype+SHIP.hype));
+  const funder=(S.fund&&S.fund.deals||[]).some(d=>(d.id==='pub'||d.id==='inv')&&d.status==='active');
+  if(funder)S.res.moral=Math.max(0,Math.min(10,S.res.moral+SHIP.funderMoral));
+  recalcQual();
+  addLog(`<span>${stepTag()}</span> ⏳ Release um ${m} Monate verschoben: ${money(cost)} Kosten, −${bugs} Bugs, +${q} Gameplay/Grafik/Sound${funder?' · Geldgeber murren (−1 Moral)':''}`);
+  if(S.res.budget<0)openCrisis('rand');else goMonth();
+}

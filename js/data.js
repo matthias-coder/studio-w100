@@ -15,7 +15,8 @@ const CAT={
   eng:['Engine & Tech-Wartung','--c6'],
   zins:['Zinsen & Abgaben','--c2'],
   invest:['Investitionen','--c8'],
-  projekt:['Projekt & Zwischenfälle','--c6']
+  projekt:['Projekt & Zwischenfälle','--c6'],
+  verschiebung:['Release-Verschiebung','--c6']
 };
 
 /* ===================== Studio-, Event- & Encounter-Grafiken ===================== */

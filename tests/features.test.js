@@ -81,3 +81,13 @@ test('hunt: summary logged once after a last-run reroll, with post-reroll counts
   assert.equal(run('S.hunt.done'),true);assert.equal(run(`S.log.filter(x=>String(x).includes('Bug-Jagd beendet')).length`),0);
   run('Math.random=()=>0.99;useAbility()');run(`afterResult('hunt')`);
   const l=run(`S.log.filter(x=>String(x).includes('Bug-Jagd beendet'))`);assert.equal(l.length,1);assert.match(String(l[0]),/1 Showstopper/);});
+const toShip=run=>run(`S.res.budget=1e9;S.round=stepIndex('pol_ship');S.mdone.push('price','china')`);
+test('pol_ship opens the release decision',()=>{const {run}=load();newProject(run);toShip(run);run('goMonth()');assert.equal(run('S.screen'),'ship');});
+test('delay: cost, polish, hype, months; only once',()=>{const {run}=load();newProject(run);toShip(run);
+  assert.equal(run('delayMonths()'),2);run('S.res.bugs=10');const b=run('S.res.budget'),gp=run('S.res.gp'),h=run('S.res.hype'),c=run('delayCost()');
+  run('decideShip(true)');assert.equal(run('S.res.budget'),b-c);assert.equal(run('S.res.bugs'),10-5);assert.equal(run('S.res.gp'),gp+2);
+  assert.equal(run('S.res.hype'),Math.max(0,h-1));assert.equal(run('S.delayM'),2);assert.equal(run('shipDue()'),false);});
+test('delay hurts moral only with publisher or investor',()=>{const a=load();newProject(a.run);toShip(a.run);const m=a.run('S.res.moral');a.run('decideShip(true)');assert.equal(a.run('S.res.moral'),m);
+  const b=load();newProject(b.run);toShip(b.run);b.run(`signDeal('pub',100)`);const m2=b.run('S.res.moral');b.run('decideShip(true)');assert.equal(b.run('S.res.moral'),m2-1);});
+test('delay into negative budget opens the crisis',()=>{const {run}=load();newProject(run);toShip(run);run('S.res.budget=1;decideShip(true)');assert.equal(run('S.screen'),'crisis');});
+test('on time changes nothing',()=>{const {run}=load();newProject(run);toShip(run);const s=JSON.stringify(run('S.res'));run('decideShip(false)');assert.equal(JSON.stringify(run('S.res')),s);assert.equal(run('S.ship'),'ontime');});
