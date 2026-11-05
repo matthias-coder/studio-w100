@@ -38,3 +38,10 @@ test('release: unfinished and cut core features cost review, USP feature needed'
   run(`featCut('rpg_1')`);assert.equal(run('featRev()'),-2*2);});
 test('old save without plan keeps extras cut and zero featRev',()=>{const {run}=load();newProject(run,{extras:['ea']});
   assert.deepEqual([...run('cutOptions().map(o=>o.id)')],['ea','scope']);assert.equal(run('featRev()'),0);});
+test('creep is due only in production with a plan and once',()=>{const {run}=load();newProject(run);run('Math.random=()=>0');
+  run(`S.round=stepIndex('prod_fp')`);assert.equal(run('creepDue()'),false);toPlan(run);run(`startPlan(['usp']);S.round=stepIndex('prod_fp')`);
+  assert.equal(run('creepDue()'),true);run(`S.round=stepIndex('pol_bugs')`);assert.equal(run('creepDue()'),false);
+  run(`S.round=stepIndex('prod_alpha');startCreep()`);assert.equal(run('S.screen'),'creep');assert.equal(run('creepDue()'),false);});
+test('creep options',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp']);S.round=stepIndex('prod_fp');S.res.hype=0;Math.random=()=>0;startCreep()`);
+  const h=run('S.res.hype');run('choose(0)');assert.equal(run('S.feat.plan.at(-1).src'),'creep');assert.equal(run('S.res.hype'),Math.min(10,h+1));
+  const o=run(`creepCard(S.creep).o`);assert.equal(o[1].st,'team');assert.equal(o[1].dc,12);assert.deepEqual({...o[2].safe},{moral:-1});});

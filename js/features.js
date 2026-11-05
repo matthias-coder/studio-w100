@@ -89,3 +89,35 @@ function featRev(s=S){
   const st=featStats(s);
   return -FEAT.missRev*(st.planned-st.built)-FEAT.coreCutRev*st.cutCore;
 }
+
+/* ===================== Feature Creep ===================== */
+function creepDue(s=S){
+  return !!s&&!!s.feat&&!!s.feat.plan&&s.round>=stepIndex('prod_fp')&&s.round<stepIndex('pol_bugs')
+    &&s.feat.creepN<FEAT.creepMax&&Math.random()<FEAT.creepChance;
+}
+function creepPool(s=S){
+  const used=[...s.feat.plan,...s.feat.cut].map(f=>f.id);
+  return CREEP_IDEAS.filter(x=>!used.includes('c_'+x[0]));
+}
+function startCreep(){
+  const pool=creepPool();
+  if(!pool.length)return false;
+  const x=pool[Math.floor(Math.random()*pool.length)];
+  S.creep=x[0];S.feat.creepN++;S.screen='creep';
+  addLog(`<span>${stepTag(lastStep())}</span> 🧩 Feature Creep: ${x[2]}`);
+  render();save();return true;
+}
+function creepAdd(id){
+  const x=CREEP_IDEAS.find(i=>i[0]===id);
+  S.feat.plan.push(mkFeat('c_'+id,x[1],x[2],x[3],false,'creep'));
+  const f=S.feat.plan[S.feat.plan.length-1];f.cost=FEAT.creepCost;f.val=FEAT.creepVal;
+}
+function creepCard(id){
+  const x=CREEP_IDEAS.find(i=>i[0]===id);
+  return {t:`Feature Creep: ${x[1]} ${x[2]}`,
+    x:`Im Daily schlägt jemand begeistert vor: ‚Wir bräuchten noch ${x[2]}!‘ Das halbe Team nickt.`,
+    o:[{l:'Einbauen',safe:{hype:FEAT.creepHype},sx:'Das Feature wandert ans Ende der Liste.',onSafe:()=>{creepAdd(id);return null}},
+       {l:'Dem Team ausreden',st:'team',dc:FEAT.creepDc,s:{moral:1},f:{},bonusV:0,
+        sx:'Das Team bleibt fokussiert.',fx:'Es landet trotzdem im Build.',onFail:()=>{creepAdd(id)}},
+       {l:'Streng ablehnen',safe:{moral:-1},sx:'Die Stimmung leidet.'}]};
+}

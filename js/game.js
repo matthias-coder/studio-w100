@@ -783,12 +783,12 @@ const curCP=()=>curStep().cp;
 const spendTotal=()=>Object.values(S.spend).reduce((a,b)=>a+b,0);
 
 /* ===================== Ablauf & W100-Würfeln ===================== */
-function curCard(){return S.screen==='mand'?getMand(S.mcur):S.screen==='fair'?fairCard(S.fair):S.screen==='stream'?streamCard(S.stream):S.screen==='probe'?probeCard(S.probe.j):E[S.deck[S.round]]}
+function curCard(){return S.screen==='mand'?getMand(S.mcur):S.screen==='fair'?fairCard(S.fair):S.screen==='stream'?streamCard(S.stream):S.screen==='creep'?creepCard(S.creep):S.screen==='probe'?probeCard(S.probe.j):E[S.deck[S.round]]}
 
 function choose(i){
   if(rolling)return;
-  const kind=S.screen==='mand'?'mand':S.screen==='fair'?'fair':S.screen==='stream'?'stream':S.screen==='probe'?'probe':'card';
-  const ev=kind==='mand'?S.mcur:kind==='fair'?S.fair:kind==='stream'?S.stream:kind==='probe'?S.probe.j:S.deck[S.round];
+  const kind=S.screen==='mand'?'mand':S.screen==='fair'?'fair':S.screen==='stream'?'stream':S.screen==='creep'?'creep':S.screen==='probe'?'probe':'card';
+  const ev=kind==='mand'?S.mcur:kind==='fair'?S.fair:kind==='stream'?S.stream:kind==='creep'?S.creep:kind==='probe'?S.probe.j:S.deck[S.round];
   const o=curCard().o[i];
   const pre=o.set?applySet({set:o.set},null):[];
   if(o.safe){
@@ -813,6 +813,7 @@ function curTitle(kind,ev){
     :kind==='legend'?(DIRS[ev]?`Legendäre Begegnung: ${DIRS[ev].n}`:'Legendäre Begegnung')
     :kind==='fair'?fairCard(ev).t
     :kind==='stream'?streamCard(ev).t
+    :kind==='creep'?creepCard(ev).t
     :kind==='probe'?probeCard(ev).t
     :kind==='shop'?SHOP.find(x=>x.id===ev).n
     :kind==='contract'?CONTRACTS.find(x=>x.id===ev).n
@@ -828,6 +829,7 @@ function getOpt(p){
   if(p.kind==='card')return E[p.ev].o[p.oi];
   if(p.kind==='fair')return fairCard(p.ev).o[p.oi];
   if(p.kind==='stream')return streamCard(p.ev).o[p.oi];
+  if(p.kind==='creep')return creepCard(p.ev).o[p.oi];
   if(p.kind==='probe')return probeCard(p.ev).o[p.oi];
   if(p.kind==='pitch'){const amb=pitchAmb();return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
   if(p.kind==='proto')return {l:'Prototyp-Iteration',st:'design',dc:protoDc(S),s:{},f:{},bonusV:0};
@@ -922,7 +924,7 @@ function afterResult(k){
   if(k==='card')monthEnd();
   else if(k==='mand'){S.mdone.push(S.mcur);goMonth()}
   else if(k==='rand'||k==='legend'||k==='fair')afterRandom();
-  else if(k==='probe')afterRandom();
+  else if(k==='probe'||k==='creep')afterRandom();
   else if(k==='stream'){if(S.last.oi!==2)revealInf(S.stream);afterRandom()}
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
   else if(k==='pitch'||k==='proto')goMonth();
@@ -1101,6 +1103,9 @@ function afterMonth(){
 
   // Überraschungs-Stream: einmal pro Projekt, ab First Playable
   if(streamDue()&&startStream())return;
+
+  // Feature Creep: höchstens einmal pro Projekt, in der Produktion
+  if(creepDue()&&startCreep())return;
 
   // Kritische Recherche: einmal pro Projekt
   if(probeDue()&&startProbe())return;
