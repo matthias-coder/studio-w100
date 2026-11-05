@@ -1430,6 +1430,7 @@ function useAbility(){
   if(id==='reroll'){
     const L=S.last;unapply(L.ch);
     if(L.kind==='rescue'){S.over=null;S.rescued=S.rescued.filter(x=>x!==L.ev);S.rescued.push(L.ev)}
+    if(L.kind==='creep')creepUndo(L.ev);
     S.abUsed=true;
     addLog(`<span>Director</span> ${ABIL[id].n}: Wurf wird wiederholt`);
     startRoll({kind:L.kind,ev:L.ev,oi:L.oi,adv:L.adv});

@@ -45,3 +45,11 @@ test('creep is due only in production with a plan and once',()=>{const {run}=loa
 test('creep options',()=>{const {run}=load();newProject(run);toPlan(run);run(`startPlan(['usp']);S.round=stepIndex('prod_fp');S.res.hype=0;Math.random=()=>0;startCreep()`);
   const h=run('S.res.hype');run('choose(0)');assert.equal(run('S.feat.plan.at(-1).src'),'creep');assert.equal(run('S.res.hype'),Math.min(10,h+1));
   const o=run(`creepCard(S.creep).o`);assert.equal(o[1].st,'team');assert.equal(o[1].dc,12);assert.deepEqual({...o[2].safe},{moral:-1});});
+const creepFail=run=>{run(`globalThis.matchMedia=()=>({matches:true});C.dir.ab='reroll';S.abUsed=false;S.res.moral=5;Math.random=()=>0.3;startPlan(['usp']);S.round=stepIndex('prod_fp');startCreep();S.pending={kind:'creep',ev:S.creep,oi:1};resolve([2])`);};
+test('creep: failed roll then successful reroll leaves no feature, moral applied once',()=>{const {run}=load();newProject(run);toPlan(run);creepFail(run);
+  assert.equal(run(`S.feat.plan.filter(f=>f.id==='c_'+S.creep).length`),1);
+  run('Math.random=()=>0.8;useAbility()');
+  assert.equal(run(`S.feat.plan.filter(f=>f.src==='creep').length`),0);assert.equal(run('S.last.ok'),true);assert.equal(run('S.res.moral'),6);});
+test('creep: failed roll then failed reroll keeps exactly one creep feature',()=>{const {run}=load();newProject(run);toPlan(run);creepFail(run);
+  run('Math.random=()=>0.3;S.pending=null;useAbility()');
+  assert.equal(run(`S.feat.plan.filter(f=>f.src==='creep').length`),1);});

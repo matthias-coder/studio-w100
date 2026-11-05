@@ -107,7 +107,9 @@ function startCreep(){
   addLog(`<span>${stepTag(lastStep())}</span> 🧩 Feature Creep: ${x[2]}`);
   render();save();return true;
 }
+function creepUndo(id){S.feat.plan=S.feat.plan.filter(f=>f.id!=='c_'+id)}
 function creepAdd(id){
+  if(S.feat.plan.some(f=>f.id==='c_'+id))return;
   const x=CREEP_IDEAS.find(i=>i[0]===id);
   S.feat.plan.push(mkFeat('c_'+id,x[1],x[2],x[3],false,'creep'));
   const f=S.feat.plan[S.feat.plan.length-1];f.cost=FEAT.creepCost;f.val=FEAT.creepVal;
