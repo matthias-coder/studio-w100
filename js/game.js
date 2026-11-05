@@ -440,7 +440,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff:0,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:false,trendCold:false,concept:{done:!!o.actsDone,lock:!!o.genre},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
+     trendHot:false,trendCold:false,concept:{...defaultConcept(!!o.genre),done:!!o.actsDone},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
   S.res.zeit=totalW(S)+2;
   if(o.genre)applyGenre(o.genre,o.subGenre||null,o.gmod||null);
@@ -501,7 +501,7 @@ function applyGenre(genre,sub,gmod){
   addLog(`<span>${stepTag()}</span> Konzept: ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}`);
 }
 
-function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
+function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
 
 /* ===================== W100 Würfel-Modifikatoren & Regeln ===================== */
 function moralMod(){
@@ -1461,7 +1461,7 @@ function reviewScore(r,certPen=0){
   const rtBonus=(S.engine==='eigen'&&C.studio.engine?.modules.includes('raytracing'))?2:0;
   const engAgeRev=(S.engine==='eigen'&&C.studio.engine)?getEngineAgeInfo(S.engAgeAtStart||0).rev:0;
   const extraRevBonus=(S.extras||[]).reduce((acc,ek)=>acc+(PROJECT_EXTRAS[ek]?.reviewBonus||0),0);
-  return clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()-certPen),15,98);
+  return clamp(Math.round(S.res.qual*.75+25-(S.works?0:S.res.bugs)*1.2+(r-50)*.16+T().review+IPS[S.ip].review+engAgeRev+rtBonus+extraRevBonus-(S.ea?(S.eaPenalty||2):0)+(hasP('kritik')?4:0)+qaRevBonus-2*S.promises+(S.shop.includes('a11y')?2:0)+pr-Math.floor(C.dir.fame/40)-rookiePenalty()+uspRev(S)+audRev(S)-certPen),15,98);
 }
 // Prognose während der Entwicklung: Wertung bei mittlerem Wurf, inkl. absehbarem Verzug
 function reviewForecast(){
@@ -1576,7 +1576,7 @@ function sales(){
       *(exList.includes('crossplay')?1.10:1)
       *(exList.includes('collectors')?(S.model!=='f2p'?1.15:1.05):1)
       *(exList.includes('antiCheat')?1.10:1);
-    const mult=uMult*marketFactor()*platFactor()*ageFactor()*licFactor()*ipSales()*trendMult*awardMult*extraSalesMult*(S.mods?(S.model==='f2p'?1.15:1.25):1)*(S.ea?.85:1)*(S.shop.includes('awards')&&e.meta>=80?1.1:1);
+    const mult=uMult*marketFactor()*platFactor()*ageFactor()*licFactor()*ipSales()*trendMult*awardMult*extraSalesMult*(S.mods?(S.model==='f2p'?1.15:1.25):1)*(S.ea?.85:1)*(S.shop.includes('awards')&&e.meta>=80?1.1:1)*audSales(S);
     const units=Math.round((organic*[1.5,1,.7][pi]+S.res.wl*conv)*mult);
     let rev=0,detail=[];
     detail.push(['Wishlists beim Release',nf(S.res.wl,0)+' ('+nf(conv*100,0)+' % kaufen sofort)']);
