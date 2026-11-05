@@ -439,7 +439,7 @@ function startGame(o){
      stats:scaledStats,res,start:budget,einlage:0,investIn:0,round:0,deck:[],mdone:extras.includes('sportLic')?['license']:[],insp:2,log:[],adv:false,last:null,
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff:0,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
-     engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
+     feat:null,hunt:null,ship:null,delayM:0,engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
      trendHot:false,trendCold:false,concept:{...defaultConcept(!!GENRES[o.genre]),done:!!o.actsDone},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
   S.res.zeit=totalW(S)+2;
@@ -983,6 +983,7 @@ function monthEnd(){
   const accN=(key,v,f)=>{S.acc[key]=(S.acc[key]||0)+v;while(S.acc[key]>=1-1e-9){S.acc[key]-=1;f(1)}while(S.acc[key]<=-1+1e-9){S.acc[key]+=1;f(-1)}};
   for(const k of ['gp','gfx','snd','bugs','hype'])accN('sp_'+k,sd[k],x=>{add(k,x);sApplied[k]+=x});
   if(sd.moral)add('moral',sd.moral);
+  featBuild(sd.feat).forEach(n=>notes.push(n));
   if(crunchOn(S))S.crunchN=(S.crunchN||0)+1;
   S.sprint.crunch=false;
   // Hype verfliegt langsam, wenn er hoch ist und nichts nachkommt

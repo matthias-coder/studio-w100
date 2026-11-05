@@ -5,22 +5,23 @@ const AREAS={
   gfx:{n:'Grafik',ic:'🎨',rate:.3},
   snd:{n:'Sound',ic:'🎵',rate:.3},
   bug:{n:'Bugfixing',ic:'🐞',rate:-.35},
-  mkt:{n:'Marketing',ic:'📣',rate:.08}
+  mkt:{n:'Marketing',ic:'📣',rate:.08},
+  feat:{n:'Features',ic:'🧩',rate:0}
 };
-const AREA_KEYS=['gp','gfx','snd','bug','mkt'];
+const AREA_KEYS=['gp','gfx','snd','bug','mkt','feat'];
 const FOCUS={
-  balanced:{n:'Ausgewogen',fn:()=>{const w=qualWeights();return {gp:70*w.gp,gfx:70*w.gfx,snd:70*w.snd,bug:15,mkt:15}}},
-  gp:{n:'Gameplay zuerst',a:{gp:55,gfx:15,snd:10,bug:10,mkt:10}},
-  look:{n:'Look & Sound',a:{gp:15,gfx:40,snd:30,bug:10,mkt:5}},
-  bugs:{n:'Bugs jagen',a:{gp:10,gfx:5,snd:5,bug:70,mkt:10}},
-  hype:{n:'Marketing-Push',a:{gp:15,gfx:15,snd:10,bug:10,mkt:50}},
+  balanced:{n:'Ausgewogen',fn:()=>{const w=qualWeights();return {gp:70*w.gp,gfx:70*w.gfx,snd:70*w.snd,bug:15,mkt:15,feat:45}}},
+  gp:{n:'Gameplay zuerst',a:{gp:55,gfx:15,snd:10,bug:10,mkt:10,feat:10}},
+  look:{n:'Look & Sound',a:{gp:15,gfx:40,snd:30,bug:10,mkt:5,feat:5}},
+  bugs:{n:'Bugs jagen',a:{gp:10,gfx:5,snd:5,bug:70,mkt:10,feat:5}},
+  hype:{n:'Marketing-Push',a:{gp:15,gfx:15,snd:10,bug:10,mkt:50,feat:5}},
   custom:{n:'Eigene Verteilung',fn:s=>s.sprint.custom}
 };
-function defaultSprint(){return {focus:'balanced',custom:{gp:30,gfx:25,snd:15,bug:15,mkt:15},crunch:false}}
+function defaultSprint(){return {focus:'balanced',custom:{gp:30,gfx:25,snd:15,bug:15,mkt:15,feat:15},crunch:false}}
 // Prozente auf ganze Zahlen mit Summe 100 (Largest-Remainder); leere Verteilung -> ausgewogen
 function normAlloc(a){
   const v=AREA_KEYS.map(k=>Math.max(0,+(a&&a[k])||0)),sum=v.reduce((x,y)=>x+y,0);
-  if(sum<=0)return normAlloc(FOCUS.balanced.fn());
+  if(sum<=0){const b=FOCUS.balanced.fn();if(typeof featActive==='function'&&!featActive())b.feat=0;return normAlloc(b)}
   const raw=v.map(x=>x*100/sum),fl=raw.map(Math.floor);
   let left=100-fl.reduce((x,y)=>x+y,0);
   raw.map((r,i)=>[r-fl[i],i]).sort((p,q)=>q[0]-p[0]||p[1]-q[1]).slice(0,left).forEach(([,i])=>fl[i]++);
@@ -28,7 +29,9 @@ function normAlloc(a){
 }
 function sprintAlloc(s=S){
   const sp=s.sprint||defaultSprint(),f=FOCUS[sp.focus]||FOCUS.balanced;
-  return normAlloc(f.fn?f.fn({...s,sprint:sp}):f.a);
+  const a={...(f.fn?f.fn({...s,sprint:sp}):f.a)};
+  if(typeof featActive==='function'&&!featActive(s))a.feat=0;
+  return normAlloc(a);
 }
 function canCrunch(s=S){return s.res.moral>=SPRINT.minCrunchMoral}
 function crunchOn(s){return !!(s.sprint&&s.sprint.crunch)&&canCrunch(s)&&s.contractStep!==s.round}
@@ -50,6 +53,6 @@ function sprintDelta(s=S){
   return {pts,
     gp:pp('gp')*AREAS.gp.rate*pol*(typeof funMult==='function'?funMult(s):1),gfx:pp('gfx')*AREAS.gfx.rate*pol,snd:pp('snd')*AREAS.snd.rate*pol,
     bugs:(pp('gp')+pp('gfx')+pp('snd'))*SPRINT.buildBugs+pp('bug')*AREAS.bug.rate+(cr?SPRINT.crunchBugs:0),
-    hype:pp('mkt')*AREAS.mkt.rate,
+    hype:pp('mkt')*AREAS.mkt.rate,feat:pp('feat'),
     moral:cr?SPRINT.crunchMoral:0};
 }
