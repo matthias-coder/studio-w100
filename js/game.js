@@ -440,7 +440,7 @@ function startGame(o){
      plan,acc:{},spend:{},income:0,payers:0,usedR:[],month:null,aff:0,promises:dir.flaws.includes('verspricht')?1:0,abUsed:false,works:false,
      shop:[],contractsPh:[],msDone:[],msResult:null,prod:{},recoup:0,publisher:false,pubExtra:0,loan:0,equity:0,layoff:false,rescued:[],langs:null,langDone:false,china:'none',
      engine:null,engAction:null,engAgeAtStart:0,world:null,cast:null,lic:null,plat:null,age:null,price:1,lootbox:false,algo:false,eaPenalty:0,dlcDone:false,
-     trendHot:false,trendCold:false,concept:{...defaultConcept(!!o.genre),done:!!o.actsDone},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
+     trendHot:false,trendCold:false,concept:{...defaultConcept(!!GENRES[o.genre]),done:!!o.actsDone},proto:{n:0,fun:0,done:!!o.actsDone},usp:null,aud:'core',seed:Math.floor(Math.random()*1e9),sprint:defaultSprint(),contractStep:-1,fund:defaultFund(),skip:[],inf:defaultInf(),crunchN:0,crisisSeen:false,probeSeen:false};
 
   S.res.zeit=totalW(S)+2;
   if(o.genre)applyGenre(o.genre,o.subGenre||null,o.gmod||null);
@@ -468,7 +468,7 @@ function applyGenre(genre,sub,gmod){
   const subKey=subGenreOf(genre,sub)?sub:defaultSub(genre);
   const subG=subGenreOf(genre,subKey);
   const gm=GENRE_MODS[gmod]?gmod:null;
-  const res=S.res;
+  const res=S.res;const h0=res.hype;
   S.genre=genre;S.subGenre=subKey;S.gmod=gm;
   for(const k in g.b){
     if(k==='qual'){res.gp+=g.b[k];res.gfx+=g.b[k];res.snd+=g.b[k]}
@@ -496,9 +496,8 @@ function applyGenre(genre,sub,gmod){
   res.gp+=S.aff*5+(spez?4:0);
   res.gfx+=S.aff*3;
   for(const k in STATS)S.stats[k]=(S.stats[k]||0)+(g.s[k]||0)*4+(subG?(subG.s[k]||0)*2:0);
-  res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,10);res.bugs=Math.max(0,res.bugs);
+  res.moral=clamp(res.moral,0,10);res.hype=clamp(res.hype,0,Math.max(6,h0));res.bugs=Math.max(0,res.bugs);
   recalcQual();
-  addLog(`<span>${stepTag()}</span> Konzept: ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}`);
 }
 
 function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':protoDue()?'proto':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}

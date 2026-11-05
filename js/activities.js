@@ -84,7 +84,7 @@ function confirmConcept({genre,sub,gmod,picks,aud}={}){
   S.aud=aud;
   S.res.hype=clamp(S.res.hype+CONCEPT.hype+(power===3?CONCEPT.hypeStrong:0)+AUD[aud].hype,0,10);
   c.done=true;
-  addLog(`<span>${stepTag()}</span> 💡 Konzept steht: ${genreName(S)} · USP „${esc(n)}“ (${AREAS[area].n}, Stärke ${power}) · Zielgruppe ${AUD[aud].n}`);
+  addLog(`<span>${stepTag()}</span> 💡 Konzept steht: ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''} · USP „${esc(n)}“ (${AREAS[area].n}, Stärke ${power}) · Zielgruppe ${AUD[aud].n}`);
   goMonth();
   return true;
 }
@@ -116,7 +116,7 @@ function resolveProto(ok,crit,fumble){
     if(fumble)p.fun=Math.max(0,p.fun-1);
     txt=`Sackgasse – ${fmtSpan(lose*refMonths(S.tier)/12)} verloren${fumble?`, Fun-Stufe ${p.fun}`:''}`;
   }
-  if(p.n>=PROTO.max)p.done=true;
+  if(p.n>=PROTO.max){p.done=true;addLog(`🧪 Prototyp abgeschlossen: Fun-Stufe ${p.fun}`)}
   return {ch,txt};
 }
 function endProto(){

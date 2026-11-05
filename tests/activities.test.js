@@ -74,3 +74,20 @@ test('pending concept without hand gets a fresh hand and numeric rerolls',()=>{c
   const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
   for(const k of ['hook','setting','twist'])assert.equal(s.concept.hand[k].length,3);
   assert.equal(typeof s.concept.rerolls,'number');});
+
+/* ===== final review fixes ===== */
+test('applyGenre never lifts hype above max(6, hype before)',()=>{const {run}=load();start(run);
+  run(`C.studio.fame=50;C.dir.fame=50;S.res.hype=6;S.model='f2p';applyGenre('strategy','moba','live')`);
+  assert.ok(run('S.res.hype')<=6,'hype '+run('S.res.hype'));
+  const b=load();start(b.run);b.run(`S.res.hype=8;applyGenre('rpg','crpg','live')`);assert.ok(b.run('S.res.hype')<=8);});
+test('applyGenre does not log; confirmConcept logs the trend once',()=>{const {run}=load();start(run);
+  run(`C.trend={hot:'rpg',cold:'puzzle'}`);
+  run(`const h=S.concept.hand;confirmConcept({genre:'rpg',sub:'crpg',gmod:null,picks:{hook:h.hook[0],setting:h.setting[0],twist:h.twist[0]},aud:'core'})`);
+  const lines=run('S.log').slice(0);assert.equal(lines.filter(l=>/Konzept/.test(l)).length,1);
+  assert.match(lines.find(l=>/Konzept steht/.test(l)),/Boom-Genre/);});
+test('fourth prototype iteration logs completion once',()=>{const {run}=load();newProject(run);
+  run(`S.proto={n:3,fun:1,done:false};resolveProto(true,false,false)`);
+  assert.equal(run('S.log').filter(l=>/Prototyp abgeschlossen: Fun-Stufe 2/.test(l)).length,1);
+  run('endProto()');assert.equal(run('S.log').filter(l=>/Prototyp abgeschlossen/.test(l)).length,1);});
+test('unknown hall genre key leaves the concept unlocked',()=>{const {run}=load();start(run,{genre:'gone'});
+  assert.equal(run('S.concept.lock'),false);assert.equal(run('S.genre'),null);});

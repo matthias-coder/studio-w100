@@ -430,8 +430,28 @@ function renderConcept(m){
   const subKey=subGenreOf(d.genre,d.sub)?d.sub:defaultSub(d.genre);
   const gm=GENRE_MODS[d.gmod]?d.gmod:null;
   const fitTag=k=>{const f=modFit(d.genre,subKey,k);return f==='syn'?' <span class="pos">✓ Synergie</span>':f==='clash'?' <span class="neg">✗ beißt sich</span>':''};
+  const subG=subGenreOf(d.genre,subKey);
+  const blendGfxW=subG?.gfxW!=null?(mainG.gfxW*0.5+subG.gfxW*0.5):mainG.gfxW;
+  const combinedStats=Object.keys(STATS).map(sk=>`${STATS[sk]} +${(mainG.s[sk]||0)*4+(subG?.s?.[sk]||0)*2}`).join(' · ');
+  const bonus=Object.entries(subG?.b||{}).map(([k,v])=>chip([k,Math.round(v*0.5)])).join('');
+  const fit=subG?.fit||mainG.fit;
+  const gmFit=gm?modFit(d.genre,subKey,gm):null;
+  const modEff=gm?Object.entries({...GENRE_MODS[gm].b}).map(e=>chip(e)).join(''):'';
+  const synHTML=`<div class="synergy-box ${gmFit==='syn'?'dream':gmFit==='clash'?'wild':''}">
+      <b>🎯 ${esc(mainG.n)} · ${esc(subG?.n||'')}${gm?' + '+esc(GENRE_MODS[gm].n):''}</b>
+      <span class="note">${esc(subG?.d||mainG.d)}</span>
+      <div class="chips">
+        <span class="chip">${combinedStats}</span>
+        <span class="chip">🎮 Gameplay ${Math.round((1-blendGfxW)*100)} % · 🎨 Grafik ${Math.round(blendGfxW*100)} %</span>
+        ${fit&&fit!=='kauf'?`<span class="chip">Passt zu ${MODELS[fit].n} (+1 Hype)</span>`:''}
+        ${bonus}${modEff}
+        ${gmFit==='syn'?`<span class="chip p">Synergie: +${MOD_SYN.gp} Gameplay, +${MOD_SYN.hype} Hype</span>`:gmFit==='clash'?`<span class="chip n">Reibung: ${MOD_CLASH.gp} Gameplay, +${MOD_CLASH.bugs} Bugs</span>`:''}
+      </div>
+    </div>`;
+  const sportNote=(S.extras||[]).includes('sportLic')?`<p class="note">⚽ Sportlizenz: +25 % Verkäufe bei Sport & Rennen (sonst +10 %)</p>`:'';
   const genreHTML=lock?`<p class="note"><b>Fortsetzung: Genre steht fest</b> – ${esc(genreName(S))}</p>`:`
-    ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n}</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n}</span></div>`:''}
+    ${sportNote}
+    ${tr?`<div class="chips"><span class="chip p">🔥 Boom-Genre: ${GENRES[tr.hot]?.n} (+15% Verkäufe, +1 Hype)</span><span class="chip n">❄️ Übersättigt: ${GENRES[tr.cold]?.n} (−10% Verkäufe)</span></div>`:''}
     <div class="field"><span class="label">1. Hauptgenre</span>
       <div class="choices compact">${Object.entries(GENRES).map(([k,g])=>{
         const engKnows=C&&C.studio.engine&&C.studio.engine.genres.includes(k);
@@ -439,12 +459,13 @@ function renderConcept(m){
         return `<label class="choice"><input type="radio" name="cg" value="${k}" ${d.genre===k?'checked':''}><b>${g.n} ${isHot?'🔥':isCold?'❄️':''}${engKnows?'★':''}</b><code>${Object.entries(g.s).filter(([,v])=>v>0).map(([sk,v])=>STATS[sk]+' +'+(v*4)).join(' · ')}</code><span class="more">${esc(g.d)}</span></label>`;
       }).join('')}</div></div>
     <div class="field"><span class="label">2. Sub-Genre von ${esc(mainG.n)}</span>
-      <div class="choices compact">${Object.entries(mainG.subs).map(([k,sg])=>`<label class="choice"><input type="radio" name="csub" value="${k}" ${subKey===k?'checked':''}><b>${esc(sg.n)}</b><code>${Object.entries(sg.s||{}).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(' · ')}</code><span class="more">${esc(sg.d)}</span></label>`).join('')}</div></div>
+      <div class="choices compact">${Object.entries(mainG.subs).map(([k,sg])=>`<label class="choice"><input type="radio" name="csub" value="${k}" ${subKey===k?'checked':''}><b>${esc(sg.n)}</b><code>${Object.entries(sg.s||{}).map(([sk,v])=>STATS[sk]+' +'+(v*2)).join(' · ')}${sg.fit&&sg.fit!=='kauf'?' · passt zu '+MODELS[sg.fit].n+(sg.fit===S.model?' ✓':''):''}</code><span class="more">${esc(sg.d)}</span></label>`).join('')}</div></div>
     <div class="field"><span class="label">3. Optionaler Modifikator</span>
       <div class="choices compact">
         <label class="choice"><input type="radio" name="cmod" value="none" ${!gm?'checked':''}><b>Keiner</b><span class="more">Klassisch, ohne genreübergreifende Zutat.</span></label>
-        ${Object.entries(GENRE_MODS).map(([k,md])=>`<label class="choice"><input type="radio" name="cmod" value="${k}" ${gm===k?'checked':''}><b>${esc(md.n)}${fitTag(k)}</b><span class="more">${esc(md.d)}</span></label>`).join('')}
-      </div></div>`;
+        ${Object.entries(GENRE_MODS).map(([k,md])=>`<label class="choice"><input type="radio" name="cmod" value="${k}" ${gm===k?'checked':''}><b>${esc(md.n)}${fitTag(k)}</b><code>${typeof md.sales==='object'?'Verkäufe ×'+nf(md.sales.kauf,2)+' bis ×'+nf(md.sales.f2p,2):md.sales!==1?'Verkäufe ×'+nf(md.sales,2):'Verkäufe ±0'}${md.monthly?' · Serverkosten ab Beta':''}</code><span class="more">${esc(md.d)}</span></label>`).join('')}
+      </div></div>
+    ${synHTML}`;
   const rows=Object.entries(IDEA_SLOTS).map(([slot,lbl])=>`<div class="field"><span class="label">${lbl}</span><div class="opts">${c.hand[slot].map(id=>{
     const card=ideaById(slot,id),on=d.picks[slot]===id;
     return `<button type="button" class="opt" data-idea="${slot}:${id}" aria-pressed="${on}"><span class="t">${card.ic} ${esc(card.n)}</span><span class="check">${AREAS[card.a].ic} ${AREAS[card.a].n}</span></button>`;

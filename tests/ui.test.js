@@ -89,3 +89,6 @@ test('reshuffling ideas keeps genre and audience choices',()=>{const {run}=load(
   assert.equal(run('conceptDraft.genre'),'puzzle');assert.equal(run('conceptDraft.sub'),'logic');assert.equal(run('conceptDraft.aud'),'hard');
   assert.ok(run(`Object.keys(IDEA_SLOTS).every(k=>S.concept.hand[k].includes(conceptDraft.picks[k]))`));
   assert.ok(run('confirmConcept(conceptDraft)'));});
+test('concept screen shows modifier costs, synergy box and sport licence hint',()=>{const {run}=load({ui:true});startRaw(run,{extras:['sportLic']});
+  const h=html(run,'renderConcept');assert.match(h,/Serverkosten ab Beta/);assert.match(h,/synergy-box/);assert.match(h,/Gameplay \d+ %/);
+  assert.match(h,/Sportlizenz: \+25 %/);assert.match(h,/passt zu/);});
