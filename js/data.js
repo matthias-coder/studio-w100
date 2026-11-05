@@ -54,8 +54,8 @@ const TIERS={
 
 const MODELS={
   kauf:{n:'Kaufspiel',d:'Einmal kaufen, für immer spielen.',sales:'Verkaufs-Wurf'},
-  abo:{n:'Abo-Modell',d:'Spiel kaufen plus 12,99 € im Monat. Server ab der Beta kosten jeden Monat.',sales:'Abonnenten-Wurf'},
-  f2p:{n:'Free-to-Play',d:'Kostenlos, Geld kommt über den Shop. Viele Spieler, wenige zahlen.',sales:'Spieler-Wurf'}
+  f2p:{n:'Free-to-Play',d:'Kostenlos, Geld kommt über den Shop. Viele Spieler, wenige zahlen.',sales:'Spieler-Wurf'},
+  live:{n:'Live Service',d:'Kaufen und dann dabeibleiben: Seasons, Battle Pass, laufende Updates. Nach dem Release laufende Einnahmen, aber Server und ein Teil des Teams bleiben gebunden.',sales:'Launch-Wurf'}
 };
 
 const IPS={
@@ -70,7 +70,7 @@ const VIOL=['action','actadv','rpg','survival'];
 const GENRES={
   action:{n:'Action & Shooter',d:'Schnelle Reflexe, Gunplay, Combos. Riesiger Markt, harte Konkurrenz.',s:{design:0,technik:2,team:1,business:1},b:{hype:1,gfx:3},gfxW:0.55,fit:'kauf',w:['level','open'],bad:[],subs:{
     fps:{n:'Ego-Shooter (FPS)',d:'Präzises Zielen, Taktik- und Hero-Maps, Ranglisten.',s:{technik:2},b:{gp:4},gfxW:0.55},
-    looter:{n:'Looter- & Extraction-Shooter',d:'Beute, Builds, Raids und das Risiko beim Rausgehen.',s:{business:2},b:{hype:2,bugs:2},gfxW:0.55,w:['open','hub']},
+    looter:{n:'Looter- & Extraction-Shooter',d:'Beute, Builds, Raids und das Risiko beim Rausgehen.',s:{business:2},b:{hype:2,bugs:2},gfxW:0.55,fit:'live',w:['open','hub']},
     br:{n:'Battle Royale',d:'Hundert Leute, eine Insel, der Kreis wird kleiner.',s:{business:2},b:{hype:2,bugs:4},gfxW:0.45,fit:'f2p',w:['open'],bad:['schlauch','level']},
     hackslay:{n:'Hack & Slay',d:'Stilwertung, Combos, absurde Bosse.',s:{design:2},b:{gp:4},gfxW:0.50,w:['level','schlauch']},
     fighting:{n:'Prügelspiel',d:'2D, 3D oder Plattform-Fighter: Frame-Daten, Combos, Turniere.',s:{team:2},b:{gp:4,hype:2},gfxW:0.45,w:['level'],bad:['open','schlauch']}
@@ -93,7 +93,7 @@ const GENRES={
     crpg:{n:'Klassisches RPG (CRPG)',d:'Würfelproben, Dialogbäume, Begleiter-Romanzen.',s:{design:2},b:{gp:6},gfxW:0.35,w:['hub','open']},
     arpg:{n:'Action-RPG',d:'Loot, Bosse und Builds in Echtzeit.',s:{technik:2},b:{gfx:4,hype:2}},
     jrpg:{n:'JRPG',d:'Rundenkämpfe, eine bunte Party und eine epische Geschichte.',s:{team:2},b:{gp:4,hype:2},w:['hub','level']},
-    mmorpg:{n:'MMORPG',d:'Gilden, Raids und tausend Server-Probleme.',s:{business:2},b:{hype:2,bugs:6},fit:'abo',w:['open'],bad:['schlauch','level']},
+    mmorpg:{n:'MMORPG',d:'Gilden, Raids und tausend Server-Probleme.',s:{business:2},b:{hype:2,bugs:6},fit:'live',w:['open'],bad:['schlauch','level']},
     monster:{n:'Monster-Sammeln',d:'Fangen, entwickeln, tauschen.',s:{design:1,business:1},b:{gp:4,hype:2},gfxW:0.40}
   }},
   strategy:{n:'Strategie',d:'Planen, Bauen, Erobern. Auf dem PC eine treue Langzeit-Nische.',s:{design:1,technik:2,team:0,business:1},b:{gp:4},gfxW:0.30,fit:'kauf',w:['open','level'],bad:['schlauch'],subs:{
@@ -111,7 +111,7 @@ const GENRES={
     job:{n:'Job- & Fahrzeug-Sim',d:'Trucks, Traktoren, Hochdruckreiniger. Seltsam entspannend.',s:{business:2},b:{hype:2},gfxW:0.45,w:['open','level']}
   }},
   sports:{n:'Sport & Rennen',d:'Stadion, Strecke, Saison. Fans wollen Echtheit oder Spaß, nicht beides halb.',s:{design:1,technik:2,team:0,business:1},b:{gp:2,gfx:4},gfxW:0.50,fit:'kauf',w:['level','hub'],bad:['schlauch'],subs:{
-    sim:{n:'Sportsimulation',d:'Lizenzen, Motion-Capture, echte Kader.',s:{technik:2},b:{gfx:6},gfxW:0.55,bad:['open','schlauch']},
+    sim:{n:'Sportsimulation',d:'Lizenzen, Motion-Capture, echte Kader.',s:{technik:2},b:{gfx:6},gfxW:0.55,fit:'live',bad:['open','schlauch']},
     manager:{n:'Sportmanager',d:'Taktiktafel, Transfermarkt, Tabellen.',s:{business:2},b:{gp:8},gfxW:0.20},
     arcaderacer:{n:'Arcade- & Fun-Racer',d:'Drift, Nitro, Bananenschalen.',s:{design:2},b:{gp:4,hype:2},gfxW:0.45},
     simracer:{n:'Rennsimulation',d:'Reifenabnutzung, Setup-Menüs, Lenkrad-Support.',s:{technik:2},b:{gfx:4},gfxW:0.65},
@@ -145,8 +145,6 @@ const GENRE_MODS={
     syn:['actadv','platformer','action.hackslay','puzzle.cards','strategy.towerdef'],clash:['adventure','sim.life','rpg.mmorpg']},
   horror:{n:'Horror-Stimmung',d:'Dunkle Atmosphäre und Schockmomente, egal in welchem Genre.',b:{hype:2,gfx:2},sales:1,
     syn:['adventure','survival','actadv'],clash:['sim.cozy','sports','puzzle.match','platformer.p3d']},
-  live:{n:'Live Service',d:'Saisons, Battle Pass, laufende Updates. Teuer im Betrieb, stark mit Free-to-Play oder Abo.',b:{hype:2,bugs:4},monthly:1,sales:{kauf:1.05,abo:1.25,f2p:1.3},
-    syn:['rpg.mmorpg','action','strategy.moba','survival','sports.sim'],clash:['adventure','puzzle.logic','platformer','rpg.crpg']},
   party:{n:'Party & Couch-Koop',d:'Für vier auf dem Sofa: kurze Runden, viel Chaos.',b:{hype:2,gp:2},sales:1.1,
     syn:['platformer','sports.arcaderacer','action.fighting','puzzle'],clash:['rpg','strategy.grand','adventure.vn','sim.factory']},
   vr:{n:'VR-Fassung',d:'Mittendrin statt nur dabei. Kleinerer Markt, aber viel Aufmerksamkeit.',b:{hype:3,gfx:-4,bugs:4},sales:0.6,
@@ -989,6 +987,12 @@ const TB=['protokoll','saga','ritter','fabrik','hafen','garten','pfad','chronik'
 
 /* ===================== Erweiterte Projekt-Extras & Lizenzen (Setup Screen 4) ===================== */
 const PROJECT_EXTRAS={
+  premium:{
+    n:'💳 Premium-Abo',
+    d:'Eine Monatsgebühr für Bonus-Inhalte und eigene Server. Bringt nach dem Release laufende Einnahmen, verlangt aber regelmäßig neuen Content.',
+    code:'Nur Kaufspiel & Live Service · −10 % Verkäufe · nach Release: Abo-Einnahmen, Server, 8 % Team-Kapazität',
+    upfront:0,monthly:0,eff:{},models:['kauf','live']
+  },
   mods:{
     n:'🛠️ Mod-Support & Workshop',
     d:'Editor und Skript-Schnittstellen für die Community. Kostet monatlich Pflege, verlängert das Leben des Spiels enorm.',

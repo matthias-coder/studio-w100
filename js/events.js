@@ -123,7 +123,7 @@ const E=[
  {p:0,t:'Das Büro',x:'Wo soll das Studio sitzen? Der Makler schwärmt von einem Loft mit Tischkicker.',o:[
   {l:'Loft mit Tischkicker',safe:{budget:-20,moral:2},sx:'Backsteinwände, Siebträger, alle kommen gern zur Arbeit.'},
   {l:'Alles im Homeoffice',st:'team',dc:11,s:{moral:1,budget:5},sx:'Läuft. Und die Miete bleibt im Budget.',f:{moral:-1},fx:'Drei Zeitzonen, null Absprachen, viele Missverständnisse.'}]},
- {p:0,t:'Server-Architektur',x:'Euer Spiel lebt online. Wie soll die Infrastruktur aussehen?',models:['abo','f2p'],o:[
+ {p:0,t:'Server-Architektur',x:'Euer Spiel lebt online. Wie soll die Infrastruktur aussehen?',models:['live','abo','f2p'],o:[
   {l:'Eigene Server-Architektur',st:'technik',dc:14,s:{gp:5,gfx:3,bugs:-2},sx:'Sauber skaliert, sauber dokumentiert.',f:{bugs:5,zeit:-1},fx:'Der Lasttest mit zehn Spielern bringt alles zum Stehen.'},
   {l:'Cloud-Dienst mieten',safe:{budget:-15,bugs:-1},sx:'Teuer im Monat, dafür schlaft ihr ruhig.'}]},
  {p:0,t:'Vertrag mit dem Rechteinhaber',x:'Der Filmverleih möchte jedes Design vorher freigeben.',ip:['lizenz'],o:[
@@ -180,7 +180,7 @@ const E=[
  {p:2,t:'Monetarisierung',x:'Womit verdient ihr Geld, wenn das Spiel nichts kostet?',models:['f2p'],o:[
   {l:'Nur Kosmetik',st:'design',dc:12,s:{payers:1,hype:1,gfx:2},sx:'Hübsche Skins, faire Preise. Die Community lobt euch.',f:{payers:0},fx:'Die Skins sehen aus wie Standardausrüstung in anderer Farbe.'},
   {l:'Booster und Lootboxen',st:'business',dc:10,set:{lootbox:true},s:{payers:2,hype:-1,gp:-2},sx:'Die Kasse klingelt, das Forum schäumt.',f:{payers:1,hype:-2,gp:-4},fx:'Ein Video „Pay-to-Win-Abzocke“ geht viral.'}]},
- {p:2,t:'Das Endgame',x:'Was machen Spieler, wenn sie das Maximallevel erreicht haben?',models:['abo'],o:[
+ {p:2,t:'Das Endgame',x:'Was machen Spieler, wenn sie das Maximallevel erreicht haben?',models:['live','abo'],o:[
   {l:'Raids für 20 Spieler',st:'design',dc:13,s:{gp:9,hype:1},sx:'Gilden planen schon ihre Strategien.',f:{bugs:4,zeit:-1},fx:'Der Endboss lässt sich mit einer Treppe austricksen.'},
   {l:'Tägliche Quests',safe:{gp:3},sx:'Beschäftigt die Leute. Begeistert sie nicht.'}]},
  {p:2,t:'KI-Assistenten in der Pipeline',x:'Ein Anbieter verspricht, mit generativer KI doppelt so schnell Texturen und Nebenquests zu erzeugen.',o:[
@@ -205,7 +205,7 @@ const E=[
  {p:3,t:'Die Aktionäre',x:'Die Quartalszahlen stehen an. Der Vorstand will mehr Einnahmen pro Spieler.',tiers:['aaa'],o:[
   {l:'Season Pass ankündigen',st:'business',dc:13,s:{budget:80,hype:-1},sx:'Der Aktienkurs steigt. Die Kommentare nicht.',f:{hype:-3,moral:-1},fx:'„Day-One-DLC für ein Spiel, das noch nicht fertig ist?“'},
   {l:'Dem Vorstand widersprechen',st:'team',dc:12,s:{moral:2},sx:'Das Team steht geschlossen hinter euch.',f:{budget:-30},fx:'Zur Strafe wird euer Marketingbudget gekürzt.'}]},
- {p:3,t:'Geschlossene Beta',x:'Wie viele Leute sollen den Online-Modus vorab testen?',models:['abo','f2p'],o:[
+ {p:3,t:'Geschlossene Beta',x:'Wie viele Leute sollen den Online-Modus vorab testen?',models:['live','abo','f2p'],o:[
   {l:'Offene Beta für alle',st:'technik',dc:14,s:{hype:3,bugs:-3,wl:5},sx:'Hunderttausend Spieler, die Server halten.',f:{hype:-2,bugs:3},fx:'Warteschlange: 47.000. Geschätzte Wartezeit: 6 Stunden.'},
   {l:'Kleine Beta mit Einladungen',safe:{bugs:-2,hype:1,gp:2},sx:'Ausgewählte Tester, wertvolles Gameplay-Feedback.'}]},
  {p:3,t:'Modding-Werkzeuge',x:'Wie viel gebt ihr der Community in die Hand?',mods:true,o:[
@@ -227,7 +227,7 @@ const E=[
  {p:4,t:'Konsolen-Zertifizierung',x:'Die Plattformhalter prüfen euren Build. 200 Seiten Richtlinien.',cond:s=>s.plat&&s.plat!=='pc',o:[
   {l:'Einreichen',st:'technik',dc:13,s:{hype:1},sx:'Bestanden beim ersten Versuch.',f:{zeit:-1,bugs:-2},fx:'Abgelehnt, weil der Speicher-Hinweis drei Pixel zu klein ist.'},
   {l:'Konsolen-Versionen später nachreichen',safe:{hype:-1},set:{plat:'pc'},sx:'Erst mal nur PC. Die Konsolen folgen irgendwann.'}]},
- {p:4,t:'Early Access',x:'Spieler wollen jetzt schon rein und würden dafür zahlen.',models:['kauf','abo'],noEA:true,o:[
+ {p:4,t:'Early Access',x:'Spieler wollen jetzt schon rein und würden dafür zahlen.',models:['kauf','live'],noEA:true,o:[
   {l:'Early Access starten',st:'business',dc:12,s:{budget:40,bugs:-3,hype:1,ea:1},sx:'Ehrliche Roadmap, treue Community, zahlende Tester.',f:{budget:10,hype:-2},fx:'„Unfertig“ steht in jeder zweiten Bewertung.'},
   {l:'Erst zum fertigen Release',safe:{},sx:'Ihr wollt einen großen ersten Eindruck.'}]},
  {p:4,t:'Playtest-Wochenende',x:'Ihr könnt ein Wochenende lang 5.000 Wishlist-Spieler testen lassen.',o:[
@@ -246,10 +246,10 @@ const E=[
  {p:5,t:'Review-Codes',x:'Die Fachpresse wartet auf Keys.',o:[
   {l:'Früh rausgeben',st:'business',dc:12,s:{hype:2,wl:2},sx:'Erste Previews sind begeistert.',f:{hype:-1},fx:'Ein früher Verriss setzt den Ton.'},
   {l:'Embargo bis zum Release',safe:{hype:-1},sx:'Das Netz rätselt, ob ihr etwas zu verbergen habt.'}]},
- {p:5,t:'Vorbesteller-Boni',x:'Händler wollen exklusive Boni für Vorbestellungen.',models:['kauf','abo'],o:[
+ {p:5,t:'Vorbesteller-Boni',x:'Händler wollen exklusive Boni für Vorbestellungen.',models:['kauf','live'],o:[
   {l:'Exklusive Händler-Boni',st:'business',dc:11,s:{hype:1,budget:15},sx:'Die Vorbestellungen ziehen an.',f:{hype:-1},fx:'Vier Editionen, sieben Boni, null Durchblick.'},
   {l:'Für alle dasselbe',safe:{moral:1},sx:'Fair und einfach.'}]},
- {p:5,t:'Server-Kapazität zum Launch',x:'Wie viele Server bucht ihr für den Starttag?',models:['abo','f2p'],o:[
+ {p:5,t:'Server-Kapazität zum Launch',x:'Wie viele Server bucht ihr für den Starttag?',models:['live','abo','f2p'],o:[
   {l:'Großzügig vorsorgen',safe:{budget:-20,hype:1},sx:'Launch ohne Warteschlange. Selten genug.'},
   {l:'Knapp kalkulieren',st:'technik',dc:14,s:{},sx:'Es reicht ganz genau.',f:{hype:-3},fx:'Fehler 37. Ihr wisst, was das bedeutet.'}]},
  {p:5,t:'Kopierschutz vor Release',x:'Der Publisher schlägt einen strengen Kopierschutz für die Startwoche vor.',models:['kauf'],o:[
@@ -284,9 +284,9 @@ const R=[
  {t:'Steuerprüfung',x:'Das Finanzamt kündigt sich an.',st:'business',dc:12,s:{},sx:'Alle Belege sind sauber abgelegt.',f:{budget:-12,zeit:-1},fx:'Zwei Wochen Ordner suchen und eine saftige Nachzahlung.'},
  {t:'Review-Bombing',x:'Wegen einer Store-Exklusivität hagelt es negative Bewertungen.',st:'business',dc:12,s:{},sx:'Eine klare Erklärung beruhigt die Lage.',f:{hype:-2},fx:'Der Shitstorm hält eine Woche an.',min:3,cond:s=>s.plat==='exklusiv'},
  {t:'Wo bleibt meine Sprache?',x:'Spieler aus Brasilien fordern eine Übersetzung.',st:'business',dc:12,s:{hype:1},sx:'Ihr kündigt die Übersetzung als Update an.',f:{hype:-2},fx:'Tausende negative Bewertungen auf Portugiesisch.',cond:s=>s.langDone&&!s.langs.pt,min:4},
- {t:'DDoS-Angriff',x:'Die Server werden mit Anfragen geflutet.',st:'technik',dc:13,s:{},sx:'Der Schutz greift, die Spieler merken nichts.',f:{hype:-2,budget:-10},fx:'Ein Wochenende lang ist der Online-Modus nicht erreichbar.',models:['abo','f2p'],min:3},
- {t:'Goldfarmer-Bots',x:'Bots farmen Ingame-Währung und verkaufen sie für echtes Geld.',st:'technik',dc:12,s:{gp:2},sx:'Eine Bann-Welle säubert die Server.',f:{gp:-4,hype:-1},fx:'Die Wirtschaft im Spiel ist ruiniert.',models:['abo','f2p'],min:4},
- {t:'Serverrechnung explodiert',x:'Der Cloud-Anbieter rechnet anders ab als gedacht.',st:'business',dc:12,s:{},sx:'Ein Gespräch, ein Rabatt.',f:{budget:-15},fx:'Die Rechnung ist dreimal so hoch wie geplant.',models:['abo','f2p'],min:4},
+ {t:'DDoS-Angriff',x:'Die Server werden mit Anfragen geflutet.',st:'technik',dc:13,s:{},sx:'Der Schutz greift, die Spieler merken nichts.',f:{hype:-2,budget:-10},fx:'Ein Wochenende lang ist der Online-Modus nicht erreichbar.',models:['live','abo','f2p'],min:3},
+ {t:'Goldfarmer-Bots',x:'Bots farmen Ingame-Währung und verkaufen sie für echtes Geld.',st:'technik',dc:12,s:{gp:2},sx:'Eine Bann-Welle säubert die Server.',f:{gp:-4,hype:-1},fx:'Die Wirtschaft im Spiel ist ruiniert.',models:['live','abo','f2p'],min:4},
+ {t:'Serverrechnung explodiert',x:'Der Cloud-Anbieter rechnet anders ab als gedacht.',st:'business',dc:12,s:{},sx:'Ein Gespräch, ein Rabatt.',f:{budget:-15},fx:'Die Rechnung ist dreimal so hoch wie geplant.',models:['live','abo','f2p'],min:4},
  {t:'Kult-Mod',x:'Ein Modder baut aus eurer Beta einen völlig neuen Spielmodus. Alle reden darüber.',eff:{hype:2,wl:3,gp:2},mods:true,min:3},
  {t:'Mod mit Schadcode',x:'Eine beliebte Mod enthält einen Krypto-Miner.',st:'technik',dc:12,s:{},sx:'Ihr sperrt sie sofort und baut eine Prüfung ein.',f:{hype:-2},fx:'Tausende Rechner sind betroffen, die Presse fragt bei euch nach.',mods:true,min:3},
  {t:'Early-Access-Rezensionen',x:'Die ersten Store-Bewertungen zur Beta trudeln ein.',st:'design',dc:12,s:{hype:1,gp:3},sx:'„Sehr positiv“. Die Wünsche der Spieler sind gute Ideen.',f:{hype:-2},fx:'„Ausgeglichen“. Das schreckt Käufer ab.',ea:true,min:4},

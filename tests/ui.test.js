@@ -90,7 +90,7 @@ test('reshuffling ideas keeps genre and audience choices',()=>{const {run}=load(
   assert.ok(run(`Object.keys(IDEA_SLOTS).every(k=>S.concept.hand[k].includes(conceptDraft.picks[k]))`));
   assert.ok(run('confirmConcept(conceptDraft)'));});
 test('concept screen shows modifier costs, synergy box and sport licence hint',()=>{const {run}=load({ui:true});startRaw(run,{extras:['sportLic']});
-  const h=html(run,'renderConcept');assert.match(h,/Serverkosten ab Beta/);assert.match(h,/synergy-box/);assert.match(h,/Gameplay \d+ %/);
+  const h=html(run,'renderConcept');assert.match(h,/Roguelike-Elemente/);assert.match(h,/synergy-box/);assert.match(h,/Gameplay \d+ %/);
   assert.match(h,/Sportlizenz: \+25 %/);assert.match(h,/passt zu/);});
 
 test('plan screen lists candidates and the estimate',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');S.usp={ids:['loop','jazz','liar'],area:'gp',power:2,n:'x'}`);

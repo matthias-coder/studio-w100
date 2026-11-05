@@ -97,7 +97,7 @@ function recalcQual(){
 const MP_SUBS=['br','mmorpg','moba','mphorror','fighting','fps'];
 function isMultiplayer(s){
   s=s||S;if(!s)return false;
-  return !!s.mp||MP_SUBS.includes(s.subGenre)||['live','party'].includes(s.gmod)||(s.extras||[]).some(k=>k==='coopMode'||k==='crossplay');
+  return !!s.mp||MP_SUBS.includes(s.subGenre)||s.gmod==='party'||s.model==='live'||(s.extras||[]).some(k=>k==='coopMode'||k==='crossplay');
 }
 
 /* ===================== Branchen-Trends & Rivalen ===================== */
@@ -365,7 +365,7 @@ function resolveContract(id,ok,crit){
 }
 
 const fameBonus=()=>C?Math.floor(((C.studio.fame||0)+(C.dir.fame||0))/15):0;
-const fits=c=>(!c.tiers||c.tiers.includes(S.tier))&&(!c.models||c.models.includes(S.model))&&(!c.ip||c.ip.includes(S.ip))&&(!c.mods||S.mods)&&(!c.noEA||!S.ea)&&(!c.ea||S.ea)&&(!c.cond||c.cond(S))&&(!c.flaw||hasF(c.flaw));
+const fits=c=>(!c.tiers||c.tiers.includes(S.tier))&&(!c.models||c.models.some(m=>modelTags(S).includes(m)))&&(!c.ip||c.ip.includes(S.ip))&&(!c.mods||S.mods)&&(!c.noEA||!S.ea)&&(!c.ea||S.ea)&&(!c.cond||c.cond(S))&&(!c.flaw||hasF(c.flaw));
 const optOk=o=>(!o.g||o.g.includes(S.genre)||o.g.includes(S.genre+'.'+S.subGenre))&&(!o.ng||!o.ng.includes(S.genre))&&(!o.cond||o.cond(S));
 function addLog(t){if(!S)return;S.log.unshift(t);if(S.log.length>90)S.log.pop()}
 function mandFor(i){const ids=[];for(let j=i-1;j>=0&&isSkipped(j);j--)ids.unshift(...(MAND_AT[STEPS[j].id]||[]));ids.push(...(MAND_AT[STEPS[i]?.id]||[]));return ids.filter(id=>!S.mdone.includes(id)&&(id!=='price'||S.model!=='f2p')&&(id!=='china'||(S.langs&&S.langs.zh)))}
@@ -379,7 +379,7 @@ function startGame(o){
   const extrasSet=new Set(Array.isArray(o.extras)?o.extras:[]);
   if(o.mods)extrasSet.add('mods');
   if(o.ea)extrasSet.add('ea');
-  const extras=[...extrasSet].filter(k=>PROJECT_EXTRAS[k]);
+  const extras=[...extrasSet].filter(k=>PROJECT_EXTRAS[k]&&(!PROJECT_EXTRAS[k].models||PROJECT_EXTRAS[k].models.includes(o.model)));
 
   let ip=o.ip,seq=null;if(ip.startsWith('seq:')){seq=C.hall[+ip.slice(4)];ip='franchise'}
   const first=C.gameNo===0;
@@ -751,7 +751,7 @@ function monthLines(){
 
   for(const k of ['mkt','qa','team','weiter','outs'])add(PLAN[k].cat,PLAN[k].cost[S.plan[k]]*sc);
   if(S.world==='open')add('welt',2*sc);else if(S.world==='hub')add('welt',1*sc);
-  if(S.model!=='kauf'&&stepFlag('live'))add('server',2*sc);
+  if((S.model!=='kauf'||hasPremium(S))&&stepFlag('live'))add('server',2*sc);
   if(S.mods)add('mods',1*sc);
   if(Array.isArray(S.extras)){
     S.extras.forEach(ek=>{
@@ -760,8 +760,6 @@ function monthLines(){
       if(mCost)add('mods',mCost*sc);
     });
   }
-  // Live Service: Server und Saison-Team ab der Beta-Phase
-  if(GENRE_MODS[S.gmod]?.monthly&&stepFlag('live'))add('server',GENRE_MODS[S.gmod].monthly*sc);
 
   if(C&&C.studio.engine){
     const eng=C.studio.engine;
@@ -1591,16 +1589,13 @@ function sales(){
       *(exList.includes('collectors')?(S.model!=='f2p'?1.15:1.05):1)
       *(exList.includes('antiCheat')?1.10:1);
     const mult=uMult*marketFactor()*platFactor()*ageFactor()*licFactor()*ipSales()*trendMult*awardMult*extraSalesMult*(S.mods?(S.model==='f2p'?1.15:1.25):1)*(S.ea?.85:1)*(S.shop.includes('awards')&&e.meta>=80?1.1:1)*audSales(S);
-    const units=Math.round((organic*[1.5,1,.7][pi]+S.res.wl*conv)*mult);
+    let units=Math.round((organic*[1.5,1,.7][pi]+S.res.wl*conv)*mult);
     let rev=0,detail=[];
     detail.push(['Wishlists beim Release',nf(S.res.wl,0)+' ('+nf(conv*100,0)+' % kaufen sofort)']);
-    if(S.model==='kauf'){
+    if(S.model==='kauf'||S.model==='live'){
+      units=Math.round(units*(S.model==='live'?LIVE.launchMult:1)*(hasPremium(S)?LIVE.premiumSales:1));
       rev=units*price*.6/1000;e.units=units;
       detail.push(['Verkaufte Exemplare',nf(units,0)],['Preis',nf(price,2)+' €'],['Umsatz netto (60 % nach Plattform und Steuern)',money(rev)]);
-    }else if(S.model==='abo'){
-      const buyers=Math.round(units*.7),box=price*.6,months=clamp(2+(e.meta-50)/8+S.res.hype/3,1,12);
-      const rB=buyers*box*.6/1000,rS=buyers*12.99*months*.7/1000;rev=rB+rS;e.units=buyers;
-      detail.push(['Käufer zum Start',nf(buyers,0)],['Startpreis inkl. erstem Monat',nf(box,2)+' €'],['Ø Abo-Monate im ersten Jahr',nf(months)],['Umsatz Verkauf netto',money(rB)],['Umsatz Abos netto',money(rS)]);
     }else{
       const players=Math.round(units*14*(.5+S.res.hype/10)),rate=clamp(4+S.payers,1,12);
       rev=players*(rate/100)*45*.7/1000;e.units=players;
@@ -1711,7 +1706,7 @@ function applyEngineAging(e){
 
 function finishGame(){
   const e=S.end,t=T();
-  e.live=S.model!=='kauf'?36*t.scale:0;
+  e.live=S.model==='f2p'?36*t.scale:0;
   if(e.live)S.spend.server=(S.spend.server||0)+e.live;
   e.lawsuit=crowdLawsuit();
   if(e.lawsuit>0)addLog(`<span>Geldgeber</span> Sammelklage der Backer: ${money(-e.lawsuit)}`);

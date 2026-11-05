@@ -16,7 +16,7 @@ const GENRE_FEATS={
   platformer:[['🦘','Präzise Steuerung','gp'],['🎨','Parallax-Welten','gfx'],['⏱️','Speedrun-Modus','gp']]
 };
 const OPT_FEATS=[['photo','📸','Fotomodus','gfx'],['ngplus','🔁','New Game Plus','gp'],['dynsnd','🎶','Dynamischer Soundtrack','snd'],['achieve','🏆','Erfolge','gp']];
-const EXTRA_FEATS={mods:['🛠️','Mod-Editor','gp'],coopMode:['🤝','Koop-Netcode','gp'],crossplay:['☁️','Crossplay-Backend','gp'],soundtrack:['🎻','Orchester-Aufnahmen','snd']};
+const EXTRA_FEATS={mods:['🛠️','Mod-Editor','gp'],coopMode:['🤝','Koop-Netcode','gp'],crossplay:['☁️','Crossplay-Backend','gp'],soundtrack:['🎻','Orchester-Aufnahmen','snd'],premium:['💳','Abo-Backend','gp']};
 const CREEP_IDEAS=[['fish','🎣','Angel-Minispiel','gp'],['cat','🐱','Katzen streicheln','gfx'],['karaoke','🎤','Karaoke-Modus','snd'],
   ['toilet','🚽','Begehbare Toiletten','gfx'],['cards','🃏','Sammelkartenspiel im Spiel','gp'],['duck','🦆','Enten-Physik','gp']];
 // Kosten skalieren mit der geplanten Dauer (Sprint-Punkte tun das auch)
