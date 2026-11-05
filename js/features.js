@@ -19,18 +19,20 @@ const OPT_FEATS=[['photo','📸','Fotomodus','gfx'],['ngplus','🔁','New Game P
 const EXTRA_FEATS={mods:['🛠️','Mod-Editor','gp'],coopMode:['🤝','Koop-Netcode','gp'],crossplay:['☁️','Crossplay-Backend','gp'],soundtrack:['🎻','Orchester-Aufnahmen','snd']};
 const CREEP_IDEAS=[['fish','🎣','Angel-Minispiel','gp'],['cat','🐱','Katzen streicheln','gfx'],['karaoke','🎤','Karaoke-Modus','snd'],
   ['toilet','🚽','Begehbare Toiletten','gfx'],['cards','🃏','Sammelkartenspiel im Spiel','gp'],['duck','🦆','Enten-Physik','gp']];
-function mkFeat(id,ic,n,a,core,src,ex){
-  const f={id,n:ic+' '+n,ic,a,cost:core?FEAT.coreCost:FEAT.optCost,val:core?FEAT.coreVal:FEAT.optVal,core,src,done:false,prog:0};
+// Kosten skalieren mit der geplanten Dauer (Sprint-Punkte tun das auch)
+function featCost(base,s=S){return Math.max(2,Math.round(base*s.dur/refMonths(s.tier)))}
+function mkFeat(id,ic,n,a,core,src,ex,s=S){
+  const f={id,n:ic+' '+n,ic,a,cost:featCost(core?FEAT.coreCost:FEAT.optCost,s),val:core?FEAT.coreVal:FEAT.optVal,core,src,done:false,prog:0};
   if(ex)f.ex=ex;return f;
 }
 // Alle wählbaren Features in Plan-Reihenfolge (USP, Kern, Extras, optional); planned = Standardplan
 function featCandidates(s=S){
   const out=[],g=GENRE_FEATS[s.genre];
-  if(s.usp){const h=ideaById('hook',s.usp.ids[0]);out.push({...mkFeat('usp','💡',h?h.n:'Idee',s.usp.area,true,'usp'),planned:true})}
-  if(g)g.slice(0,2).forEach((x,i)=>out.push({...mkFeat(`${s.genre}_${i+1}`,x[0],x[1],x[2],true,'genre'),planned:true}));
-  (s.extras||[]).forEach(e=>{const x=EXTRA_FEATS[e];if(x)out.push({...mkFeat('x_'+e,x[0],x[1],x[2],false,'extra',e),planned:true})});
-  if(g)out.push({...mkFeat(`${s.genre}_3`,g[2][0],g[2][1],g[2][2],false,'genre'),planned:false});
-  OPT_FEATS.forEach(x=>out.push({...mkFeat(x[0],x[1],x[2],x[3],false,'opt'),planned:false}));
+  if(s.usp){const h=ideaById('hook',s.usp.ids[0]);out.push({...mkFeat('usp','💡',h?h.n:'Idee',s.usp.area,true,'usp',undefined,s),planned:true})}
+  if(g)g.slice(0,2).forEach((x,i)=>out.push({...mkFeat(`${s.genre}_${i+1}`,x[0],x[1],x[2],true,'genre',undefined,s),planned:true}));
+  (s.extras||[]).forEach(e=>{const x=EXTRA_FEATS[e];if(x)out.push({...mkFeat('x_'+e,x[0],x[1],x[2],false,'extra',e,s),planned:true})});
+  if(g)out.push({...mkFeat(`${s.genre}_3`,g[2][0],g[2][1],g[2][2],false,'genre',undefined,s),planned:false});
+  OPT_FEATS.forEach(x=>out.push({...mkFeat(x[0],x[1],x[2],x[3],false,'opt',undefined,s),planned:false}));
   return out;
 }
 function startPlan(ids){
@@ -42,6 +44,7 @@ function startPlan(ids){
     else if(f.core||f.src==='extra')cut.push(strip(f));
   });
   S.feat={plan,cut,creepN:0};
+  if(S.sprint&&S.sprint.custom&&!(S.sprint.custom.feat>0))S.sprint.custom.feat=15;
   return true;
 }
 function featActive(s=S){return !!(s&&s.feat&&s.feat.plan&&s.feat.plan.some(f=>!f.done))}
@@ -60,16 +63,16 @@ function featBuild(pts){
   }
   return notes;
 }
-// Ein unfertiges Feature eine Stelle nach oben (nicht über fertige hinweg)
-// Erwartete Feature-Punkte bis Beta im Fokus "Ausgewogen" (mutiert S nicht)
-function featEstimate(s=S){
+// Erwartete Feature-Punkte von prod_plan bis zum Schritt `end` im Fokus "Ausgewogen" (mutiert S nicht)
+function featEstimate(s=S,end='prod_beta'){
   let t=0;
-  for(let i=stepIndex('prod_plan');i<=stepIndex('prod_beta');i++){
+  for(let i=stepIndex('prod_plan');i<=stepIndex(end);i++){
     const c={...s,round:i,sprint:{...(s.sprint||defaultSprint()),focus:'balanced',crunch:false},feat:{plan:[{done:false}],cut:[],creepN:0}};
     t+=sprintDelta(c).feat;
   }
   return Math.round(t);
 }
+// Ein unfertiges Feature eine Stelle nach oben (nicht über fertige hinweg)
 function featUp(id){
   if(!S.feat||!S.feat.plan)return false;
   const p=S.feat.plan,i=p.findIndex(f=>f.id===id);
@@ -121,7 +124,7 @@ function creepAdd(id){
   if(S.feat.plan.some(f=>f.id==='c_'+id))return;
   const x=CREEP_IDEAS.find(i=>i[0]===id);
   S.feat.plan.push(mkFeat('c_'+id,x[1],x[2],x[3],false,'creep'));
-  const f=S.feat.plan[S.feat.plan.length-1];f.cost=FEAT.creepCost;f.val=FEAT.creepVal;
+  const f=S.feat.plan[S.feat.plan.length-1];f.cost=featCost(FEAT.creepCost);f.val=FEAT.creepVal;
 }
 function creepCard(id){
   const x=CREEP_IDEAS.find(i=>i[0]===id);
@@ -155,9 +158,10 @@ function bugList(s=S){
 }
 function featuresDue(s=S){return STEPS[s.round]?.id==='prod_plan'&&!s.feat}
 function huntDue(s=S){return STEPS[s.round]?.id==='pol_bugs'&&!(s.hunt&&s.hunt.done)}
-function openHunt(s=S){
+function openHunt(s=S,c=C){
   if(s.hunt)return;
-  s.hunt={base:bugSplit(Math.max(0,s.res.bugs)),runs:HUNT.runs+(staffLevel('qalead')>=3?1:0),done:false};
+  const qa=((c&&c.studio&&c.studio.staff)||[]).find(x=>x.id==='qalead');
+  s.hunt={base:bugSplit(Math.max(0,s.res.bugs)),runs:HUNT.runs+(qa&&(qa.level||1)>=3?1:0),done:false};
 }
 function startHunt(sev){
   if(!S.hunt||S.hunt.done||S.hunt.runs<=0||!(bugList()[sev]>0))return;

@@ -190,7 +190,7 @@ function normalizeProject(s,c){
   if(typeof s.delayM!=='number')s.delayM=0;
   if(s.screen==='event'){
     if(featuresDue(s))s.screen='features';
-    else if(huntDue(s)){openHunt(s);s.screen='hunt'}
+    else if(huntDue(s)){openHunt(s,c);s.screen='hunt'}
     else if(shipDue(s))s.screen='ship';
   }
   if(!s.msDone)s.msDone=MILESTONES.filter(m=>stepIndex(m.at)<s.round).map(m=>m.id);

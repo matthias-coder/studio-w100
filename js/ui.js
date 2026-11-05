@@ -306,7 +306,7 @@ function sprintBar(){
   if(S.contractStep===S.round)return `<div class="sprintbar"><div class="sprint-head"><b>Sprint · 0 Punkte</b></div><div class="note">Auftragsarbeit: Das Team ist diesen Schritt ausgebucht.</div></div>`;
   const d=sprintDelta(),al=sprintAlloc();
   const r=v=>Math.round(v*10)/10;
-  const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)]].filter(([,v])=>v!==0);
+  const eff=[['gp',r(d.gp)],['gfx',r(d.gfx)],['snd',r(d.snd)],['bugs',r(d.bugs)],['hype',r(d.hype)],['feat',r(d.feat)]].filter(([,v])=>v!==0);
   const cr=crunchOn(S),can=canCrunch();
   const foc=Object.keys(FOCUS).filter(k=>k!=='custom').map(k=>`<button type="button" data-focus="${k}" aria-pressed="${sp.focus===k}">${FOCUS[k].n}</button>`).join('');
   const fine=sprintKeys().map(k=>`<div class="fine-row"><span>${AREAS[k].ic} ${AREAS[k].n}</span><button type="button" class="btn tiny ghost" data-area="${k}" data-step="-5" aria-label="${AREAS[k].n} weniger">−5</button><b>${al[k]} %</b><button type="button" class="btn tiny ghost" data-area="${k}" data-step="5" aria-label="${AREAS[k].n} mehr">+5</button></div>`).join('');
@@ -407,15 +407,16 @@ function renderPitch(m){
 }
 
 /* ===================== Features: Plan-Screen & Panel ===================== */
-let featDraft=null;
+let featDraft=null,featDraftSeed=null;
 const FEAT_AREA={gp:'Gameplay',gfx:'Grafik',snd:'Sound'};
 function featKind(f){return f.core?'Kern':f.src==='extra'?'Extra':'Optional'}
 function renderFeatures(m){
   m.className='card big-decision';
   const cands=featCandidates(S);
+  if(!featDraft||featDraftSeed!==S.seed){featDraftSeed=S.seed;featDraft=null}
   if(!featDraft)featDraft=new Set(cands.filter(f=>f.planned).map(f=>f.id));
   cands.forEach(f=>{if(f.src==='extra')featDraft.add(f.id)});
-  const on=cands.filter(f=>featDraft.has(f.id)),cost=on.reduce((t,f)=>t+f.cost,0);
+  const on=cands.filter(f=>featDraft.has(f.id)),cost=on.reduce((t,f)=>t+f.cost,0),coreCost=on.filter(f=>f.core).reduce((t,f)=>t+f.cost,0);
   const rows=cands.map(f=>{
     const checked=featDraft.has(f.id),locked=f.src==='extra';
     const note=locked?'Gestrichen wird über die Feature-Liste':f.core&&!checked?`Streichen kostet −${FEAT.coreCutRev} Wertung`:'';
@@ -425,6 +426,7 @@ function renderFeatures(m){
     <p class="note">Kern-Features prüft die Alpha, alle geplanten Features die Beta. Gebaut wird über den Sprint fast von selbst.</p>
     <div class="opts">${rows}</div>
     <p class="note">Geplant: ${on.length} Features · ${cost} Punkte · Erwartet bis Beta: ~${featEstimate()} Feature-Punkte (Ausgewogen)</p>
+    <p class="note">Kern bis Alpha: ~${featEstimate(S,'prod_alpha')} / ${coreCost} Punkte</p>
     <div class="row"><button class="btn" id="featGo">🧩 Plan übernehmen</button></div>`;
   m.querySelectorAll?.('[data-fp]').forEach(b=>b.onclick=()=>{
     if(b.disabled)return;
@@ -453,9 +455,10 @@ function bindFeatPanel(m){
 }
 
 /* ===================== Konzept (Ideen-Mixer) & Prototyp-Schleife ===================== */
-let conceptDraft=null;
+let conceptDraft=null,conceptDraftSeed=null;
 function ensureConceptDraft(){
   const c=S.concept;
+  if(conceptDraftSeed!==S.seed){conceptDraftSeed=S.seed;conceptDraft=null}
   if(conceptDraft&&Object.keys(IDEA_SLOTS).every(k=>c.hand[k].includes(conceptDraft.picks[k])))return;
   const keep=conceptDraft;
   const locked=c.lock&&S.genre;
@@ -545,7 +548,7 @@ function renderProto(m){
   const fun='●'.repeat(p.fun)+'○'.repeat(Math.max(0,PROTO.maxFun-p.fun));
   m.innerHTML=`<span class="label">${stepLabel()}</span><h3>Prototyp-Schleife</h3>
     <p class="note">Ihr probiert Ideen im Prototyp aus, bis sich das Spiel gut anfühlt.</p>
-    <div class="chips"><span class="chip p">Fun gefunden: ${fun}</span><span class="chip">Iterationen ${p.n}/${PROTO.max}</span><span class="chip">Nächste Iteration: SG ${dc100(dc)} (${winChance(dc,optMod({st:'design'}))} %)</span></div>
+    <div class="chips"><span class="chip p">Fun gefunden: ${fun}</span><span class="chip">Iterationen ${p.n}/${PROTO.max}</span><span class="chip">Nächste Iteration: SG ${dc100(dc)} (${winChance(dc,optMod({st:'design'})+moralMod())} %)</span></div>
     <div class="row"><button type="button" class="btn" id="pIter">🎲 Weiter iterieren</button><button type="button" class="btn ghost" id="pStop">✅ Aufhören</button></div>
     <p class="note">Jede Fun-Stufe: +8 % Gameplay aus jedem Sprint</p>`;
   const it=$('pIter');if(it)it.onclick=startProto;
@@ -559,12 +562,12 @@ function renderHunt(m){
   const l=bugList(),h=S.hunt,pen=certPenalty();
   const rows=HUNT_ROWS.map(([k,ic,n])=>{
     const dc=HUNT.dc[k],off=!l[k]||h.runs<=0;
-    return `<button type="button" class="opt" data-hunt="${k}"${off?' disabled':''}><span class="t">${ic} ${n} ×${l[k]}</span><span class="d">SG ${dc100(dc)} (${winChance(dc,optMod({st:'technik'}))} %) · −${HUNT.w[k]} Bugs je Treffer</span></button>`;
+    return `<button type="button" class="opt" data-hunt="${k}"${off?' disabled':''}><span class="t">${ic} ${n} ×${l[k]}</span><span class="d">SG ${dc100(dc)} (${winChance(dc,optMod({st:'technik'})+moralMod())} %) · −${HUNT.w[k]} Bug${HUNT.w[k]>1?'s':''} je Treffer</span></button>`;
   }).join('');
-  const cert=l.crit<=HUNT.certCrit?'Zertifizierung: ✓ voraussichtlich bestanden':`Zertifizierung: ✗ durchgefallen (−${pen} Wertung)`;
+  const cert=S.works?'Zertifizierung: ✓ (It just works)':l.crit<=HUNT.certCrit?'Zertifizierung: ✓ voraussichtlich bestanden':`Zertifizierung: ✗ durchgefallen (−${pen} Wertung)`;
   m.innerHTML=eventBannerHTML('hunt')+`<span class="label">${stepLabel()}</span><h3>Bug-Jagd</h3>
     <p class="note">Die QA nimmt sich die schlimmsten Fehler vor, bevor es in die Zertifizierung geht.</p>
-    <div class="chips"><span class="chip">QA-Runden: ${h.runs} übrig</span><span class="chip">🐞 ${S.res.bugs} Bugs</span><span class="chip ${pen?'n':'p'}">${cert}</span></div>
+    <div class="chips"><span class="chip">QA-Runden: ${h.runs} übrig</span><span class="chip">🐞 ${S.res.bugs} Bugs</span><span class="chip ${pen&&!S.works?'n':'p'}">${cert}</span></div>
     <div class="opts">${rows}</div>
     <div class="row"><button type="button" class="btn" id="huntEnd">✅ Fertig</button></div>`;
   m.querySelectorAll?.('[data-hunt]').forEach(b=>b.onclick=()=>{if(!b.disabled)startHunt(b.dataset.hunt)});
@@ -575,12 +578,12 @@ function renderShip(m){
   const l=bugList(),fc=reviewForecast(),mo=delayMonths(),w=delayWeight();
   const bugs=Math.min(S.res.bugs,Math.round(SHIP.bugPerW*w)),q=Math.round(SHIP.qualPerW*w);
   const funder=(S.fund&&S.fund.deals||[]).some(d=>(d.id==='pub'||d.id==='inv')&&d.status==='active');
-  const cert=certPenalty()?`Showstopper: ${l.crit} · Zertifizierung gefährdet`:`Showstopper: ${l.crit} · Zertifizierung ok`;
+  const cert=S.works?`Showstopper: ${l.crit} · Zertifizierung: ✓ (It just works)`:certPenalty()?`Showstopper: ${l.crit} · Zertifizierung gefährdet`:`Showstopper: ${l.crit} · Zertifizierung ok`;
   m.innerHTML=eventBannerHTML('ship')+`<span class="label">${stepLabel()}</span><h3>Release: Jetzt oder später?</h3>
     <p class="note">Prognose: ${fc==null?'–':fc} · Bugs: ${S.res.bugs} · ${cert}</p>
     <div class="opts">
       <button type="button" class="opt" id="shipNow"><span class="t">🚀 Pünktlich releasen</span><span class="d">Alles bleibt, wie es ist.</span></button>
-      <button type="button" class="opt" id="shipLate"><span class="t">⏳ Um ${mo} Monate verschieben · ${money(delayCost())}</span><span class="d">−${bugs} Bugs · +${q} Gameplay/Grafik/Sound · −1 Hype${funder?' · Geldgeber murren (−1 Moral)':''}</span></button>
+      <button type="button" class="opt" id="shipLate"><span class="t">⏳ Um ${mo} Monate verschieben · ${money(delayCost())}</span><span class="d">−${bugs} Bugs · +${q} Gameplay/Grafik/Sound · −${-SHIP.hype} Hype${funder?` · Geldgeber murren (−${-SHIP.funderMoral} Moral)`:''}</span></button>
     </div>`;
   const a=$('shipNow');if(a)a.onclick=()=>decideShip(false);
   const b=$('shipLate');if(b)b.onclick=()=>decideShip(true);

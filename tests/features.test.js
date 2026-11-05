@@ -108,3 +108,19 @@ test('legacy save at pol_bugs gets a hunt, missing ship/delayM defaults',()=>{co
   const s=run('normalizeProject(JSON.parse(JSON.stringify(S)),C)');
   assert.equal(s.screen,'hunt');assert.ok(s.hunt);assert.equal(s.feat.legacy,true);assert.equal(s.delayM,0);assert.equal(s.ship,null);
   run(`S.round=stepIndex('pol_ship')+1;delete S.ship`);assert.equal(run('normalizeProject(JSON.parse(JSON.stringify(S)),C)').ship,'ontime');});
+
+/* ===== final review fixes ===== */
+test('custom focus: tuned before the plan still builds features after startPlan',()=>{const {run}=load({ui:true});newProject(run);toPlan(run);
+  run(`sprintTune('gp',5)`);assert.equal(run('S.sprint.custom.feat'),0);
+  run(`startPlan(['rpg_1','rpg_2'])`);assert.equal(run('S.sprint.focus'),'custom');assert.ok(run('sprintAlloc().feat')>0);});
+test('custom focus: old save without feat gets a share on startPlan',()=>{const {run}=load();newProject(run);toPlan(run);
+  run(`S.sprint={focus:'custom',custom:{gp:40,gfx:30,snd:10,bug:10,mkt:10},crunch:false};startPlan(['rpg_1'])`);assert.ok(run('sprintAlloc().feat')>0);});
+test('feature cost scales with planned duration',()=>{
+  const c=d=>{const {run}=load();newProject(run,{dur:d});toPlan(run);return run(`(()=>{const f=featCandidates();return [f.find(x=>x.core).cost,f.find(x=>!x.core).cost]})()`)};
+  assert.deepEqual([...c('short')],[3,2]);assert.deepEqual([...c('normal')],[5,3]);assert.deepEqual([...c('long')],[7,4]);});
+test('creep feature cost scales too',()=>{const {run}=load();newProject(run,{dur:'short'});toPlan(run);run(`startPlan(['rpg_1']);creepAdd('fish')`);
+  assert.equal(run(`S.feat.plan.find(f=>f.id==='c_fish').cost`),2);});
+test('featEstimate to alpha is smaller than to beta',()=>{const {run}=load();newProject(run);assert.ok(run(`featEstimate(S,'prod_alpha')`)<run('featEstimate()'));assert.ok(run(`featEstimate(S,'prod_alpha')`)>0);});
+test('openHunt uses the passed career for the QA lead bonus',()=>{const {run}=load();newProject(run);
+  run(`S.res.bugs=5;const c2={studio:{staff:[{id:'qalead',level:3}]}};const s={res:{bugs:5}};openHunt(s,c2);globalThis.qaA=s.hunt.runs;const s2={res:{bugs:5}};openHunt(s2,{studio:{staff:[]}});globalThis.qaB=s2.hunt.runs`);
+  assert.equal(run('qaA'),4);assert.equal(run('qaB'),3);});

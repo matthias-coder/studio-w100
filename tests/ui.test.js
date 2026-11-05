@@ -107,3 +107,19 @@ test('hunt screen shows severities and certification',()=>{const {run}=load({ui:
   const h=html(run,'renderHunt');assert.match(h,/Showstopper ×3/);assert.match(h,/QA-Runden: 3/);assert.match(h,/durchgefallen/);assert.match(h,/Fertig/);});
 test('ship screen offers both choices with cost',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('pol_ship')`);
   const h=html(run,'renderShip');assert.match(h,/Pünktlich releasen/);assert.match(h,/Um 2 Monate verschieben/);});
+
+/* ===== final review fixes ===== */
+test('plan screen shows core-to-alpha estimate',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');S.usp={ids:['loop','jazz','liar'],area:'gp',power:2,n:'x'}`);
+  assert.match(html(run,'renderFeatures'),/Kern bis Alpha: ~\d+ \/ \d+ Punkte/);});
+test('feature draft is bound to the project',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan')`);
+  html(run,'renderFeatures');run(`featDraft.delete('rpg_1')`);
+  run(`S.seed=S.seed+1`);html(run,'renderFeatures');assert.ok(run(`featDraft.has('rpg_1')`));});
+test('concept draft is bound to the project',()=>{const {run}=load({ui:true});startRaw(run);
+  html(run,'renderConcept');run(`conceptDraft.aud='indie'`);run(`S.seed=S.seed+1`);html(run,'renderConcept');assert.equal(run('conceptDraft.aud'),'core');});
+test('hunt and proto chances include moral',()=>{const {run}=load({ui:true});newProject(run);run(`S.res.bugs=30;S.round=stepIndex('pol_bugs');openHunt();S.res.moral=10`);
+  const hi=html(run,'renderHunt');run('S.res.moral=0');const lo=html(run,'renderHunt');assert.notEqual(hi,lo);});
+test('works skips certification warning; copy singular and constants',()=>{const {run}=load({ui:true});newProject(run);run(`S.res.bugs=60;S.round=stepIndex('pol_bugs');openHunt();S.works=true`);
+  const h=html(run,'renderHunt');assert.match(h,/It just works/);assert.match(h,/−1 Bug je Treffer/);assert.match(h,/−2 Bugs je Treffer/);
+  run(`S.round=stepIndex('pol_ship')`);assert.match(html(run,'renderShip'),/It just works/);});
+test('sprint expected chips show feature points',()=>{const {run}=load({ui:true});newProject(run);run(`S.round=stepIndex('prod_plan');startPlan(['rpg_1'])`);
+  assert.match(run('sprintBar()'),/Feature-Punkte/);});
