@@ -60,7 +60,7 @@ function planText(id){
 
 /* ===================== Pitch: Auswahl, Wurf, Abschluss, Eigenfinanzierung ===================== */
 function pitchDue(s=S){return !s.fund.pitched&&STEPS[s.round]?.id==='pit_meet'}
-function pitchBonus(s=S){return (Math.floor(s.res.hype/2)+Math.floor((s.res.qual-30)/10))*4+fameBonus()}
+function pitchBonus(s=S){return (Math.floor(s.res.hype/2)+Math.floor((s.res.qual-30)/10))*4+fameBonus()+(s.usp?CONCEPT.pitchPer*s.usp.power:0)}
 function pitchMod(){return optMod({st:'business'})+pitchBonus()+moralMod()}
 function pitchTarget(id,amb){return dc100(FUNDERS[id].dc+(amb?FUND.ambDc:0))}
 function startPitch(ids,amb){

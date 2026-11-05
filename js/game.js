@@ -501,7 +501,7 @@ function applyGenre(genre,sub,gmod){
   addLog(`<span>${stepTag()}</span> Konzept: ${genreName(S)}${S.trendHot?' (Boom-Genre!)':S.trendCold?' (Übersättigt)':''}`);
 }
 
-function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
+function goMonth(){const m=mandFor(S.round);if(m.length){S.mcur=m[0];S.screen=m[0]==='lang'?'lang':'mand'}else S.screen=conceptDue()?'concept':protoDue()?'proto':(typeof pitchDue==='function'&&pitchDue())?'pitch':'event';render();save()}
 
 /* ===================== W100 Würfel-Modifikatoren & Regeln ===================== */
 function moralMod(){
@@ -820,6 +820,7 @@ function curTitle(kind,ev){
     :kind==='hire'?STAFF[ev].n
     :kind==='dlc'?DLC_OPTS.find(x=>x.id===ev).n
     :kind==='pitch'?'Pitch-Termine'
+    :kind==='proto'?'Prototyp-Schleife'
     :kind==='renego'?'Nachverhandlung'
     :RESC.find(x=>x.id===ev).n;
 }
@@ -830,6 +831,7 @@ function getOpt(p){
   if(p.kind==='stream')return streamCard(p.ev).o[p.oi];
   if(p.kind==='probe')return probeCard(p.ev).o[p.oi];
   if(p.kind==='pitch'){const amb=pitchAmb();return {l:'Pitch',st:'business',dc:Math.min(...S.pitchSel.map(id=>FUNDERS[id].dc+(amb?FUND.ambDc:0))),s:{},f:{},bonusV:pitchBonus()}}
+  if(p.kind==='proto')return {l:'Prototyp-Iteration',st:'design',dc:protoDc(S),s:{},f:{},bonusV:0};
   if(p.kind==='renego')return {l:'Nachverhandeln',st:'business',dc:FUND.renegoDc,s:{},f:{},bonusV:fameBonus()};
   if(p.kind==='mand')return getMand(p.ev).o[p.oi];
   if(p.kind==='rand'){const r=R[p.ev];const adj=r.dcAdj?r.dcAdj(S):0;return {...r,l:'Rettungswurf',dc:dc100(r.dc)+adj*4}}
@@ -908,6 +910,7 @@ function resolve(rolls){
     if(x.txt)txt+=' '+x.txt;
   }
   if(p.kind==='pitch'){const x=resolvePitch(total,crit,fumble);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
+  if(p.kind==='proto'){const x=resolveProto(ok,crit,fumble);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
   if(p.kind==='renego'){const x=resolveRenego(ok);pre=pre.concat(x.ch);if(x.txt)txt+=' '+x.txt}
   if(ok&&o.onOk){const x=o.onOk();if(x)txt+=' '+x}
   if(!ok&&o.onFail){const x=o.onFail();if(x)txt+=' '+x}
@@ -923,7 +926,7 @@ function afterResult(k){
   else if(k==='probe')afterRandom();
   else if(k==='stream'){if(S.last.oi!==2)revealInf(S.stream);afterRandom()}
   else if(k==='shop'||k==='hire'||k==='contract'){S.screen='shop';render();save()}
-  else if(k==='pitch')goMonth();
+  else if(k==='pitch'||k==='proto')goMonth();
   else if(k==='renego'){S.screen='milestone';render();save()}
   else if(k==='dlc'){S.screen='end';render();save()}
   else if(k==='rescue'){if(S.over)gameOver(S.over);else{S.screen='crisis';render();save()}}

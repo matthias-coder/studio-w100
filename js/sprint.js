@@ -48,7 +48,7 @@ function sprintDelta(s=S){
   const pol=.9+.05*((typeof D==='function'&&D()&&D().s.polish)||0);
   const pp=k=>pts*al[k]/100;
   return {pts,
-    gp:pp('gp')*AREAS.gp.rate*pol,gfx:pp('gfx')*AREAS.gfx.rate*pol,snd:pp('snd')*AREAS.snd.rate*pol,
+    gp:pp('gp')*AREAS.gp.rate*pol*(typeof funMult==='function'?funMult(s):1),gfx:pp('gfx')*AREAS.gfx.rate*pol,snd:pp('snd')*AREAS.snd.rate*pol,
     bugs:(pp('gp')+pp('gfx')+pp('snd'))*SPRINT.buildBugs+pp('bug')*AREAS.bug.rate+(cr?SPRINT.crunchBugs:0),
     hype:pp('mkt')*AREAS.mkt.rate,
     moral:cr?SPRINT.crunchMoral:0};

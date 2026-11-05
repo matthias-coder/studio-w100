@@ -43,3 +43,18 @@ test('USP kept or broken changes the review',()=>{const {run}=load();newProject(
 test('audience multiplies sales and shifts the review',()=>{const {run}=load();newProject(run);
   run(`S.aud='casual'`);assert.equal(run('audSales()'),1.15);assert.equal(run('audRev()'),-2);
   run(`delete S.aud`);assert.equal(run('audSales()'),1);});
+
+const toProto=run=>run(`S.res.budget=1e9;S.round=stepIndex('pre_proto');S.proto={n:0,fun:0,done:false};goMonth()`);
+test('pre_proto opens the prototype screen',()=>{const {run}=load();newProject(run);toProto(run);assert.equal(run('S.screen'),'proto');});
+test('skipped pre_proto never opens it',()=>{const {run}=load();newProject(run);run(`S.skip=['pre_proto']`);toProto(run);assert.notEqual(run('S.screen'),'proto');});
+test('iteration SG rises',()=>{const {run}=load();newProject(run);run(`S.proto={n:2,fun:0,done:false}`);assert.equal(run('dc100(protoDc())'),55);});
+test('success, crit cap, fumble floor, time loss',()=>{const {run}=load();newProject(run);
+  run(`S.proto={n:0,fun:2,done:false};resolveProto(true,true,false)`);assert.equal(run('S.proto.fun'),3);
+  run(`S.proto={n:0,fun:0,done:false};S.res.zeit=5;resolveProto(false,false,true)`);assert.equal(run('S.proto.fun'),0);assert.equal(run('S.res.zeit'),4);
+  run(`S.res.zeit=5;resolveProto(false,false,false)`);assert.equal(run('S.res.zeit'),4.5);});
+test('fourth iteration ends the loop',()=>{const {run}=load();newProject(run);run(`S.proto={n:3,fun:1,done:false};resolveProto(true,false,false)`);
+  assert.equal(run('S.proto.done'),true);});
+test('fun multiplies sprint gameplay',()=>{const {run}=load();newProject(run);run(`S.sprint.focus='gp';S.proto={n:0,fun:0,done:true}`);
+  const a=run('sprintDelta().gp');run('S.proto.fun=3');assert.ok(Math.abs(run('sprintDelta().gp')-a*1.24)<1e-9);});
+test('USP raises the pitch bonus',()=>{const {run}=load();newProject(run);const a=run('pitchBonus()');
+  run(`S.usp={ids:[],area:'gp',power:2,n:'x'}`);assert.equal(run('pitchBonus()'),a+6);});

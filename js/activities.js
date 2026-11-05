@@ -95,3 +95,34 @@ function uspKept(s=S){return !!s.usp&&s.res[s.usp.area]>=uspTarget(s)}
 function uspRev(s=S){return s.usp?(uspKept(s)?1:-1)*CONCEPT.revPer*s.usp.power:0}
 function audSales(s=S){return AUD[s.aud]?.sales??1}
 function audRev(s=S){return AUD[s.aud]?.rev??0}
+
+/* ===================== Prototyp-Schleife ===================== */
+function protoDue(s=S){return !!s.proto&&!s.proto.done&&STEPS[s.round]?.id==='pre_proto'&&!isSkipped(s.round,s)}
+function protoDc(s=S){return PROTO.dc+PROTO.step*s.proto.n}
+function funMult(s=S){return 1+PROTO.funStep*((s.proto&&s.proto.fun)||0)}
+function startProto(){
+  if(!S.proto||S.proto.done)return;
+  startRoll({kind:'proto',ev:'proto',adv:false});
+}
+function resolveProto(ok,crit,fumble){
+  const p=S.proto,ch=[];let txt='';
+  p.n++;
+  if(ok){
+    p.fun=Math.min(PROTO.maxFun,p.fun+(crit?2:1));
+    txt=`Fun gefunden! Stufe ${p.fun}`;
+  }else{
+    const lose=fumble?PROTO.fumbleZeit:PROTO.failZeit;
+    ch.push(...apply({zeit:-lose}));
+    if(fumble)p.fun=Math.max(0,p.fun-1);
+    txt=`Sackgasse – ${fmtSpan(lose*refMonths(S.tier)/12)} verloren${fumble?`, Fun-Stufe ${p.fun}`:''}`;
+  }
+  if(p.n>=PROTO.max)p.done=true;
+  return {ch,txt};
+}
+function endProto(){
+  if(S.proto&&!S.proto.done){
+    S.proto.done=true;
+    addLog(`🧪 Prototyp abgeschlossen: Fun-Stufe ${S.proto.fun}`);
+  }
+  goMonth();
+}
